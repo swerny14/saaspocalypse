@@ -1,0 +1,33 @@
+{
+  "name": "saaspocalypse",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.104.1",
+    "next": "^15.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tldts": "^7.0.28",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "dotenv": "^17.4.2",
+    "eslint": "^9.25.0",
+    "eslint-config-next": "^15.5.4",
+    "tailwindcss": "^4.1.11",
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.3"
+  }
+}

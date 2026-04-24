@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Saaspocalypse — verdict report preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; background: #e8e6dc; font-family: "Space Grotesk", system-ui, sans-serif; }
+  .nav { position: sticky; top: 0; z-index: 10; display: flex; gap: 10px; padding: 14px 20px; background: #0a0a0a; color: #f4f1e8; border-bottom: 2.5px solid #0a0a0a; font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .nav a { color: #c6ff00; text-decoration: none; border: 1.5px solid #c6ff00; padding: 4px 10px; cursor: pointer; }
+  .nav a:hover { background: #c6ff00; color: #0a0a0a; }
+  .report-wrap { max-width: 980px; margin: 0 auto; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="nav">
+    <span style="margin-right:auto">▸ saaspocalypse verdict report · preview</span>
+    <a href="#notion">notion-ish · 78</a>
+    <a href="#calendly">calendly-ish · 86</a>
+    <a href="#linear">linear-ish · 52</a>
+    <a href="#stripe">stripe-ish · 6</a>
+  </div>
+  <div id="root"></div>
+
+  <script type="text/babel" src="verdict-data-source.jsx"></script>
+  <script type="text/babel" src="verdict-report-source.jsx"></script>
+  <script type="text/babel" data-presets="env,react">
+    function App() {
+      const reports = window.VERDICT_REPORTS;
+      return (
+        <div>
+          {reports.map(r => (
+            <div key={r.id} id={r.id} className="report-wrap">
+              <VerdictReport v={r} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
