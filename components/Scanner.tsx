@@ -14,10 +14,10 @@ import { VerdictReport } from "./VerdictReport";
 type Phase = "idle" | "scanning" | "done" | "error";
 
 const PRESETS = [
-  "notion-ish.com",
-  "calendly-ish.com",
-  "linear-ish.app",
-  "stripe-ish.com",
+  "calendly.com",
+  "notion.com",
+  "linear.app",
+  "stripe.com",
 ];
 
 export function Scanner() {

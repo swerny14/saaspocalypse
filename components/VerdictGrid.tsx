@@ -12,7 +12,7 @@ export async function VerdictGrid() {
         <SectionHead
           eyebrow="Recent verdicts"
           title="We've been busy judging."
-          sub="Real URLs, real robot opinions, real receipts. Names changed to protect the funded."
+          sub="Fresh out of the scanner, still warm to the touch."
         />
 
         {reports.length === 0 ? (

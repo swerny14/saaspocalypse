@@ -69,7 +69,7 @@ export const HOW_STEPS = [
   {
     n: "02",
     t: "We do the thing",
-    b: "Our very smart robot (it's a prompt) scans the site, sniffs the JS, and guesses the schema. Mostly right. Sometimes hilariously wrong.",
+    b: "Our robot scans the site, sniffs the JS, and renders judgment with the calm confidence of someone who's never been hugged.",
   },
   {
     n: "03",
@@ -85,11 +85,11 @@ export const FAQS = [
   },
   {
     q: "Do you actually build the thing for me?",
-    a: "No. That's the whole bit. We tell you you CAN build it. You, famously, will not. But you could. And that's beautiful.",
+    a: "No, but we like your optimism. We tell you you CAN build it. You, famously, will not. But you could. And that's beautiful.",
   },
   {
     q: "Is it free?",
-    a: "Yes. It will be free forever. If we ever add a paid tier, you have our permission to paste our own URL into it and build the replacement yourself.",
+    a: "The verdict is free, forever. If you want the full step-by-step build guide for a specific report, that's $2 — paid once, not monthly. No subscriptions, no seats, no tiers. That's every price we have.",
   },
   {
     q: "What if I'm the SaaS and you roasted me?",
@@ -103,15 +103,6 @@ export const FAQS = [
     q: "Can I use this to decide what to build?",
     a: "Yes, but inversely. If we say 'WEEKEND', the market is saturated. If we say 'DON'T', that's your billion-dollar idea. You're welcome.",
   },
-];
-
-export const FOOTER_EASTER = [
-  "we're not a real company",
-  "the robot is lying to you (a little)",
-  "curl -X POST /verdict",
-  "shoutout to supabase for existing",
-  "if you're reading this you should ship",
-  "no VCs were harmed",
 ];
 
 export const MARQUEE_ITEMS = [
@@ -128,8 +119,8 @@ export const MARQUEE_ITEMS = [
 export const PRICING_BULLETS = [
   "Unlimited URLs (please don't actually)",
   "Itemized stack receipts",
-  "Tutorial links curated by a Real Human (who owes us a favor)",
+  "Challenges ranked easy to nightmare, sorted accordingly",
   "A sassy verdict (non-negotiable)",
-  "Zero dark patterns, zero upsells, zero seat-based anything",
+  "Zero dark patterns, zero seat-based anything, zero recurring guilt",
   'Optional email nag 6 months later: "did u build it tho"',
 ];
