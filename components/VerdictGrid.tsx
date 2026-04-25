@@ -11,7 +11,7 @@ export async function VerdictGrid() {
       <div className="container">
         <SectionHead
           eyebrow="Recent verdicts"
-          title="We've been busy roasting."
+          title="We've been busy judging."
           sub="Real URLs, real robot opinions, real receipts. Names changed to protect the funded."
         />
 

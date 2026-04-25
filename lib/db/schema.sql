@@ -57,3 +57,67 @@ drop trigger if exists reports_set_updated_at on reports;
 create trigger reports_set_updated_at
   before update on reports
   for each row execute function set_updated_at();
+
+-- ───────────────────────────── build guides ─────────────────────────────
+
+create table if not exists build_guides (
+  id               uuid primary key default gen_random_uuid(),
+  report_id        uuid unique not null references reports(id) on delete cascade,
+
+  overview         text  not null,
+  prerequisites    jsonb not null,   -- string[]
+  steps            jsonb not null,   -- see Zod schema
+  stack_specifics  jsonb not null,   -- { libraries, references }
+  pitfalls         jsonb not null,   -- [{ title, body }]
+
+  model            text  not null,
+  input_tokens     int,
+  output_tokens    int,
+
+  generated_at     timestamptz not null default now()
+);
+
+alter table build_guides enable row level security;
+-- No public read policy: guides are only served server-side via admin client
+-- after an access_token check. Anon/authenticated roles get zero visibility.
+
+-- ─────────────────────────── guide purchases ───────────────────────────
+
+create table if not exists build_guide_purchases (
+  id                  uuid primary key default gen_random_uuid(),
+  report_id           uuid not null references reports(id) on delete cascade,
+  user_id             uuid,
+  email               text not null,
+  stripe_session_id   text unique,
+  amount_cents        int  not null,
+  status              text not null check (status in ('pending','paid','failed','refunded')),
+  access_token        text unique not null,
+  created_at          timestamptz not null default now(),
+  paid_at             timestamptz
+);
+
+create index if not exists purchases_report_id_idx on build_guide_purchases (report_id);
+create index if not exists purchases_email_idx on build_guide_purchases (email);
+
+alter table build_guide_purchases enable row level security;
+-- Same: purchases are server-side only. No anon policy.
+
+-- ─────────────────────────── error log ────────────────────────────────
+
+create table if not exists error_log (
+  id            uuid primary key default gen_random_uuid(),
+  scope         text not null,        -- 'scan' | 'guide_gen' | 'purchase' | 'webhook' | 'resend'
+  reason        text,                 -- enum value from the pipeline (ScanErrorReason / GuideErrorReason)
+  ref_id        uuid,                 -- optional FK-ish: report_id, purchase_id
+  ref_slug      text,                 -- human-readable reference (domain slug, etc.)
+  message       text not null,        -- the real internal error message (stack traces, DB errors, etc.)
+  detail        jsonb,                -- anything structured: request metadata, tool_use previews, etc.
+  created_at    timestamptz not null default now()
+);
+
+create index if not exists error_log_scope_created_idx on error_log (scope, created_at desc);
+create index if not exists error_log_ref_id_idx on error_log (ref_id);
+create index if not exists error_log_ref_slug_idx on error_log (ref_slug);
+
+alter table error_log enable row level security;
+-- No public read policy: error_log is ops-only, written via admin client.

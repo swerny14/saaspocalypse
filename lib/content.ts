@@ -1,17 +1,3 @@
-export type Tier = "WEEKEND" | "MONTH" | "DON'T";
-
-export type Verdict = {
-  name: string;
-  tier: Tier;
-  tierColor: string;
-  score: number;
-  time: string;
-  cost: string;
-  stack: string[];
-  verdict: string;
-  tutorials: number;
-};
-
 export const HEADLINES: { top: string; sub: string }[] = [
   {
     top: "Can I build this myself?",
@@ -28,101 +14,6 @@ export const HEADLINES: { top: string; sub: string }[] = [
   {
     top: "It's just a CRUD app in a trenchcoat.",
     sub: "Let us prove it. Paste a URL and we'll undress the stack.",
-  },
-];
-
-export const EXAMPLE_VERDICTS: Verdict[] = [
-  {
-    name: "notion-ish.com",
-    tier: "WEEKEND",
-    tierColor: "#22c55e",
-    score: 78,
-    time: "14 hrs",
-    cost: "$0.42/mo",
-    stack: [
-      "Postgres (tree-ish schema)",
-      "Next.js + TipTap",
-      "S3 for uploads",
-      "auth.js",
-    ],
-    verdict:
-      "It's a rich-text editor with a database attached. You are the database.",
-    tutorials: 3,
-  },
-  {
-    name: "calendly-ish.com",
-    tier: "WEEKEND",
-    tierColor: "#22c55e",
-    score: 82,
-    time: "9 hrs",
-    cost: "$0.00/mo",
-    stack: [
-      "Google Calendar API",
-      "Next.js form",
-      "Resend for emails",
-      "sqlite",
-    ],
-    verdict:
-      "You're charging $12/mo for an if-statement and a calendar invite. Respect.",
-    tutorials: 2,
-  },
-  {
-    name: "linear-ish.app",
-    tier: "MONTH",
-    tierColor: "#eab308",
-    score: 54,
-    time: "6 weeks",
-    cost: "$14/mo",
-    stack: [
-      "Postgres + CRDTs",
-      "Electric/SQLite sync",
-      "Websockets",
-      "Tauri desktop",
-    ],
-    verdict:
-      "The UI is the product. Build the boring bug tracker in 2 days, spend 40 on the keyboard shortcuts.",
-    tutorials: 5,
-  },
-  {
-    name: "stripe-ish.com",
-    tier: "DON'T",
-    tierColor: "#ef4444",
-    score: 8,
-    time: "∞",
-    cost: "a soul",
-    stack: ["regulatory attorneys", "a bank", "PCI DSS", "tears"],
-    verdict:
-      "Absolutely not. This is the one thing worth paying for. Go outside.",
-    tutorials: 0,
-  },
-  {
-    name: "loom-ish.com",
-    tier: "MONTH",
-    tierColor: "#eab308",
-    score: 48,
-    time: "3 weeks",
-    cost: "$9/mo",
-    stack: [
-      "MediaRecorder API",
-      "Cloudflare Stream",
-      "Next.js",
-      "ffmpeg.wasm",
-    ],
-    verdict:
-      "The browser records video now. It's fine. The hard part is the little bouncy cursor.",
-    tutorials: 4,
-  },
-  {
-    name: "figma-ish.com",
-    tier: "DON'T",
-    tierColor: "#ef4444",
-    score: 12,
-    time: "5 years",
-    cost: "your 20s",
-    stack: ["WebGL", "CRDTs", "a C++ renderer", "venture capital"],
-    verdict:
-      "You'd need a rendering engine, a multiplayer engine, and a therapist. Pass.",
-    tutorials: 1,
   },
 ];
 
@@ -234,13 +125,6 @@ export const MARQUEE_ITEMS = [
   "venture capital is cope",
 ];
 
-export const PRESET_URLS = [
-  { label: "notion-ish.com", idx: 0 },
-  { label: "calendly-ish.com", idx: 1 },
-  { label: "linear-ish.app", idx: 2 },
-  { label: "stripe-ish.com", idx: 3 },
-];
-
 export const PRICING_BULLETS = [
   "Unlimited URLs (please don't actually)",
   "Itemized stack receipts",
@@ -248,13 +132,4 @@ export const PRICING_BULLETS = [
   "A sassy verdict (non-negotiable)",
   "Zero dark patterns, zero upsells, zero seat-based anything",
   'Optional email nag 6 months later: "did u build it tho"',
-];
-
-export const SCAN_STEPS = [
-  "Pinging URL...",
-  "Sniffing <script> tags...",
-  "Guessing the database schema...",
-  "Consulting the indie hacker oracle...",
-  "Calculating Vercel bill...",
-  "Printing verdict...",
 ];

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function Nav() {
@@ -8,9 +9,14 @@ export function Nav() {
           href="/"
           className="flex items-center gap-3 no-underline text-ink"
         >
-          <div className="select-none grid place-items-center w-[34px] h-[34px] bg-accent border-[2.5px] border-ink font-display font-bold text-[20px] -rotate-3">
-            §
-          </div>
+          <Image
+            src="/images/logo.png"
+            alt="saaspocalypse logo"
+            width={34}
+            height={34}
+            priority
+            className="rounded-full -rotate-3 select-none"
+          />
           <span className="font-display font-bold text-[22px] tracking-[-0.02em]">
             saaspocalypse
           </span>

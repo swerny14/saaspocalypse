@@ -1,261 +1,251 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRef, useState } from "react";
+import type { StoredReport } from "@/lib/db/reports";
 import {
-  EXAMPLE_VERDICTS,
-  PRESET_URLS,
-  SCAN_STEPS,
-  type Verdict,
-} from "@/lib/content";
+  STEP_LABELS,
+  STEP_ORDER,
+  type ScanEvent,
+  type ScanStepId,
+} from "@/lib/scanner/events";
+import { VerdictReport } from "./VerdictReport";
 
-type Phase = "idle" | "scanning" | "done";
+type Phase = "idle" | "scanning" | "done" | "error";
+
+const PRESETS = [
+  "notion-ish.com",
+  "calendly-ish.com",
+  "linear-ish.app",
+  "stripe-ish.com",
+];
 
 export function Scanner() {
   const [phase, setPhase] = useState<Phase>("idle");
-  const [url, setUrl] = useState("notion-ish.com");
-  const [verdictIdx, setVerdictIdx] = useState(0);
-  const [step, setStep] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [url, setUrl] = useState("");
+  const [currentStep, setCurrentStep] = useState<ScanStepId | null>(null);
+  const [report, setReport] = useState<StoredReport | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    if (phase !== "scanning") return;
-    let i = 0;
-    setStep(0);
-    const id = setInterval(() => {
-      i += 1;
-      setStep(i);
-      if (i >= SCAN_STEPS.length) {
-        clearInterval(id);
-        setTimeout(() => setPhase("done"), 300);
-      }
-    }, 450);
-    return () => clearInterval(id);
-  }, [phase]);
+  const handleEvent = (event: ScanEvent) => {
+    if (event.type === "step") {
+      setCurrentStep(event.step);
+    } else if (event.type === "done") {
+      setReport(event.report);
+      setCurrentStep("verdict");
+      setPhase("done");
+    } else if (event.type === "error") {
+      setErrorMsg(event.message);
+      setPhase("error");
+    }
+  };
 
-  const start = (u?: string, idx?: number) => {
-    if (u !== undefined) setUrl(u);
-    if (typeof idx === "number") setVerdictIdx(idx);
+  const startScan = async (targetUrl: string) => {
+    const trimmed = targetUrl.trim();
+    if (!trimmed) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setPhase("scanning");
-  };
-  const reset = () => {
-    setPhase("idle");
-    setStep(0);
+    setCurrentStep(null);
+    setReport(null);
+    setErrorMsg(null);
+
+    try {
+      const res = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: trimmed }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok || !res.body) {
+        setPhase("error");
+        setErrorMsg(`Scan request failed (${res.status})`);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let sepIdx = buffer.indexOf("\n\n");
+        while (sepIdx !== -1) {
+          const frame = buffer.slice(0, sepIdx);
+          buffer = buffer.slice(sepIdx + 2);
+          const dataLine = frame
+            .split("\n")
+            .find((line) => line.startsWith("data: "));
+          if (dataLine) {
+            const json = dataLine.slice("data: ".length);
+            try {
+              handleEvent(JSON.parse(json) as ScanEvent);
+            } catch {
+              // ignore malformed frames
+            }
+          }
+          sepIdx = buffer.indexOf("\n\n");
+        }
+      }
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") return;
+      setPhase("error");
+      setErrorMsg(e instanceof Error ? e.message : "Scan failed");
+    }
   };
 
-  const verdict = EXAMPLE_VERDICTS[verdictIdx];
+  const reset = () => {
+    abortRef.current?.abort();
+    setPhase("idle");
+    setCurrentStep(null);
+    setReport(null);
+    setErrorMsg(null);
+  };
+
+  const buttonLabel =
+    phase === "scanning"
+      ? "scanning…"
+      : phase === "done" || phase === "error"
+        ? "scan again"
+        : "judge it →";
 
   return (
     <div>
-      <div className="bru bg-paper flex items-stretch relative">
-        <div className="pl-5 pr-[18px] py-[18px] border-r-[2.5px] border-ink font-mono text-base text-muted flex items-center">
-          https://
-        </div>
-        <input
-          ref={inputRef}
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") start(url, verdictIdx);
-          }}
-          placeholder="your-next-victim.com"
-          aria-label="URL to scan"
-          className="flex-1 border-none px-5 py-[18px] font-mono text-xl bg-transparent min-w-0 outline-none"
-        />
-        <button
-          onClick={() => (phase === "done" ? reset() : start(url, verdictIdx))}
-          aria-live="polite"
-          className="bg-accent border-none border-l-[2.5px] border-ink px-7 font-display font-bold text-lg cursor-pointer tracking-[-0.01em]"
-        >
-          {phase === "scanning"
-            ? "scanning…"
-            : phase === "done"
-              ? "scan again"
-              : "judge it →"}
-        </button>
-      </div>
-
-      <div className="mt-3 flex gap-2 items-center flex-wrap font-mono text-[13px]">
-        <span className="opacity-60">or try:</span>
-        {PRESET_URLS.map((p) => (
-          <button
-            key={p.label}
-            onClick={() => {
-              setUrl(p.label);
-              setVerdictIdx(p.idx);
-              start(p.label, p.idx);
+      <div className="max-w-[780px]">
+        <div className="bru bg-paper flex items-stretch relative">
+          <div className="pl-5 pr-[18px] py-[18px] border-r-[2.5px] border-ink font-mono text-base text-muted flex items-center">
+            https://
+          </div>
+          <input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") startScan(url);
             }}
-            className="bru-xs bg-paper px-2.5 py-1 font-mono text-xs cursor-pointer"
+            placeholder="your-next-victim.com"
+            aria-label="URL to scan"
+            className="flex-1 border-none px-5 py-[18px] font-mono text-xl bg-transparent min-w-0 outline-none"
+          />
+          <button
+            onClick={() =>
+              phase === "done" || phase === "error" ? reset() : startScan(url)
+            }
+            aria-live="polite"
+            disabled={phase === "scanning"}
+            className="bg-accent border-none border-l-[2.5px] border-ink px-7 font-display font-bold text-lg cursor-pointer tracking-[-0.01em] disabled:cursor-wait"
           >
-            {p.label}
+            {buttonLabel}
           </button>
-        ))}
+        </div>
+
+        {phase === "idle" && (
+          <div className="mt-3 flex gap-2 items-center flex-wrap font-mono text-[13px]">
+            <span className="opacity-60">or try:</span>
+            {PRESETS.map((p) => (
+              <button
+                key={p}
+                onClick={() => {
+                  setUrl(p);
+                  startScan(p);
+                }}
+                className="bru-xs bg-paper px-2.5 py-1 font-mono text-xs cursor-pointer"
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {phase === "scanning" && <ScanningPanel currentStep={currentStep} />}
+        {phase === "error" && (
+          <ErrorPanel message={errorMsg ?? "Something broke."} />
+        )}
       </div>
 
-      {phase !== "idle" && (
-        <div className="bru mt-[18px] bg-paper overflow-hidden">
-          {phase === "scanning" ? (
-            <ScanningPanel step={step} url={url} />
-          ) : (
-            <VerdictPanel verdict={verdict} />
-          )}
+      {phase === "done" && report && (
+        <div className="mt-[18px] space-y-3">
+          <VerdictReport report={report} />
+          <div className="font-mono text-xs opacity-70">
+            ▸ shareable link:{" "}
+            <Link href={`/r/${report.slug}`} className="underline text-ink">
+              /r/{report.slug}
+            </Link>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function ScanningPanel({ step, url }: { step: number; url: string }) {
+function ScanningPanel({ currentStep }: { currentStep: ScanStepId | null }) {
+  const activeIdx = currentStep ? STEP_ORDER.indexOf(currentStep) : -1;
+  const progressPct = activeIdx < 0 ? 0 : ((activeIdx + 1) / STEP_ORDER.length) * 100;
+
   return (
-    <div className="px-7 py-6 font-mono">
-      <div className="flex justify-between items-center mb-4 text-[13px] font-bold tracking-[0.1em] uppercase">
-        <span>scanning {url || "your-next-victim.com"}</span>
-        <span className="text-muted">
-          {Math.min(step, SCAN_STEPS.length)}/{SCAN_STEPS.length}
-        </span>
-      </div>
-      <div className="grid gap-1.5">
-        {SCAN_STEPS.map((s, i) => {
-          const done = i < step;
-          const active = i === step;
-          return (
-            <div
-              key={i}
-              className={`flex items-center gap-2.5 text-sm font-mono ${
-                done || active ? "opacity-100" : "opacity-25"
-              }`}
-            >
-              <span
-                className={`w-4 h-4 grid place-items-center border-[1.5px] border-ink text-[10px] font-bold shrink-0 ${
-                  done
-                    ? "bg-success"
-                    : active
-                      ? "bg-accent"
-                      : "bg-[#eee]"
+    <div className="bru mt-[18px] bg-paper overflow-hidden">
+      <div className="px-7 py-6 font-mono">
+        <div className="flex justify-between items-center mb-4 text-[13px] font-bold tracking-[0.1em] uppercase">
+          <span>scanning your url</span>
+          <span className="text-muted">
+            {activeIdx < 0 ? 0 : activeIdx + 1}/{STEP_ORDER.length}
+          </span>
+        </div>
+        <div className="grid gap-1.5">
+          {STEP_ORDER.map((s, i) => {
+            const done = i < activeIdx;
+            const active = i === activeIdx;
+            return (
+              <div
+                key={s}
+                className={`flex items-center gap-2.5 text-sm font-mono ${
+                  done || active ? "opacity-100" : "opacity-25"
                 }`}
               >
-                {done ? "✓" : active ? "•" : " "}
-              </span>
-              <span>{s}</span>
-              {active && (
-                <span className="text-muted">
-                  <span className="dot1">.</span>
-                  <span className="dot2">.</span>
-                  <span className="dot3">.</span>
+                <span
+                  className={`w-4 h-4 grid place-items-center border-[1.5px] border-ink text-[10px] font-bold shrink-0 ${
+                    done ? "bg-success" : active ? "bg-accent" : "bg-[#eee]"
+                  }`}
+                >
+                  {done ? "✓" : active ? "•" : " "}
                 </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-4 h-1.5 bg-[#f0eee9] border-[1.5px] border-ink overflow-hidden relative">
-        <div
-          className="h-full bg-accent transition-[width] duration-[400ms]"
-          style={{
-            width: `${Math.min((step / SCAN_STEPS.length) * 100, 100)}%`,
-          }}
-        />
+                <span>{STEP_LABELS[s]}</span>
+                {active && (
+                  <span className="text-muted">
+                    <span className="dot1">.</span>
+                    <span className="dot2">.</span>
+                    <span className="dot3">.</span>
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-4 h-1.5 bg-[#f0eee9] border-[1.5px] border-ink overflow-hidden relative">
+          <div
+            className="h-full bg-accent transition-[width] duration-[400ms]"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-function VerdictPanel({ verdict }: { verdict: Verdict }) {
+function ErrorPanel({ message }: { message: string }) {
   return (
-    <div>
-      <div className="px-7 py-5 border-b-[2.5px] border-ink flex justify-between items-center font-mono bg-bg flex-wrap gap-2">
-        <div className="font-bold text-[13px] tracking-[0.1em] uppercase">
-          ▸ verdict for {verdict.name}
-        </div>
-        <div className="text-xs text-muted">
-          generated by a robot · don&apos;t sue us
-        </div>
+    <div className="bru mt-[18px] bg-paper px-7 py-6 font-mono text-sm">
+      <div className="font-bold mb-2 text-danger">▸ scan failed</div>
+      <div className="opacity-80">{message}</div>
+      <div className="opacity-60 mt-3 text-xs">
+        Try again, or try a different URL.
       </div>
-
-      <div className="verdict-main">
-        <div className="verdict-main-left p-7">
-          <div className="font-mono text-xs font-bold tracking-[0.1em] uppercase text-muted">
-            buildable: {verdict.tier}
-          </div>
-          <div className="flex items-baseline gap-3.5 mt-2">
-            <div
-              className="font-display font-bold leading-none tracking-[-0.04em] text-[88px]"
-              style={{ color: verdict.tierColor }}
-            >
-              {verdict.score}
-            </div>
-            <div className="font-display text-[22px] font-medium text-muted">
-              / 100
-            </div>
-          </div>
-          <p className="font-display text-xl font-medium leading-[1.3] mt-4 mb-0 tracking-[-0.01em]">
-            &ldquo;{verdict.verdict}&rdquo;
-          </p>
-        </div>
-
-        <div className="grid grid-rows-2 font-mono">
-          <div className="p-5 border-b-[2.5px] border-ink">
-            <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-muted">
-              Time to clone
-            </div>
-            <div className="font-display text-4xl font-bold mt-1 tracking-[-0.02em]">
-              {verdict.time}
-            </div>
-          </div>
-          <div className="p-5">
-            <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-muted">
-              Monthly cost
-            </div>
-            <div className="font-display text-4xl font-bold mt-1 tracking-[-0.02em]">
-              {verdict.cost}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-7 py-6 font-mono text-sm bg-paper-alt border-t-[2.5px] border-ink">
-        <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-muted mb-3.5">
-          ✦ your stack receipt
-        </div>
-        {verdict.stack.map((s, i) => (
-          <div
-            key={i}
-            className={`flex justify-between py-1.5 ${
-              i < verdict.stack.length - 1
-                ? "border-b border-dashed border-[#ccc]"
-                : ""
-            }`}
-          >
-            <span>
-              {String(i + 1).padStart(2, "0")}  {s}
-            </span>
-            <span className="text-muted">
-              {i === 0
-                ? "free tier"
-                : i === 1
-                  ? "vibes"
-                  : i === 2
-                    ? "$0.00"
-                    : "included"}
-            </span>
-          </div>
-        ))}
-        <div className="flex justify-between pt-3.5 mt-1.5 border-t-2 border-ink font-bold">
-          <span>TOTAL</span>
-          <span>{verdict.cost}</span>
-        </div>
-      </div>
-
-      {verdict.tutorials > 0 && (
-        <div className="px-7 py-4 border-t-[2.5px] border-ink bg-accent font-mono text-sm flex justify-between items-center flex-wrap gap-3">
-          <span className="font-medium">
-            ▸ {verdict.tutorials} tutorials queued for your weekend of
-            self-loathing
-          </span>
-          <button className="bg-ink text-accent border-none px-4 py-2 font-mono font-bold text-[13px] cursor-pointer">
-            email me the build guide →
-          </button>
-        </div>
-      )}
     </div>
   );
 }

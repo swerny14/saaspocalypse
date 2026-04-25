@@ -1,5 +1,6 @@
 import type { VerdictReport } from "@/lib/scanner/schema";
 import { getSupabaseAnon, getSupabaseAdmin } from "./supabase";
+import { wrapDbError } from "./errors";
 import { toSlug } from "@/lib/domain";
 
 /** DB row: VerdictReport plus server-generated metadata. */
@@ -84,7 +85,7 @@ export async function insertReport(
     .insert(row)
     .select(REPORT_COLUMNS)
     .single();
-  if (error) throw error;
+  if (error) throw wrapDbError(error, "reports insert");
   return data as StoredReport;
 }
 
@@ -104,6 +105,6 @@ export async function upsertReport(
     .upsert(row, { onConflict: "domain" })
     .select(REPORT_COLUMNS)
     .single();
-  if (error) throw error;
+  if (error) throw wrapDbError(error, "reports upsert");
   return data as StoredReport;
 }

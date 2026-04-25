@@ -10,11 +10,11 @@ export function Hero() {
       <div className="container">
         <div className="grid gap-5 max-w-[1000px]">
           <div className="select-none text-right font-mono text-[11px] uppercase tracking-[0.15em] opacity-60">
-            est. 2026 · a public service
+            est. 2026 · indie hackers welcome
           </div>
           <div className="select-none flex items-center gap-2 px-3 py-1.5 border-2 border-ink bg-paper font-mono text-xs font-medium">
             <span className="w-2 h-2 bg-success rounded-full shrink-0" />
-            robot is awake · 12,483 SaaS ruined today
+            service is live · 12,483 SaaS ruined today
           </div>
 
           <RansomHeadline text={headline.top} />
@@ -24,7 +24,7 @@ export function Hero() {
           </p>
         </div>
 
-        <div id="scanner" className="mt-12 max-w-[780px]">
+        <div id="scanner" className="mt-12">
           <Scanner />
         </div>
 

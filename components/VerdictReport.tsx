@@ -1,6 +1,8 @@
 import type { StoredReport } from "@/lib/db/reports";
 import type { Difficulty, Tier } from "@/lib/scanner/schema";
 import { DIFFICULTIES } from "@/lib/scanner/schema";
+import { guidePriceCents } from "@/lib/stripe";
+import { PurchaseCTA } from "./PurchaseCTA";
 
 type Props = { report: StoredReport };
 
@@ -326,18 +328,7 @@ export function VerdictReport({ report: v }: Props) {
                 : "We'll email you a link to Google Maps. Nearest park."}
           </div>
         </div>
-        <button
-          type="button"
-          disabled
-          className="font-display text-lg font-bold tracking-[-0.01em] bg-accent text-ink border-[2.5px] border-accent shadow-[5px_5px_0_0_var(--color-bg)] px-7 py-4 cursor-not-allowed whitespace-nowrap opacity-95 max-[720px]:justify-self-start"
-          title="Coming soon (Phase 3)"
-        >
-          {v.score >= 70
-            ? "→ get the build guide"
-            : v.score >= 30
-              ? "→ email me anyway"
-              : "→ go outside"}
-        </button>
+        <PurchaseCTA slug={v.slug} score={v.score} priceCents={guidePriceCents()} />
       </div>
 
       {/* FOOTER */}
