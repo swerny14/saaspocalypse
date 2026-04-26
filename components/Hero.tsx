@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { HEADLINES } from "@/lib/content";
 import { RansomHeadline } from "./RansomHeadline";
 import { Scanner } from "./Scanner";
@@ -34,6 +35,18 @@ export function Hero() {
           <span>✦ we don&apos;t have a database (yet)</span>
           <span>✦ press ↵ to judge</span>
         </div>
+
+        <p className="mt-3 pt-2.5 border-t border-ink/10 max-w-[560px] font-mono italic text-[11px] leading-[1.55] opacity-55">
+          By submitting, you agree to our{" "}
+          <Link href="/terms" className="underline hover:opacity-100">
+            Terms
+          </Link>{" "}
+          &{" "}
+          <Link href="/privacy" className="underline hover:opacity-100">
+            Privacy Policy
+          </Link>
+          . Reports are public — don&apos;t submit confidential pages.
+        </p>
       </div>
     </section>
   );

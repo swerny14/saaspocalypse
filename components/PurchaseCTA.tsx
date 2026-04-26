@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { TERMS_VERSION } from "@/lib/legal/terms";
+import { PRIVACY_VERSION } from "@/lib/legal/privacy";
 
 type Props = {
   slug: string;
@@ -57,6 +59,7 @@ function PurchaseModal({
   onClose: () => void;
 }) {
   const [email, setEmail] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,12 +75,22 @@ function PurchaseModal({
       setError("Enter a valid email.");
       return;
     }
+    if (!agreed) {
+      setError("Please agree to the Terms and Privacy Policy to continue.");
+      return;
+    }
     setBusy(true);
     try {
       const res = await fetch("/api/purchase", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug, email: email.trim().toLowerCase() }),
+        body: JSON.stringify({
+          slug,
+          email: email.trim().toLowerCase(),
+          accepted: true,
+          terms_version: TERMS_VERSION,
+          privacy_version: PRIVACY_VERSION,
+        }),
       });
       const data = (await res.json()) as { redirect?: string; error?: string };
       if (!res.ok || !data.redirect) {
@@ -129,6 +142,37 @@ function PurchaseModal({
             />
           </label>
 
+          <label className="flex items-start gap-2.5 cursor-pointer font-mono text-[12px] leading-[1.5] text-ink">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              required
+              className="mt-[3px] w-[15px] h-[15px] accent-ink shrink-0 cursor-pointer"
+            />
+            <span>
+              I agree to the{" "}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Terms
+              </a>{" "}
+              and{" "}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Privacy Policy
+              </a>
+              .
+            </span>
+          </label>
+
           {error && (
             <div className="font-mono text-[13px] text-danger">▸ {error}</div>
           )}
@@ -143,8 +187,8 @@ function PurchaseModal({
             </button>
             <button
               type="submit"
-              disabled={busy}
-              className="flex-1 font-display text-base font-bold tracking-[-0.01em] bg-accent text-ink border-2 border-ink px-4 py-2.5 cursor-pointer disabled:cursor-wait disabled:opacity-70"
+              disabled={busy || !agreed}
+              className="flex-1 font-display text-base font-bold tracking-[-0.01em] bg-accent text-ink border-2 border-ink px-4 py-2.5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
             >
               {busy ? "redirecting…" : "continue to checkout →"}
             </button>

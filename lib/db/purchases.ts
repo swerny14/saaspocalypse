@@ -12,8 +12,17 @@ export type StoredPurchase = {
   amount_cents: number;
   status: PurchaseStatus;
   access_token: string;
+  terms_version: string | null;
+  privacy_version: string | null;
+  terms_accepted_at: string | null;
   created_at: string;
   paid_at: string | null;
+};
+
+export type ConsentRecord = {
+  terms_version: string;
+  privacy_version: string;
+  terms_accepted_at: string;
 };
 
 export async function createPendingPurchase(input: {
@@ -22,6 +31,7 @@ export async function createPendingPurchase(input: {
   amount_cents: number;
   access_token: string;
   stripe_session_id?: string | null;
+  consent: ConsentRecord;
 }): Promise<StoredPurchase> {
   const admin = getSupabaseAdmin();
   const row = {
@@ -31,6 +41,9 @@ export async function createPendingPurchase(input: {
     access_token: input.access_token,
     stripe_session_id: input.stripe_session_id ?? null,
     status: "pending" as PurchaseStatus,
+    terms_version: input.consent.terms_version,
+    privacy_version: input.consent.privacy_version,
+    terms_accepted_at: input.consent.terms_accepted_at,
   };
   const { data, error } = await admin
     .from("build_guide_purchases")
@@ -47,6 +60,7 @@ export async function createPaidPurchase(input: {
   email: string;
   amount_cents: number;
   access_token: string;
+  consent: ConsentRecord;
 }): Promise<StoredPurchase> {
   const admin = getSupabaseAdmin();
   const row = {
@@ -57,6 +71,9 @@ export async function createPaidPurchase(input: {
     stripe_session_id: null,
     status: "paid" as PurchaseStatus,
     paid_at: new Date().toISOString(),
+    terms_version: input.consent.terms_version,
+    privacy_version: input.consent.privacy_version,
+    terms_accepted_at: input.consent.terms_accepted_at,
   };
   const { data, error } = await admin
     .from("build_guide_purchases")

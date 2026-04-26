@@ -92,6 +92,11 @@ create table if not exists build_guide_purchases (
   amount_cents        int  not null,
   status              text not null check (status in ('pending','paid','failed','refunded')),
   access_token        text unique not null,
+  -- Legal-consent record captured in the purchase modal before checkout.
+  -- Versions are ISO date strings matching the constants in lib/legal/{terms,privacy}.ts.
+  terms_version       text,
+  privacy_version     text,
+  terms_accepted_at   timestamptz,
   created_at          timestamptz not null default now(),
   paid_at             timestamptz
 );
@@ -121,3 +126,13 @@ create index if not exists error_log_ref_slug_idx on error_log (ref_slug);
 
 alter table error_log enable row level security;
 -- No public read policy: error_log is ops-only, written via admin client.
+
+-- ─────────────────────────── migrations ────────────────────────────────
+-- Apply these on existing databases that were created before the columns
+-- above were part of the source-of-truth schema. Safe to re-run.
+
+-- 2026-04-25: legal-consent fields on build_guide_purchases.
+alter table build_guide_purchases
+  add column if not exists terms_version     text,
+  add column if not exists privacy_version   text,
+  add column if not exists terms_accepted_at timestamptz;

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export function Footer() {
   return (
@@ -19,7 +20,20 @@ export function Footer() {
             </div>
           </div>
         </div>
-        <span className="opacity-70">we&apos;re not a real company</span>
+        <nav className="flex items-center gap-5" aria-label="Footer">
+          <Link
+            href="/terms"
+            className="hover:underline underline-offset-4"
+          >
+            Terms
+          </Link>
+          <Link
+            href="/privacy"
+            className="hover:underline underline-offset-4"
+          >
+            Privacy
+          </Link>
+        </nav>
       </div>
     </footer>
   );

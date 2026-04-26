@@ -20,6 +20,9 @@ export const runtime = "nodejs";
 const BodySchema = z.object({
   slug: z.string().min(1),
   email: z.email(),
+  accepted: z.literal(true),
+  terms_version: z.string().min(1).max(64),
+  privacy_version: z.string().min(1).max(64),
 });
 
 // User-facing copy. Internal detail is logged to error_log server-side.
@@ -76,6 +79,11 @@ export async function POST(req: NextRequest) {
   }
   const { slug } = parsed.data;
   const email = parsed.data.email.toLowerCase();
+  const consent = {
+    terms_version: parsed.data.terms_version,
+    privacy_version: parsed.data.privacy_version,
+    terms_accepted_at: new Date().toISOString(),
+  };
 
   const report = await getReportBySlug(slug);
   if (!report) {
@@ -115,6 +123,7 @@ export async function POST(req: NextRequest) {
         email,
         amount_cents: amountCents,
         access_token: accessToken,
+        consent,
       });
     } catch (e) {
       await logError({
@@ -163,6 +172,7 @@ export async function POST(req: NextRequest) {
       amount_cents: amountCents,
       access_token: accessToken,
       stripe_session_id: session.id,
+      consent,
     });
   } catch (e) {
     await logError({
