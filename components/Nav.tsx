@@ -25,8 +25,8 @@ export function Nav() {
           </span>
         </Link>
         <div className="flex items-center gap-6 font-mono text-sm">
-          <Link href="/#examples" className="hidden sm:inline text-ink no-underline">
-            Examples
+          <Link href="/directory" className="hidden sm:inline text-ink no-underline">
+            Directory
           </Link>
           <Link href="/#how" className="hidden sm:inline text-ink no-underline">
             How it works

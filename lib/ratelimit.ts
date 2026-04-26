@@ -37,6 +37,23 @@ export function getScanRateLimiter(): Ratelimit | null {
   return _scanLimiter;
 }
 
+let _viewLimiter: Ratelimit | null | undefined;
+export function getViewRateLimiter(): Ratelimit | null {
+  if (_viewLimiter !== undefined) return _viewLimiter;
+  const redis = getRedis();
+  if (!redis) {
+    _viewLimiter = null;
+    return null;
+  }
+  _viewLimiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(5, "1 m"),
+    prefix: "saaspo:view:ip",
+    analytics: false,
+  });
+  return _viewLimiter;
+}
+
 /**
  * Acquire a short-lived exclusive lock for a domain. Returns true if the lock
  * was acquired. If Redis isn't configured, returns true (no locking in dev).

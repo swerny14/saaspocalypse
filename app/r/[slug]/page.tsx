@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { VerdictReport } from "@/components/VerdictReport";
+import { TrackView } from "@/components/TrackView";
 import { getReportBySlug } from "@/lib/db/reports";
+import {
+  reportTitle,
+  reportOgTitle,
+  reportDescription,
+  reportCanonical,
+} from "@/lib/seo/meta";
+import { reportJsonLd, serializeJsonLd } from "@/lib/seo/jsonld";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -19,24 +27,24 @@ export async function generateMetadata({
     return { title: "verdict not found · saaspocalypse" };
   }
 
-  const title = `${report.name} — ${report.tier}, ${report.score}/100 · saaspocalypse`;
-  const description =
-    report.take.length > 180 ? `${report.take.slice(0, 177)}…` : report.take;
-  const canonical = `/r/${report.slug}`;
+  const title = reportTitle(report);
+  const ogTitle = reportOgTitle(report);
+  const description = reportDescription(report);
+  const canonical = reportCanonical(report.slug);
 
   return {
     title,
     description,
     alternates: { canonical },
     openGraph: {
-      title,
+      title: ogTitle,
       description,
       url: canonical,
       type: "article",
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: ogTitle,
       description,
     },
   };
@@ -51,6 +59,11 @@ export default async function ReportPage({ params }: { params: Params }) {
     <main className="bg-bg min-h-screen py-10">
       <div className="container">
         <VerdictReport report={report} />
+        <TrackView slug={report.slug} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(reportJsonLd(report)) }}
+        />
       </div>
     </main>
   );

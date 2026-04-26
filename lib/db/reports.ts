@@ -8,6 +8,7 @@ export type StoredReport = VerdictReport & {
   id: string;
   domain: string;
   slug: string;
+  view_count: number;
   scanned_at: string;
   created_at: string;
   updated_at: string;
@@ -62,6 +63,27 @@ export async function getRecentReports(limit = 6): Promise<StoredReport[]> {
     return [];
   }
   return (data as StoredReport[]) ?? [];
+}
+
+export async function getAllReports(limit = 1000): Promise<StoredReport[]> {
+  const sb = getSupabaseAnon();
+  if (!sb) return [];
+  const { data, error } = await sb
+    .from("reports")
+    .select(REPORT_COLUMNS)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error("[reports] getAllReports failed", error);
+    return [];
+  }
+  return (data as StoredReport[]) ?? [];
+}
+
+export async function incrementReportViewCount(slug: string): Promise<void> {
+  const admin = getSupabaseAdmin();
+  const { error } = await admin.rpc("increment_report_view_count", { p_slug: slug });
+  if (error) throw wrapDbError(error, "reports incrementViewCount");
 }
 
 /**

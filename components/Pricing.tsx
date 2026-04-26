@@ -30,7 +30,7 @@ export function Pricing() {
             </ul>
           </div>
           <div className="mt-6 font-mono text-[13px] opacity-75">
-            verdict's free forever. optional build guide is $2, paid once. no subscriptions, ever — that's the whole bit.
+            verdict&apos;s free forever. optional build guide is $2, paid once. no subscriptions, ever — that&apos;s the whole bit.
           </div>
         </div>
       </div>

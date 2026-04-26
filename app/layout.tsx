@@ -27,6 +27,13 @@ export const metadata: Metadata = {
     description:
       "Paste any SaaS URL. We'll tell you if it's a weekend or a life sentence.",
     type: "website",
+    siteName: "saaspocalypse",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "saaspocalypse — can I build this myself?",
+    description:
+      "Paste any SaaS URL. We'll tell you if it's a weekend or a life sentence.",
   },
 };
 

@@ -7,6 +7,7 @@ import { Pricing } from "@/components/Pricing";
 import { FAQ } from "@/components/FAQ";
 import { CTA } from "@/components/CTA";
 import { Footer } from "@/components/Footer";
+import { landingJsonLd, serializeJsonLd } from "@/lib/seo/jsonld";
 
 export default function Home() {
   return (
@@ -20,6 +21,10 @@ export default function Home() {
       <FAQ />
       <CTA />
       <Footer />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(landingJsonLd()) }}
+      />
     </>
   );
 }

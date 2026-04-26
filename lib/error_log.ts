@@ -5,7 +5,8 @@ export type ErrorScope =
   | "guide_gen"
   | "purchase"
   | "webhook"
-  | "resend";
+  | "resend"
+  | "view";
 
 export type LogErrorArgs = {
   scope: ErrorScope;

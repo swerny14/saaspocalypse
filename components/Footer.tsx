@@ -22,6 +22,12 @@ export function Footer() {
         </div>
         <nav className="flex items-center gap-5" aria-label="Footer">
           <Link
+            href="/directory"
+            className="hover:underline underline-offset-4"
+          >
+            Directory
+          </Link>
+          <Link
             href="/terms"
             className="hover:underline underline-offset-4"
           >

@@ -27,6 +27,8 @@ create table if not exists reports (
   challenges      jsonb not null,
   stack           jsonb not null,
 
+  view_count      integer not null default 0,
+
   scanned_at      timestamptz not null default now(),
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
@@ -34,6 +36,12 @@ create table if not exists reports (
 
 create index if not exists reports_created_at_idx on reports (created_at desc);
 create index if not exists reports_tier_score_idx on reports (tier, score desc);
+create index if not exists reports_view_count_idx on reports (view_count desc);
+
+create or replace function increment_report_view_count(p_slug text)
+returns void language sql as $$
+  update reports set view_count = view_count + 1 where slug = p_slug;
+$$;
 
 alter table reports enable row level security;
 
@@ -136,3 +144,14 @@ alter table build_guide_purchases
   add column if not exists terms_version     text,
   add column if not exists privacy_version   text,
   add column if not exists terms_accepted_at timestamptz;
+
+-- 2026-04-26: view_count on reports + popularity sort index + RPC.
+alter table reports
+  add column if not exists view_count integer not null default 0;
+
+create index if not exists reports_view_count_idx on reports (view_count desc);
+
+create or replace function increment_report_view_count(p_slug text)
+returns void language sql as $$
+  update reports set view_count = view_count + 1 where slug = p_slug;
+$$;

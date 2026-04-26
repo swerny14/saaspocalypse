@@ -70,9 +70,9 @@ export function VerdictReport({ report: v }: Props) {
           <div className="font-mono text-xs font-bold tracking-[0.15em] uppercase text-muted mb-2.5">
             subject of investigation
           </div>
-          <h2 className="font-display font-bold text-[52px] leading-none tracking-[-0.03em] m-0">
+          <h1 className="font-display font-bold text-[52px] leading-none tracking-[-0.03em] m-0">
             {v.name}
-          </h2>
+          </h1>
           <div className="font-mono text-sm mt-2.5 opacity-70">▸ {v.tagline}</div>
         </div>
 

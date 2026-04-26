@@ -1,6 +1,7 @@
 import { normalizeUrl, InvalidDomainError } from "@/lib/domain";
 import {
   getReportByDomain,
+  incrementReportViewCount,
   insertReport,
   type StoredReport,
 } from "@/lib/db/reports";
@@ -69,6 +70,15 @@ export async function runScan(
   // 2. Cache check.
   const cached = await getReportByDomain(domain);
   if (cached) {
+    incrementReportViewCount(cached.slug).catch((e) =>
+      logError({
+        scope: "view",
+        reason: "increment_failed",
+        refSlug: cached.slug,
+        message: e instanceof Error ? e.message : String(e),
+        detail: { source: "scan_cache_hit" },
+      }),
+    );
     await emit({ type: "done", cached: true, slug: cached.slug, report: cached });
     return;
   }
