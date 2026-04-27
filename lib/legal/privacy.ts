@@ -241,7 +241,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "If you have questions, requests, or complaints about this Policy or our handling of your information, contact WEB3 SOLUTIONS LLC at support@saaspocalypse.dev.",
+        text: "If you have questions, requests, or complaints about this Policy or our handling of your information, contact us at support@saaspocalypse.dev.",
       },
     ],
   },

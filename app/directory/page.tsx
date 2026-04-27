@@ -209,21 +209,19 @@ export default async function DirectoryPage({
           <div className="font-mono text-[11px] font-bold tracking-[0.2em] uppercase opacity-60 mb-2.5">
             ▸ the archive · {all.length} scans on file · updated daily
           </div>
-          <div className="flex justify-between items-end gap-8 flex-wrap">
-            <h1 className="font-display font-bold text-[clamp(56px,8vw,88px)] leading-[0.92] tracking-[-0.045em] m-0">
-              Every SaaS we{" "}
-              <span className="bg-ink text-accent px-3.5 inline-block rotate-[-1.5deg]">
-                scrutinized
-              </span>
-              ,
-              <br />
-              now sortable.
-            </h1>
-            <p className="font-display text-base leading-[1.5] opacity-75 max-w-[360px] m-0">
-              Every scan we&apos;ve run, filed by buildability. Find one before
-              you accidentally spend $144/year on a CRUD app.
-            </p>
-          </div>
+          <h1 className="font-display font-bold text-[clamp(48px,7vw,76px)] leading-[0.92] tracking-[-0.045em] m-0">
+            Every SaaS we{" "}
+            <span className="bg-ink text-accent px-3.5 inline-block rotate-[-1.5deg]">
+              scrutinized
+            </span>
+            ,
+            <br />
+            now sortable.
+          </h1>
+          <p className="font-display text-base leading-[1.5] opacity-75 max-w-[640px] mt-5 mb-0">
+            Every scan we&apos;ve run, filed by buildability. Find one before
+            you accidentally spend $144/year on a CRUD app.
+          </p>
         </div>
 
         <DirectorySearch

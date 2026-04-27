@@ -10,7 +10,7 @@ Marketing landing page for a (not yet built) tool that tells indie hackers wheth
 - **Package manager:** pnpm
 - **Deployment target:** Vercel
 
-**Shipped:** Phases 1 + 2 + 3 + SEO. Real Claude-powered scanner, report storage, ISR'd per-report SEO pages, SSE-streamed scan UX, IP rate limiting, per-domain locking, Stripe-gated build guide generation (lazy, shared per report_id), magic-link email delivery via Resend. Public legal pages (`/terms`, `/privacy`) with version-tracked consent captured at purchase and a soft-consent line under the scanner. Full SEO surface: `app/sitemap.ts`, `app/robots.ts`, JSON-LD on landing (`WebSite` + `Organization`) and per-report (`Review` of a `SoftwareApplication`), dynamic OG images at `app/opengraph-image.tsx` (default) and `app/r/[slug]/opengraph-image.tsx` (per-report, tier-colored score), favicons (`app/icon[1-5].png` + `app/apple-icon.png` auto-detected by Next), intent-led per-report titles ("Can I build {name}?" — see `lib/seo/meta.ts`). Public `/directory` page (Layout A "filing cabinet") with URL-driven filters (tier, score range, query, sort, page). Per-report `view_count` tracking with `most popular` sort.
+**Shipped:** Phases 1 + 2 + 3 + SEO + blog. Real Claude-powered scanner, report storage, ISR'd per-report SEO pages, SSE-streamed scan UX, IP rate limiting, per-domain locking, Stripe-gated build guide generation (lazy, shared per report_id), magic-link email delivery via Resend. Public legal pages (`/terms`, `/privacy`) with version-tracked consent captured at purchase and a soft-consent line under the scanner. Full SEO surface: `app/sitemap.ts`, `app/robots.ts`, JSON-LD on landing (`WebSite` + `Organization`) and per-report (`Review` of a `SoftwareApplication`), dynamic OG images at `app/opengraph-image.tsx` (default) and `app/r/[slug]/opengraph-image.tsx` (per-report, tier-colored score), favicons (`app/icon[1-5].png` + `app/apple-icon.png` auto-detected by Next), intent-led per-report titles ("Can I build {name}?" — see `lib/seo/meta.ts`). Public `/directory` page (Layout A "filing cabinet") with URL-driven filters (tier, score range, query, sort, page). Per-report `view_count` tracking with `most popular` sort. Public `/blog` (Layout A "editorial broadsheet") + per-post `/blog/[slug]` with category filter via `?cat=`, `BlogPosting` JSON-LD, dynamic per-post OG, and a Resend-audience-backed newsletter capture in the footer.
 
 **Phase 3 flow:** On verdict report CTA → email capture modal → Stripe Checkout → webhook marks paid → Resend sends magic link (`/r/<slug>/guide?t=<token>`) → token-gated page. First buyer triggers a second Claude call that generates the full `BuildGuide` (streamed); all subsequent buyers hit the cached row instantly.
 
@@ -30,9 +30,11 @@ pnpm tsx scripts/seed.ts   # seed the 4 handoff reports into Supabase (requires 
 
 ## Project layout
 
-- `app/` — App Router entry. `layout.tsx` (global `<Nav />`), `page.tsx` (landing), `r/[slug]/page.tsx` (per-report SEO page, ISR'd), `r/[slug]/guide/page.tsx` (token-gated build guide), `directory/page.tsx` (public report index), `terms/page.tsx`, `privacy/page.tsx`, `sitemap.ts`, `robots.ts`, `opengraph-image.tsx` (default site OG), `r/[slug]/opengraph-image.tsx` (per-report dynamic OG), `icon[1-5].png` + `apple-icon.png` (favicons, Next file convention), `api/scan/route.ts`, `api/guide/[slug]/route.ts`, `api/purchase/{route,webhook,resend}/route.ts`, `api/reports/[slug]/view/route.ts` (view-count increment), `globals.css`.
+- `app/` — App Router entry. `layout.tsx` (global `<Nav />`), `page.tsx` (landing), `r/[slug]/page.tsx` (per-report SEO page, ISR'd), `r/[slug]/guide/page.tsx` (token-gated build guide), `directory/page.tsx` (public report index), `blog/page.tsx` (blog index, URL-filterable by `?cat=`), `blog/[slug]/page.tsx` (per-post page, statically generated from `getPublishedPosts()`), `terms/page.tsx`, `privacy/page.tsx`, `sitemap.ts`, `robots.ts`, `opengraph-image.tsx` (default site OG), `r/[slug]/opengraph-image.tsx` (per-report dynamic OG), `blog/opengraph-image.tsx` (blog index OG), `blog/[slug]/opengraph-image.tsx` (per-post OG), `icon[1-5].png` + `apple-icon.png` (favicons, Next file convention), `api/scan/route.ts`, `api/guide/[slug]/route.ts`, `api/purchase/{route,webhook,resend}/route.ts`, `api/reports/[slug]/view/route.ts` (view-count increment), `api/newsletter/route.ts` (Resend audience signup), `globals.css`.
 - `components/` — section + interactive components. `VerdictReport.tsx` is the full report card; `BuildGuide.tsx` is the full guide with copy-to-clipboard prompt blocks; `PurchaseCTA.tsx` is the client CTA + email-capture modal (with required Terms/Privacy checkbox); `LegalPage.tsx` is the shared shell that renders Terms and Privacy; `TrackView.tsx` is the 5-line client component that fires the per-page-view POST.
 - `components/directory/` — directory page subcomponents: `DirectoryCard.tsx` (handoff Layout A card), `TierBadge.tsx`, `ScoreBar.tsx` (10-segment), `FilterGroup.tsx`, `FilterRow.tsx`, `PageBtn.tsx`, `DirectorySearch.tsx` (client search bar + sort), `ScoreRangeFilter.tsx` (client min/max + visual track), `tiers.ts` (the 3 directory tiers).
+- `components/blog/` — blog page subcomponents: `BlogShell.tsx` (max-width wrapper, 1200/780 toggle), `BlogIndex.tsx`, `BlogMasthead.tsx`, `FeaturedPost.tsx` (sticky-yellow tile), `CategoryChips.tsx` (server-rendered, `?cat=` driven), `PostCard.tsx`, `NewsletterBlock.tsx` + `NewsletterForm.tsx` (form is the only `"use client"` piece), `Breadcrumb.tsx`, `ArticleHeader.tsx`, `ArticleBody.tsx` (renders `BlogBlock[]` — `p`, `h2`, `callout`), `ArticleEndMatter.tsx` (filed-under + prev/next).
+- `lib/blog/` — blog content + helpers. `schema.ts` (`Post` + `BlogBlock` + `BlogCategory` types), `content.ts` (masthead + newsletter copy), `formatters.ts` (`formatPostDate`), `posts/index.ts` (sorts by date desc, exports `getAllPosts` / `getPostBySlug` / `getFeaturedPost` / `getPostsByCategory` / `getPublishedPosts` / `getAdjacentPosts`; throws at module-eval time if not exactly one `featured: true` post), `posts/{slug}.ts` × N (one TS file per post, body optional). The handoff design uses a Fraunces serif for headlines — we deliberately don't load it; all blog headlines render in `font-display` (Space Grotesk) to stay consistent with the rest of the site.
 - `lib/seo/meta.ts` — title/description builders. `reportTitle` produces `"Can I build {name}? — {tier} · {time_estimate} · saaspocalypse"`; `reportOgTitle` is a longer Twitter/Slack-friendly form; `reportDescription` blends score + time + stack + first sentence of `take`, with graceful fallback when ≤155 chars overflows. **All metadata, OG, and JSON-LD `headline` fields call these so they don't drift.**
 - `lib/seo/jsonld.ts` — `landingJsonLd` (`WebSite` + `Organization` graph) and `reportJsonLd` (`Review` of `SoftwareApplication`). `serializeJsonLd` escapes `<` so the payload can't break out of its `<script>` tag.
 - `lib/content.ts` — static copy (headlines, testimonials, FAQs, footer, marquee, pricing). **Change copy here, not in components.**
@@ -109,9 +111,10 @@ STRIPE_WEBHOOK_SECRET=               # from `stripe listen` or dashboard
 STRIPE_GUIDE_PRICE_ID=               # optional; if unset, uses inline price_data w/ GUIDE_PRICE_CENTS
 GUIDE_PRICE_CENTS=700                # display + fallback. 0 + NODE_ENV!=prod → dev bypass.
 
-# Resend (magic-link delivery)
+# Resend (magic-link delivery + newsletter audience)
 RESEND_API_KEY=
 RESEND_FROM=guides@saaspocalypse.dev
+RESEND_AUDIENCE_ID=                  # optional; without it /api/newsletter logs to stderr instead
 ```
 
 Degraded-mode behavior (so the codebase stays workable pre-provisioning):
@@ -120,6 +123,7 @@ Degraded-mode behavior (so the codebase stays workable pre-provisioning):
 - **No Anthropic:** scan + guide endpoints return friendly errors.
 - **No Stripe + `GUIDE_PRICE_CENTS=0`:** dev bypass kicks in. `/api/purchase` skips checkout, creates a paid purchase, and emails the magic link directly. Only active when `NODE_ENV !== 'production'`.
 - **No Resend:** emails log to the console instead of sending. Magic links are still generated and persisted, so you can grab them from logs.
+- **No `RESEND_AUDIENCE_ID`:** newsletter signups log to stderr and the form still shows the success state. No contact is added to any audience until the env var is set.
 
 ## Setting up Supabase (first-time)
 
@@ -201,6 +205,38 @@ Two exceptions worth knowing:
 The brand `saaspocalypse` is always lowercase except inside the ALL CAPS pill (`SAASPOCALYPSE`). Proper-noun caps are preserved inside any voice (`Postgres`, `Next.js`, `Supabase`, `SaaS`, `CRUD`, `URL`).
 
 Mnemonic: **labels shout, prose talks, jokes whisper.**
+
+### Blog voice
+
+Blog posts target **Paul Graham essay register + a thread of indie-hacker humor**. Most posts are essays; keep one confession piece per batch for tonal variety.
+
+**Essays (`category: "essays"`, ~1500–2000 words, ~7–8 min):**
+- Open with the contrarian claim. No throat-clearing.
+- State the thesis inside the first three paragraphs.
+- 3–5 H2s, each one advancing the argument (not summarizing).
+- Exactly one `callout` block per essay — the load-bearing line, the thesis crystallized. Callouts are written lowercase-deadpan even when surrounding prose is sentence case; the renderer styles them as pull quotes.
+- Close with a "this is why I built saaspocalypse" beat. PG's "this is why I care," not a CTA.
+- Humor is seasoning. One or two dry asides per section, not a punchline per paragraph.
+
+**Confessions (`category: "confessions"`, ~500–800 words, ~3–5 min):**
+- Lowercase-deadpan end to end, matching the marquee and pricing copy.
+- Short paragraphs. No four-sentence walls.
+- One callout used as the punchline.
+- Self-roast first; generalize last (or not at all).
+
+**Build logs (`category: "build-log"`, ~1100–1500 words, ~5–7 min):**
+- Concrete, technical, narrated. Reflection beat goes in the *last* H2, not the first.
+- No code-block type exists — describe code in prose, or use `callout` for the load-bearing snippet.
+
+**Universal post rules:**
+- Title: short, declarative. Avoid the "Title. Subtitle clause." listicle pattern and "here's the part that…" tics.
+- `excerpt`: 100–160 chars, ASCII-only — it feeds the Satori OG image, and smart quotes / em-dashes / `…` / `∞` either tofu or fail to download a font.
+- `tags`: 2 max, kebab-case, personal-feeling (`manifesto`, `scope-creep` — not `productivity`).
+- `date`: ISO `YYYY-MM-DD`, roughly weekly cadence (the masthead claims as much).
+- `read_time`: estimate at ~220 words/min, round to nearest minute.
+- `author`: always `"saaspocalypse"`.
+- Exactly one post has `featured: true` — `lib/blog/posts/index.ts` throws at module eval otherwise. Currently `no-original-saas-ideas` (the site manifesto).
+- Body block types are `p` | `h2` | `callout` only. No code blocks, no images, no lists. Change the schema before smuggling HTML into a `p` text string.
 
 ## Design handoffs
 

@@ -1,11 +1,15 @@
 import type { MetadataRoute } from "next";
 import { getAllReportsForSitemap } from "@/lib/db/reports";
+import { getAllPosts, getPublishedPosts } from "@/lib/blog/posts";
 import { SITE_URL } from "@/lib/seo/meta";
 
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const reports = await getAllReportsForSitemap();
+  const allPosts = getAllPosts();
+  const publishedPosts = getPublishedPosts();
+  const newestPostDate = allPosts[0]?.date;
 
   const staticEntries: MetadataRoute.Sitemap = [
     {
@@ -19,6 +23,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.9,
       lastModified: new Date(),
+    },
+    {
+      url: `${SITE_URL}/blog`,
+      changeFrequency: "weekly",
+      priority: 0.8,
+      lastModified: newestPostDate ? new Date(newestPostDate) : new Date(),
     },
     {
       url: `${SITE_URL}/terms`,
@@ -39,5 +49,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(r.updated_at),
   }));
 
-  return [...staticEntries, ...reportEntries];
+  const blogEntries: MetadataRoute.Sitemap = publishedPosts.map((p) => ({
+    url: `${SITE_URL}/blog/${p.slug}`,
+    changeFrequency: "monthly",
+    priority: 0.6,
+    lastModified: new Date(p.date),
+  }));
+
+  return [...staticEntries, ...reportEntries, ...blogEntries];
 }

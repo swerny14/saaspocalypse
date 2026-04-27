@@ -66,6 +66,49 @@ This link is yours forever. Save the email.
   });
 }
 
+/**
+ * Add an email to the configured Resend audience. Returns `{ ok: true }` for
+ * both newly-added and already-subscribed (the route layer can't distinguish
+ * the two — Resend returns 200 in both cases — and we don't want to leak
+ * audience membership anyway). Returns `{ ok: false }` only on real failures
+ * (missing config in production, network error, non-2xx response). In
+ * degraded mode (no RESEND_API_KEY or no RESEND_AUDIENCE_ID) it logs the
+ * email to stderr and returns ok so dev still works.
+ */
+export async function addToAudience(
+  email: string,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const audienceId = process.env.RESEND_AUDIENCE_ID;
+  if (!apiKey || !audienceId) {
+    console.log(
+      `[newsletter] degraded mode — would subscribe ${email} (RESEND_API_KEY=${!!apiKey}, RESEND_AUDIENCE_ID=${!!audienceId})`,
+    );
+    return { ok: true };
+  }
+
+  const res = await fetch(
+    `https://api.resend.com/audiences/${audienceId}/contacts`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, unsubscribed: false }),
+    },
+  );
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    return {
+      ok: false,
+      reason: `resend ${res.status}: ${body.slice(0, 200)}`,
+    };
+  }
+  return { ok: true };
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

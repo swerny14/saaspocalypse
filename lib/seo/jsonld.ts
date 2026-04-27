@@ -1,4 +1,5 @@
 import type { StoredReport } from "@/lib/db/reports";
+import type { Post } from "@/lib/blog/schema";
 import { SITE_URL, BRAND } from "./meta";
 
 type JsonLd = Record<string, unknown>;
@@ -40,6 +41,59 @@ export function landingJsonLd(): JsonLd {
         sameAs: [],
       },
     ],
+  };
+}
+
+export function blogIndexJsonLd(): JsonLd {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "@id": `${SITE_URL}/blog#blog`,
+    url: `${SITE_URL}/blog`,
+    name: `${BRAND} blog`,
+    description:
+      "Field notes from indie hackers who probably shouldn't be left alone with a dev server.",
+    publisher: {
+      "@type": "Organization",
+      name: BRAND,
+      url: SITE_URL,
+    },
+  };
+}
+
+export function blogPostJsonLd(post: Post): JsonLd {
+  const url = `${SITE_URL}/blog/${post.slug}`;
+  const articleBody = post.body
+    ? post.body
+        .filter((b) => b.type === "p" || b.type === "callout")
+        .map((b) => b.text)
+        .join("\n\n")
+    : undefined;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "@id": `${url}#article`,
+    mainEntityOfPage: url,
+    url,
+    headline: post.title,
+    description: post.excerpt,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: {
+      "@type": "Organization",
+      name: BRAND,
+      url: SITE_URL,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: BRAND,
+      url: SITE_URL,
+      logo: `${SITE_URL}/images/logo.png`,
+    },
+    keywords: post.tags.join(", "),
+    articleSection: post.category,
+    ...(articleBody ? { articleBody } : {}),
   };
 }
 

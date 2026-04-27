@@ -110,6 +110,29 @@ export function getGuideRateLimiter(): Ratelimit | null {
 }
 
 /**
+ * /api/newsletter rate limit. Each request hits the Resend contacts API and a
+ * scripted abuser could otherwise stuff our audience with garbage. 5/min/IP
+ * is plenty for legitimate use (one click, maybe a retry); the form is also
+ * protected by client-side email-shape validation.
+ */
+let _newsletterLimiter: Ratelimit | null | undefined;
+export function getNewsletterRateLimiter(): Ratelimit | null {
+  if (_newsletterLimiter !== undefined) return _newsletterLimiter;
+  const redis = getRedis();
+  if (!redis) {
+    _newsletterLimiter = null;
+    return null;
+  }
+  _newsletterLimiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(5, "1 m"),
+    prefix: "saaspo:newsletter:ip",
+    analytics: false,
+  });
+  return _newsletterLimiter;
+}
+
+/**
  * Acquire a short-lived exclusive lock for a domain. Returns true if the lock
  * was acquired. If Redis isn't configured, returns true (no locking in dev).
  */
