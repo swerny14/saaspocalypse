@@ -32,7 +32,7 @@ pnpm tsx scripts/seed.ts   # seed the 4 handoff reports into Supabase (requires 
 
 - `app/` — App Router entry. `layout.tsx` (global `<Nav />`), `page.tsx` (landing), `r/[slug]/page.tsx` (per-report SEO page, ISR'd), `r/[slug]/guide/page.tsx` (token-gated build guide), `directory/page.tsx` (public report index), `terms/page.tsx`, `privacy/page.tsx`, `sitemap.ts`, `robots.ts`, `opengraph-image.tsx` (default site OG), `r/[slug]/opengraph-image.tsx` (per-report dynamic OG), `icon[1-5].png` + `apple-icon.png` (favicons, Next file convention), `api/scan/route.ts`, `api/guide/[slug]/route.ts`, `api/purchase/{route,webhook,resend}/route.ts`, `api/reports/[slug]/view/route.ts` (view-count increment), `globals.css`.
 - `components/` — section + interactive components. `VerdictReport.tsx` is the full report card; `BuildGuide.tsx` is the full guide with copy-to-clipboard prompt blocks; `PurchaseCTA.tsx` is the client CTA + email-capture modal (with required Terms/Privacy checkbox); `LegalPage.tsx` is the shared shell that renders Terms and Privacy; `TrackView.tsx` is the 5-line client component that fires the per-page-view POST.
-- `components/directory/` — directory page subcomponents: `DirectoryCard.tsx` (handoff Layout A card), `TierBadge.tsx`, `ScoreBar.tsx` (10-segment), `FilterGroup.tsx`, `FilterRow.tsx`, `PageBtn.tsx`, `DirectorySearch.tsx` (client search bar + sort), `ScoreRangeFilter.tsx` (client min/max + visual track), `tiers.ts` (the 4 directory tiers — includes QUARTER, which is rendered but disabled until a report exists with that tier).
+- `components/directory/` — directory page subcomponents: `DirectoryCard.tsx` (handoff Layout A card), `TierBadge.tsx`, `ScoreBar.tsx` (10-segment), `FilterGroup.tsx`, `FilterRow.tsx`, `PageBtn.tsx`, `DirectorySearch.tsx` (client search bar + sort), `ScoreRangeFilter.tsx` (client min/max + visual track), `tiers.ts` (the 3 directory tiers).
 - `lib/seo/meta.ts` — title/description builders. `reportTitle` produces `"Can I build {name}? — {tier} · {time_estimate} · saaspocalypse"`; `reportOgTitle` is a longer Twitter/Slack-friendly form; `reportDescription` blends score + time + stack + first sentence of `take`, with graceful fallback when ≤155 chars overflows. **All metadata, OG, and JSON-LD `headline` fields call these so they don't drift.**
 - `lib/seo/jsonld.ts` — `landingJsonLd` (`WebSite` + `Organization` graph) and `reportJsonLd` (`Review` of `SoftwareApplication`). `serializeJsonLd` escapes `<` so the payload can't break out of its `<script>` tag.
 - `lib/content.ts` — static copy (headlines, testimonials, FAQs, footer, marquee, pricing). **Change copy here, not in components.**
@@ -189,6 +189,22 @@ Per-report `view_count` is bumped from two paths and exposed on the directory's 
 
 All copy is final and intentional — the jokes are the product. Don't sanitize. Edit `lib/content.ts`. Long-form legal prose lives in `lib/legal/`, not `lib/content.ts`.
 
+### Capitalization conventions
+
+The site mixes three voices on purpose. Match the voice of the surrounding copy when adding new strings.
+
+- **ALL CAPS** (source written lowercase + Tailwind `uppercase tracking-[0.1…0.15em]`) — eyebrows, micro-labels, status pills, tier badges, scan numbers, "STEP 01", the `SAASPOCALYPSE` brand pill. Categorical labels, not sentences.
+- **lowercase-first deadpan** (lowercase + a final `.` or `?`) — section H3s inside long-form artifacts (`cost breakdown.`, `what'll actually be hard.`, `prerequisites.`, `the build.`), big bottom-of-page joke CTAs (`go on then.` and its supporting line), marquee one-liners, asides like `you keep it forever.`, the entire pricing section's voice (sub, bullets, footer note).
+- **Sentence case** — earnest UI and content: hero H1/sub, nav links, FAQ Q&A, How-It-Works titles + bodies, modal H2/body (`Get your build guide.`), verdict-report CTA copy, empty states, legal pages, email content, primary action buttons (`Search →`, `Scan a URL ↓/→`, `Send me my guide`).
+
+Two exceptions worth knowing:
+- The `judge it →` button next to the URL input is intentionally lowercase — it's the signature voice button. New buttons should default to sentence case unless they're playing the same role.
+- Tiny utility/pagination chrome (`← prev`, `next →`, `↻ reset filters`, `↻ clear filters`) stays lowercase. They're navigational, not CTAs.
+
+The brand `saaspocalypse` is always lowercase except inside the ALL CAPS pill (`SAASPOCALYPSE`). Proper-noun caps are preserved inside any voice (`Postgres`, `Next.js`, `Supabase`, `SaaS`, `CRUD`, `URL`).
+
+Mnemonic: **labels shout, prose talks, jokes whisper.**
+
 ## Design handoffs
 
 When the user points to a `design/design_handoff_*` folder:
@@ -228,11 +244,7 @@ Current hero uses `design_handoff_ransom_hero` (per-word rotated chips). Other s
 
 ## Not yet built
 
-- Mobile hamburger for nav (spec says collapse below ~700px).
 - Scan quality logging (`scan_metrics` table — see plan §"Quality measurement").
 - Playwright-based scraping for JS-heavy sites.
 - Admin regenerate / moderation / refund tools.
 - Guide regeneration / versioning (currently `build_guides.report_id` is unique — regen would need either a new-column version or an "archive old row" flow).
-- Force-re-acceptance flow when `TERMS_VERSION` / `PRIVACY_VERSION` change (today, only new purchases capture the current version; existing magic-link holders are not re-prompted).
-- Filling the legal-doc placeholders (`[LEGAL_NAME]`, `[CONTACT_EMAIL]`, `[GOVERNING_LAW_STATE]`) before public launch.
-- QUARTER tier (a 4th tier between MONTH and DON'T). The directory sidebar already renders a disabled QUARTER row — adding it requires updating the Zod `TierSchema` + the tier-bucket `.refine()` thresholds in `lib/scanner/schema.ts`, the DB `check (tier in (...))` constraint, the LLM prompt's tier examples, and the `TIER_FG`/`TIER_BG` color maps. The directory's `TIER_STYLES` already has the swatch (`#ffa066`).

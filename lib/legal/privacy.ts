@@ -15,7 +15,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "This Privacy Policy describes how [LEGAL_NAME] (\"we,\" \"us,\" or \"our\") collects, uses, shares, and protects information in connection with the saaspocalypse website and services (the \"Service\"). It applies to information we receive when you visit the site, submit a URL to the scanner, purchase a build guide, or otherwise interact with us. Our Terms & Conditions are incorporated by reference.",
+        text: "This Privacy Policy describes how WEB3 SOLUTIONS LLC (\"we,\" \"us,\" or \"our\") collects, uses, shares, and protects information in connection with the saaspocalypse website and services (the \"Service\"). It applies to information we receive when you visit the site, submit a URL to the scanner, purchase a build guide, or otherwise interact with us. Our Terms & Conditions are incorporated by reference.",
       },
       {
         kind: "p",
@@ -129,7 +129,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
       },
       {
         kind: "p",
-        text: "We may also disclose information when we believe in good faith that disclosure is necessary to comply with applicable law or legal process, to enforce our Terms, to detect or prevent fraud or abuse, or to protect the rights, property, or safety of [LEGAL_NAME], our users, or the public. If we are involved in a merger, acquisition, financing, reorganization, bankruptcy, or sale of assets, information may be transferred as part of that transaction; we will continue to honor the commitments in this Policy.",
+        text: "We may also disclose information when we believe in good faith that disclosure is necessary to comply with applicable law or legal process, to enforce our Terms, to detect or prevent fraud or abuse, or to protect the rights, property, or safety of WEB3 SOLUTIONS LLC, our users, or the public. If we are involved in a merger, acquisition, financing, reorganization, bankruptcy, or sale of assets, information may be transferred as part of that transaction; we will continue to honor the commitments in this Policy.",
       },
     ],
   },
@@ -176,7 +176,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
       },
       {
         kind: "p",
-        text: "EEA / United Kingdom (GDPR / UK GDPR). In addition to the rights above, you have the right to restrict or object to certain processing, the right to withdraw consent where we rely on consent, and the right to lodge a complaint with your local data-protection authority (such as your national Data Protection Authority in the EEA or the Information Commissioner's Office in the UK). We have not appointed an Article 27 representative; for now, please contact us directly at [CONTACT_EMAIL].",
+        text: "EEA / United Kingdom (GDPR / UK GDPR). In addition to the rights above, you have the right to restrict or object to certain processing, the right to withdraw consent where we rely on consent, and the right to lodge a complaint with your local data-protection authority (such as your national Data Protection Authority in the EEA or the Information Commissioner's Office in the UK). We have not appointed an Article 27 representative; for now, please contact us directly at support@saaspocalypse.dev.",
       },
       {
         kind: "p",
@@ -184,7 +184,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
       },
       {
         kind: "p",
-        text: "How to exercise your rights. Email us at [CONTACT_EMAIL] from the address you used at checkout (or otherwise provide enough detail to locate the relevant records). To protect against unauthorized access, deletion, or modification of someone else's data, we will only fulfill requests where we can reasonably verify that you are the person whose information the request concerns (or are an authorized agent acting on that person's behalf where applicable law permits). For higher-risk requests — such as deletion of a purchase record — we may require additional verification, such as confirmation from the original purchase email or details only the requester would know. We may decline or pause requests that we cannot verify, that are excessive or repetitive, or that conflict with our legal obligations.",
+        text: "How to exercise your rights. Email us at support@saaspocalypse.dev from the address you used at checkout (or otherwise provide enough detail to locate the relevant records). To protect against unauthorized access, deletion, or modification of someone else's data, we will only fulfill requests where we can reasonably verify that you are the person whose information the request concerns (or are an authorized agent acting on that person's behalf where applicable law permits). For higher-risk requests — such as deletion of a purchase record — we may require additional verification, such as confirmation from the original purchase email or details only the requester would know. We may decline or pause requests that we cannot verify, that are excessive or repetitive, or that conflict with our legal obligations.",
       },
     ],
   },
@@ -210,7 +210,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "The Service is not directed to children under the age of 13 (or, in the EEA, the age of digital consent in your country, which is typically 13–16). We do not knowingly collect personal information from children below those ages. If you believe a child has provided us with personal information, please contact [CONTACT_EMAIL] and we will take steps to delete it.",
+        text: "The Service is not directed to children under the age of 13 (or, in the EEA, the age of digital consent in your country, which is typically 13–16). We do not knowingly collect personal information from children below those ages. If you believe a child has provided us with personal information, please contact support@saaspocalypse.dev and we will take steps to delete it.",
       },
     ],
   },
@@ -241,7 +241,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "If you have questions, requests, or complaints about this Policy or our handling of your information, contact [LEGAL_NAME] at [CONTACT_EMAIL].",
+        text: "If you have questions, requests, or complaints about this Policy or our handling of your information, contact WEB3 SOLUTIONS LLC at support@saaspocalypse.dev.",
       },
     ],
   },

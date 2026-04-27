@@ -15,7 +15,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "Welcome to saaspocalypse (the \"Service\"), operated by [LEGAL_NAME] (\"we,\" \"us,\" or \"our\"). These Terms & Conditions (\"Terms\") govern your access to and use of the websites, scanner, build guides, and any related features we provide. By accessing or using the Service, you agree to be bound by these Terms and our Privacy Policy. If you do not agree, you must not use the Service.",
+        text: "Welcome to saaspocalypse (the \"Service\"), operated by WEB3 SOLUTIONS LLC (\"we,\" \"us,\" or \"our\"). These Terms & Conditions (\"Terms\") govern your access to and use of the websites, scanner, build guides, and any related features we provide. By accessing or using the Service, you agree to be bound by these Terms and our Privacy Policy. If you do not agree, you must not use the Service.",
       },
       {
         kind: "p",
@@ -84,11 +84,11 @@ export const TERMS_SECTIONS: LegalSection[] = [
       },
       {
         kind: "p",
-        text: "Removal requests. If you believe a report contains content that is unlawful, defamatory, infringing, or otherwise warrants removal or correction, please contact us at [CONTACT_EMAIL] with: (a) the URL of the report, (b) the specific content at issue, (c) your reason for the request, and (d) your relationship to the affected company or person.",
+        text: "Removal requests. If you believe a report contains content that is unlawful, defamatory, infringing, or otherwise warrants removal or correction, please contact us at support@saaspocalypse.dev with: (a) the URL of the report, (b) the specific content at issue, (c) your reason for the request, and (d) your relationship to the affected company or person.",
       },
       {
         kind: "p",
-        text: "Copyright (DMCA). For copyright concerns affecting U.S. visitors, send notices that comply with 17 U.S.C. § 512(c)(3) — including identification of the copyrighted work, identification of the allegedly infringing material, your contact information, a good-faith statement, a statement under penalty of perjury that you are authorized to act, and your physical or electronic signature — to [CONTACT_EMAIL]. We will respond to valid notices in accordance with the DMCA. Knowingly submitting a materially misrepresentative notice may expose you to liability under § 512(f).",
+        text: "Copyright (DMCA). For copyright concerns affecting U.S. visitors, send notices that comply with 17 U.S.C. § 512(c)(3) — including identification of the copyrighted work, identification of the allegedly infringing material, your contact information, a good-faith statement, a statement under penalty of perjury that you are authorized to act, and your physical or electronic signature — to support@saaspocalypse.dev. We will respond to valid notices in accordance with the DMCA. Knowingly submitting a materially misrepresentative notice may expose you to liability under § 512(f).",
       },
       {
         kind: "p",
@@ -109,7 +109,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
       },
       {
         kind: "p",
-        text: "Magic-link responsibility. You are responsible for maintaining the confidentiality of any magic-link URL we issue to you. Anyone who possesses a valid magic link can access the associated guide; we may treat any access via your magic link as authorized by you. Notify us promptly at [CONTACT_EMAIL] if you believe your link has been disclosed without your consent so we can rotate it.",
+        text: "Magic-link responsibility. You are responsible for maintaining the confidentiality of any magic-link URL we issue to you. Anyone who possesses a valid magic link can access the associated guide; we may treat any access via your magic link as authorized by you. Notify us promptly at support@saaspocalypse.dev if you believe your link has been disclosed without your consent so we can rotate it.",
       },
       {
         kind: "p",
@@ -143,7 +143,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
       },
       {
         kind: "p",
-        text: "Technical failure exception. If a technical failure prevents the guide from ever being generated or delivered to you within a reasonable period after payment, contact us at [CONTACT_EMAIL] within 14 days of the charge and we will work in good faith to either re-deliver the guide or refund the purchase. Statutory rights that cannot be waived under your local consumer-protection laws are not affected by this section.",
+        text: "Technical failure exception. If a technical failure prevents the guide from ever being generated or delivered to you within a reasonable period after payment, contact us at support@saaspocalypse.dev within 14 days of the charge and we will work in good faith to either re-deliver the guide or refund the purchase. Statutory rights that cannot be waived under your local consumer-protection laws are not affected by this section.",
       },
     ],
   },
@@ -182,7 +182,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "The Service, including its software, design, brand, copy, prompts, templates, and the look-and-feel of any output presentation, is owned by [LEGAL_NAME] or our licensors and is protected by intellectual-property laws. Except for the rights expressly granted in these Terms, no rights are transferred to you.",
+        text: "The Service, including its software, design, brand, copy, prompts, templates, and the look-and-feel of any output presentation, is owned by WEB3 SOLUTIONS LLC or our licensors and is protected by intellectual-property laws. Except for the rights expressly granted in these Terms, no rights are transferred to you.",
       },
       {
         kind: "p",
@@ -242,7 +242,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT WILL [LEGAL_NAME], ITS AFFILIATES, OR ITS LICENSORS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, REVENUE, GOODWILL, DATA, OR BUSINESS OPPORTUNITIES, ARISING OUT OF OR RELATED TO THE SERVICE, WHETHER BASED ON CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, OR ANY OTHER LEGAL THEORY, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.",
+        text: "TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT WILL WEB3 SOLUTIONS LLC, ITS AFFILIATES, OR ITS LICENSORS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, REVENUE, GOODWILL, DATA, OR BUSINESS OPPORTUNITIES, ARISING OUT OF OR RELATED TO THE SERVICE, WHETHER BASED ON CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, OR ANY OTHER LEGAL THEORY, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.",
       },
       {
         kind: "p",
@@ -255,7 +255,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "You agree to defend, indemnify, and hold harmless [LEGAL_NAME] and its officers, directors, employees, contractors, and agents from and against any claims, demands, losses, liabilities, damages, costs, and expenses (including reasonable attorneys' fees) arising out of or related to (a) your use of the Service, (b) URLs or other content you submit, (c) any product, service, or content you build, ship, or distribute based on Service outputs, (d) your violation of these Terms, or (e) your violation of any law or third-party right.",
+        text: "You agree to defend, indemnify, and hold harmless WEB3 SOLUTIONS LLC and its officers, directors, employees, contractors, and agents from and against any claims, demands, losses, liabilities, damages, costs, and expenses (including reasonable attorneys' fees) arising out of or related to (a) your use of the Service, (b) URLs or other content you submit, (c) any product, service, or content you build, ship, or distribute based on Service outputs, (d) your violation of these Terms, or (e) your violation of any law or third-party right.",
       },
     ],
   },
@@ -313,11 +313,11 @@ export const TERMS_SECTIONS: LegalSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "These Terms are governed by the laws of the State of [GOVERNING_LAW_STATE], United States, without regard to its conflict-of-laws principles. Before filing a formal dispute, you agree to first contact us at [CONTACT_EMAIL] and to attempt to resolve the dispute informally for at least 30 days.",
+        text: "These Terms are governed by the laws of the State of Indiana, United States, without regard to its conflict-of-laws principles. Before filing a formal dispute, you agree to first contact us at support@saaspocalypse.dev and to attempt to resolve the dispute informally for at least 30 days.",
       },
       {
         kind: "p",
-        text: "If the dispute is not resolved informally, it will be brought exclusively in the state or federal courts located in [GOVERNING_LAW_STATE], and you and we consent to the personal jurisdiction of those courts. To the extent permitted by law, you and we each waive any right to a jury trial and any right to participate in a class, collective, or representative action against the other.",
+        text: "If the dispute is not resolved informally, it will be brought exclusively in the state or federal courts located in Indiana, and you and we consent to the personal jurisdiction of those courts. To the extent permitted by law, you and we each waive any right to a jury trial and any right to participate in a class, collective, or representative action against the other.",
       },
     ],
   },
@@ -326,7 +326,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "Questions about these Terms, or content removal requests? Contact [LEGAL_NAME] at [CONTACT_EMAIL].",
+        text: "Questions about these Terms, or content removal requests? Contact us at support@saaspocalypse.dev.",
       },
     ],
   },

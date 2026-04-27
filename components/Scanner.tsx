@@ -119,27 +119,29 @@ export function Scanner() {
   return (
     <div>
       <div className="max-w-[780px]">
-        <div className="bru bg-paper flex items-stretch relative">
-          <div className="pl-5 pr-[18px] py-[18px] border-r-[2.5px] border-ink font-mono text-base text-muted flex items-center">
-            https://
+        <div className="bru bg-paper flex flex-col sm:flex-row sm:items-stretch relative">
+          <div className="flex items-stretch flex-1 min-w-0 border-b-[2.5px] sm:border-b-0 border-ink">
+            <div className="px-4 sm:pl-5 sm:pr-[18px] py-3.5 sm:py-[18px] border-r-[2.5px] border-ink font-mono text-sm sm:text-base text-muted flex items-center">
+              https://
+            </div>
+            <input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") startScan(url);
+              }}
+              placeholder="your-next-victim.com"
+              aria-label="URL to scan"
+              className="flex-1 border-none px-3 sm:px-5 py-3.5 sm:py-[18px] font-mono text-base sm:text-xl bg-transparent min-w-0 outline-none"
+            />
           </div>
-          <input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") startScan(url);
-            }}
-            placeholder="your-next-victim.com"
-            aria-label="URL to scan"
-            className="flex-1 border-none px-5 py-[18px] font-mono text-xl bg-transparent min-w-0 outline-none"
-          />
           <button
             onClick={() =>
               phase === "done" || phase === "error" ? reset() : startScan(url)
             }
             aria-live="polite"
             disabled={phase === "scanning"}
-            className="bg-accent border-none border-l-[2.5px] border-ink px-7 font-display font-bold text-lg cursor-pointer tracking-[-0.01em] disabled:cursor-wait"
+            className="bg-accent border-none sm:border-l-[2.5px] sm:border-ink px-7 py-3 sm:py-0 font-display font-bold text-lg cursor-pointer tracking-[-0.01em] disabled:cursor-wait"
           >
             {buttonLabel}
           </button>

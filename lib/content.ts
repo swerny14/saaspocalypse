@@ -117,10 +117,10 @@ export const MARQUEE_ITEMS = [
 ];
 
 export const PRICING_BULLETS = [
-  "Unlimited URLs (please don't actually)",
-  "Itemized stack receipts",
-  "Challenges ranked easy to nightmare, sorted accordingly",
-  "A sassy verdict (non-negotiable)",
-  "Zero dark patterns, zero seat-based anything, zero recurring guilt",
-  'Optional email nag 6 months later: "did u build it tho"',
+  "unlimited URLs (please don't actually)",
+  "itemized stack receipts",
+  "challenges ranked easy to nightmare, sorted accordingly",
+  "a sassy verdict (non-negotiable)",
+  "zero dark patterns, zero seat-based anything, zero recurring guilt",
+  'optional email nag 6 months later: "did u build it tho"',
 ];

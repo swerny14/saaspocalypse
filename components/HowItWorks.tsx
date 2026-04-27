@@ -20,7 +20,7 @@ export function HowItWorks() {
               <div className="font-mono text-[13px] text-accent font-bold tracking-[0.1em]">
                 STEP {s.n}
               </div>
-              <h3 className="font-display text-[32px] font-bold my-3 tracking-[-0.02em]">
+              <h3 className="font-display text-[26px] sm:text-[32px] font-bold my-3 tracking-[-0.02em] pr-14 sm:pr-0">
                 {s.t}
               </h3>
               <p className="font-mono text-[15px] leading-[1.6] m-0 opacity-85">
@@ -28,7 +28,7 @@ export function HowItWorks() {
               </p>
               <div
                 aria-hidden
-                className="absolute top-5 right-5 font-display text-[64px] font-bold opacity-15 text-accent leading-none"
+                className="absolute top-4 right-4 sm:top-5 sm:right-5 font-display text-[44px] sm:text-[64px] font-bold opacity-15 text-accent leading-none"
               >
                 {s.n}
               </div>

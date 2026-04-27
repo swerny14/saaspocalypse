@@ -7,7 +7,7 @@ export function Hero() {
   const headline = HEADLINES[0];
 
   return (
-    <section className="overflow-hidden pt-20 pb-[60px]">
+    <section className="overflow-hidden pt-8 sm:pt-20 pb-[60px]">
       <div className="container">
         <div className="grid gap-5 max-w-[1000px]">
           <div className="select-none text-right font-mono text-[11px] uppercase tracking-[0.15em] opacity-60">
@@ -20,16 +20,16 @@ export function Hero() {
 
           <RansomHeadline text={headline.top} />
 
-          <p className="font-mono text-xl max-w-[620px] leading-normal m-0 text-[#2a2a2a]">
+          <p className="font-mono text-base sm:text-xl max-w-[620px] leading-normal m-0 text-[#2a2a2a]">
             {headline.sub}
           </p>
         </div>
 
-        <div id="scanner" className="mt-12">
+        <div id="scanner" className="mt-6 sm:mt-9">
           <Scanner />
         </div>
 
-        <div className="select-none mt-3.5 font-mono text-xs opacity-[0.65] flex gap-5 flex-wrap">
+        <div className="select-none mt-3.5 font-mono text-xs opacity-[0.65] flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-5">
           <span>✦ no signup</span>
           <span>✦ no credit card</span>
           <span>✦ we don&apos;t have a database (yet)</span>

@@ -63,7 +63,7 @@ export function LegalPage({ title, effectiveDate, intro, sections }: Props) {
         </article>
 
         <p className="font-mono text-[12px] text-muted mt-8 text-center">
-          Questions? Email <span className="text-ink">[CONTACT_EMAIL]</span>.
+          Questions? Email <span className="text-ink">support@saaspocalypse.dev</span>.
         </p>
       </div>
     </main>

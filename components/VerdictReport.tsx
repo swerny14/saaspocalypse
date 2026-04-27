@@ -52,7 +52,7 @@ export function VerdictReport({ report: v }: Props) {
   return (
     <div className="bg-paper border-[2.5px] border-ink shadow-[5px_5px_0_0_#0a0a0a]">
       {/* HEADER BAR */}
-      <div className="flex justify-between items-center gap-4 px-[22px] py-3.5 bg-bg border-b-[2.5px] border-ink font-mono text-[11px] tracking-[0.05em] flex-wrap">
+      <div className="flex justify-between items-center gap-3 px-4 sm:px-[22px] py-3 sm:py-3.5 bg-bg border-b-[2.5px] border-ink font-mono text-[10px] sm:text-[11px] tracking-[0.05em] flex-wrap">
         <div className="flex gap-3.5 items-center">
           <span className="bg-ink text-accent px-2 py-0.5 font-bold tracking-[0.1em]">
             SAASPOCALYPSE
@@ -65,12 +65,12 @@ export function VerdictReport({ report: v }: Props) {
       </div>
 
       {/* TITLE BLOCK */}
-      <div className="px-11 pt-9 pb-7 border-b-[2.5px] border-ink grid grid-cols-[1fr_auto] gap-8 items-end max-[640px]:grid-cols-1">
-        <div>
+      <div className="px-5 sm:px-11 pt-7 sm:pt-9 pb-7 border-b-[2.5px] border-ink grid grid-cols-[1fr_auto] gap-8 items-end max-[640px]:grid-cols-1 max-[640px]:gap-5">
+        <div className="min-w-0">
           <div className="font-mono text-xs font-bold tracking-[0.15em] uppercase text-muted mb-2.5">
             subject of investigation
           </div>
-          <h1 className="font-display font-bold text-[52px] leading-none tracking-[-0.03em] m-0">
+          <h1 className="font-display font-bold text-[36px] sm:text-[52px] leading-none tracking-[-0.03em] m-0 break-words">
             {v.name}
           </h1>
           <div className="font-mono text-sm mt-2.5 opacity-70">▸ {v.tagline}</div>
@@ -86,16 +86,16 @@ export function VerdictReport({ report: v }: Props) {
       {/* SCORE + TAKE */}
       <div className="grid grid-cols-[280px_1fr] border-b-[2.5px] border-ink max-[720px]:grid-cols-1">
         <div
-          className={`px-7 py-8 border-r-[2.5px] border-ink flex flex-col justify-between min-h-[260px] max-[720px]:border-r-0 max-[720px]:border-b-[2.5px] ${tierBg}`}
+          className={`px-5 sm:px-7 py-6 sm:py-8 border-r-[2.5px] border-ink flex flex-col justify-between min-h-[200px] sm:min-h-[260px] gap-4 sm:gap-0 max-[720px]:border-r-0 max-[720px]:border-b-[2.5px] ${tierBg}`}
         >
           <div className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase text-[#333]">
             buildability score
           </div>
           <div className="flex items-baseline gap-2">
-            <div className="font-display font-bold text-[140px] leading-[0.85] tracking-[-0.05em] text-ink">
+            <div className="font-display font-bold text-[100px] sm:text-[140px] leading-[0.85] tracking-[-0.05em] text-ink">
               {v.score}
             </div>
-            <div className="font-display text-[28px] font-medium opacity-50">
+            <div className="font-display text-[22px] sm:text-[28px] font-medium opacity-50">
               /100
             </div>
           </div>
@@ -104,11 +104,11 @@ export function VerdictReport({ report: v }: Props) {
           </div>
         </div>
 
-        <div className="px-10 py-8 flex flex-col justify-center">
+        <div className="px-5 sm:px-10 py-6 sm:py-8 flex flex-col justify-center">
           <div className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase text-muted mb-3.5">
             the blunt take
           </div>
-          <p className="font-display text-2xl font-medium leading-[1.3] tracking-[-0.015em] m-0 text-balance">
+          <p className="font-display text-xl sm:text-2xl font-medium leading-[1.3] tracking-[-0.015em] m-0 text-balance">
             &ldquo;{v.take}&rdquo;
           </p>
           <p className="text-[15px] leading-normal mt-4 mb-0 opacity-70 max-w-[620px]">
@@ -118,9 +118,9 @@ export function VerdictReport({ report: v }: Props) {
       </div>
 
       {/* COST BREAKDOWN */}
-      <div className="px-11 py-8 border-b-[2.5px] border-ink">
-        <div className="flex justify-between items-baseline mb-6 gap-4 flex-wrap">
-          <h3 className="font-display text-[26px] font-bold m-0 tracking-[-0.02em]">
+      <div className="px-5 sm:px-11 py-6 sm:py-8 border-b-[2.5px] border-ink">
+        <div className="flex justify-between items-baseline mb-5 sm:mb-6 gap-3 flex-wrap">
+          <h3 className="font-display text-[22px] sm:text-[26px] font-bold m-0 tracking-[-0.02em]">
             cost breakdown.
           </h3>
           <div className="font-mono text-[11px] tracking-[0.1em] uppercase opacity-60">
@@ -140,7 +140,7 @@ export function VerdictReport({ report: v }: Props) {
                 {v.current_cost.label}
               </div>
               <div className="flex items-baseline gap-1.5">
-                <div className="font-display text-[44px] font-bold leading-none tracking-[-0.03em]">
+                <div className="font-display text-[36px] sm:text-[44px] font-bold leading-none tracking-[-0.03em] break-words min-w-0">
                   {typeof v.current_cost.price === "number"
                     ? `$${v.current_cost.price}`
                     : v.current_cost.price}
@@ -214,9 +214,9 @@ export function VerdictReport({ report: v }: Props) {
       </div>
 
       {/* ALTERNATIVES */}
-      <div className="px-11 py-8 border-b-[2.5px] border-ink bg-bg">
-        <div className="flex justify-between items-baseline mb-5 gap-4 flex-wrap">
-          <h3 className="font-display text-[26px] font-bold m-0 tracking-[-0.02em]">
+      <div className="px-5 sm:px-11 py-6 sm:py-8 border-b-[2.5px] border-ink bg-bg">
+        <div className="flex justify-between items-baseline mb-5 gap-3 flex-wrap">
+          <h3 className="font-display text-[22px] sm:text-[26px] font-bold m-0 tracking-[-0.02em]">
             or, you know, use one of these.
           </h3>
           <div className="font-mono text-[11px] tracking-[0.1em] uppercase opacity-60">
@@ -233,7 +233,7 @@ export function VerdictReport({ report: v }: Props) {
               <div className="font-mono text-[10px] tracking-[0.15em] uppercase opacity-50">
                 option {String.fromCharCode(65 + i)}
               </div>
-              <div className="font-display text-[22px] font-bold tracking-[-0.01em] mt-1">
+              <div className="font-display text-[20px] sm:text-[22px] font-bold tracking-[-0.01em] mt-1 break-words">
                 {alt.name}
               </div>
               <div className="text-sm leading-normal mt-2 opacity-80">
@@ -245,9 +245,9 @@ export function VerdictReport({ report: v }: Props) {
       </div>
 
       {/* BUILD CHALLENGES */}
-      <div className="px-11 py-8 border-b-[2.5px] border-ink">
-        <div className="flex justify-between items-baseline mb-2 gap-4 flex-wrap">
-          <h3 className="font-display text-[26px] font-bold m-0 tracking-[-0.02em]">
+      <div className="px-5 sm:px-11 py-6 sm:py-8 border-b-[2.5px] border-ink">
+        <div className="flex justify-between items-baseline mb-2 gap-3 flex-wrap">
+          <h3 className="font-display text-[22px] sm:text-[26px] font-bold m-0 tracking-[-0.02em]">
             what&apos;ll actually be hard.
           </h3>
           <div className="font-mono text-[11px] tracking-[0.1em] uppercase opacity-60">
@@ -315,12 +315,12 @@ export function VerdictReport({ report: v }: Props) {
       </div>
 
       {/* CTA */}
-      <div className="px-11 py-7 bg-ink text-bg grid grid-cols-[1fr_auto] gap-6 items-center max-[720px]:grid-cols-1">
+      <div className="px-5 sm:px-11 py-6 sm:py-7 bg-ink text-bg grid grid-cols-[1fr_auto] gap-5 sm:gap-6 items-center max-[720px]:grid-cols-1">
         <div>
           <div className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase text-accent mb-1">
             ready to build?
           </div>
-          <div className="font-display text-[26px] font-bold tracking-[-0.02em] leading-[1.15]">
+          <div className="font-display text-[20px] sm:text-[26px] font-bold tracking-[-0.02em] leading-[1.2] sm:leading-[1.15]">
             {v.score >= 70
               ? "We'll email you a 1-page build guide."
               : v.score >= 30
@@ -332,7 +332,7 @@ export function VerdictReport({ report: v }: Props) {
       </div>
 
       {/* FOOTER */}
-      <div className="px-[22px] py-2.5 font-mono text-[10px] tracking-[0.1em] uppercase text-muted bg-bg border-t-[2.5px] border-ink flex justify-between gap-4 flex-wrap">
+      <div className="px-4 sm:px-[22px] py-2.5 font-mono text-[10px] tracking-[0.1em] uppercase text-muted bg-bg border-t-[2.5px] border-ink flex justify-between gap-3 flex-wrap">
         <span>▸ generated with love, by a heartless robot</span>
         <span>verdict v2.1 · saaspocalypse.dev</span>
       </div>

@@ -176,7 +176,6 @@ export default async function DirectoryPage({
   const tierCounts: Record<DirectoryTier, number> = {
     WEEKEND: 0,
     MONTH: 0,
-    QUARTER: 0,
     "DON'T": 0,
   };
   for (const r of all) {
@@ -212,7 +211,7 @@ export default async function DirectoryPage({
           </div>
           <div className="flex justify-between items-end gap-8 flex-wrap">
             <h1 className="font-display font-bold text-[clamp(56px,8vw,88px)] leading-[0.92] tracking-[-0.045em] m-0">
-              every saas we{" "}
+              Every SaaS we{" "}
               <span className="bg-ink text-accent px-3.5 inline-block rotate-[-1.5deg]">
                 scrutinized
               </span>
@@ -350,10 +349,10 @@ function EmptyState() {
   return (
     <div className="border-[2.5px] border-ink bg-paper p-10 text-center">
       <h2 className="font-display font-bold text-[28px] m-0 tracking-[-0.02em]">
-        no scans match. weird flex.
+        No scans match. Weird flex.
       </h2>
       <p className="font-display text-[15px] opacity-70 mt-2 mb-5">
-        loosen a filter or try a different search.
+        Loosen a filter or try a different search.
       </p>
       <a
         href="/directory"
