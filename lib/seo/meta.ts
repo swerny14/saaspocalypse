@@ -1,6 +1,6 @@
 import type { StoredReport } from "@/lib/db/reports";
 
-const SITE_URL = "https://saaspocalypse.com";
+const SITE_URL = "https://www.saaspocalypse.dev";
 const BRAND = "saaspocalypse";
 
 /** Front-loads the long-tail query phrase users actually search for. */

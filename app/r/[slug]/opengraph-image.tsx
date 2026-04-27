@@ -269,7 +269,7 @@ export default async function Image({ params }: { params: Params }) {
             <span style={{ opacity: 0.4, display: "flex" }}>·</span>
             <span style={{ display: "flex" }}>{fmtTotal(report.est_total)}</span>
           </div>
-          <div style={{ opacity: 0.6, display: "flex" }}>saaspocalypse.com</div>
+          <div style={{ opacity: 0.6, display: "flex" }}>saaspocalypse.dev</div>
         </div>
       </div>
     ),

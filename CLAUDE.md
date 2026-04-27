@@ -111,10 +111,7 @@ GUIDE_PRICE_CENTS=700                # display + fallback. 0 + NODE_ENV!=prod â†
 
 # Resend (magic-link delivery)
 RESEND_API_KEY=
-RESEND_FROM=guides@saaspocalypse.biz
-
-# Optional tunables
-SCAN_RATE_LIMIT_PER_HOUR=5
+RESEND_FROM=guides@saaspocalypse.dev
 ```
 
 Degraded-mode behavior (so the codebase stays workable pre-provisioning):

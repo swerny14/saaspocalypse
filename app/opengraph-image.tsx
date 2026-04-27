@@ -136,7 +136,7 @@ export default async function Image() {
               DON&apos;T
             </span>
           </div>
-          <div style={{ display: "flex", opacity: 0.6 }}>saaspocalypse.com</div>
+          <div style={{ display: "flex", opacity: 0.6 }}>saaspocalypse.dev</div>
         </div>
       </div>
     ),

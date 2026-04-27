@@ -133,7 +133,7 @@ export function BuildGuide({ report, guide }: Props) {
       {/* FOOTER */}
       <div className="px-[22px] py-2.5 font-mono text-[10px] tracking-[0.1em] uppercase text-muted bg-bg border-t-[2.5px] border-ink flex justify-between gap-4 flex-wrap">
         <span>▸ this guide is yours forever — bookmark the URL</span>
-        <span>guide v1 · saaspocalypse.biz</span>
+        <span>guide v1 · saaspocalypse.dev</span>
       </div>
     </div>
   );

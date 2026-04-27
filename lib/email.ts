@@ -14,7 +14,7 @@ export function getResend(): Resend | null {
 }
 
 function getFromAddress(): string {
-  return process.env.RESEND_FROM ?? "guides@saaspocalypse.biz";
+  return process.env.RESEND_FROM ?? "guides@saaspocalypse.dev";
 }
 
 export async function sendGuideMagicLink(args: {

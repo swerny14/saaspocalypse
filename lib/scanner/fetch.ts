@@ -16,7 +16,7 @@ const MAX_TEXT_CHARS = 20_000; // ~5K tokens once handed to Claude
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 3;
 const UA =
-  "Mozilla/5.0 (compatible; SaaspocalypseBot/1.0; +https://saaspocalypse.biz)";
+  "Mozilla/5.0 (compatible; SaaspocalypseBot/1.0; +https://www.saaspocalypse.dev)";
 // Fallback UA used only after a 403 with our identifying UA. Some WAFs
 // (Cloudflare, Akamai) reject anything with "bot" in the UA string regardless
 // of intent. We try once more looking like a normal browser before giving up.

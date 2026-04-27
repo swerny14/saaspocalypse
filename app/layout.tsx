@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   title: "saaspocalypse — can I build this myself?",
   description:
     "Paste any SaaS URL. We'll tell you if it's a weekend or a life sentence. Buildability score, stack receipt, time-to-clone, and a snarky one-liner.",
-  metadataBase: new URL("https://saaspocalypse.com"),
+  metadataBase: new URL("https://www.saaspocalypse.dev"),
   openGraph: {
     title: "saaspocalypse — can I build this myself?",
     description:
