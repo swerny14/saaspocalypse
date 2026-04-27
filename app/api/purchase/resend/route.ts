@@ -28,22 +28,48 @@ function originFromRequest(req: NextRequest): string {
   return new URL(req.url).origin;
 }
 
-// 3 resends / hour / email. Cheap abuse guard.
-let _limiter: Ratelimit | null | undefined;
-function limiter(): Ratelimit | null {
-  if (_limiter !== undefined) return _limiter;
+// 3 resends / hour / email. Caps abuse on a known buyer's address.
+let _emailLimiter: Ratelimit | null | undefined;
+function emailLimiter(): Ratelimit | null {
+  if (_emailLimiter !== undefined) return _emailLimiter;
   const redis = getRedis();
   if (!redis) {
-    _limiter = null;
+    _emailLimiter = null;
     return null;
   }
-  _limiter = new Ratelimit({
+  _emailLimiter = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(3, "1 h"),
     prefix: "saaspo:resend:email",
     analytics: false,
   });
-  return _limiter;
+  return _emailLimiter;
+}
+
+// 20 resends / hour / IP. Stops single-IP enumeration — the per-email cap
+// alone lets a script try one address, get blocked, try a different address,
+// and repeat indefinitely without ever tripping. Both must pass.
+let _ipLimiter: Ratelimit | null | undefined;
+function ipLimiter(): Ratelimit | null {
+  if (_ipLimiter !== undefined) return _ipLimiter;
+  const redis = getRedis();
+  if (!redis) {
+    _ipLimiter = null;
+    return null;
+  }
+  _ipLimiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(20, "1 h"),
+    prefix: "saaspo:resend:ip",
+    analytics: false,
+  });
+  return _ipLimiter;
+}
+
+function getClientIp(req: NextRequest): string {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0]!.trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
 }
 
 export async function POST(req: NextRequest) {
@@ -59,10 +85,19 @@ export async function POST(req: NextRequest) {
   const { slug } = parsed.data;
   const email = parsed.data.email.toLowerCase();
 
-  const rl = limiter();
-  if (rl) {
-    const result = await rl.limit(email);
-    if (!result.success) {
+  // Both limiters must pass. Per-IP first so a script can't burn through
+  // attempts before hitting the per-email cap.
+  const ipRl = ipLimiter();
+  if (ipRl) {
+    const { success } = await ipRl.limit(getClientIp(req));
+    if (!success) {
+      return jsonError(429, "Too many resend requests. Try again in an hour.");
+    }
+  }
+  const emailRl = emailLimiter();
+  if (emailRl) {
+    const { success } = await emailRl.limit(email);
+    if (!success) {
       return jsonError(429, "Too many resend requests. Try again in an hour.");
     }
   }

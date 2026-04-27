@@ -322,10 +322,10 @@ export function VerdictReport({ report: v }: Props) {
           </div>
           <div className="font-display text-[20px] sm:text-[26px] font-bold tracking-[-0.02em] leading-[1.2] sm:leading-[1.15]">
             {v.score >= 70
-              ? "We'll email you a 1-page build guide."
+              ? "We'll email you the build guide. You'll be done by Sunday."
               : v.score >= 30
-                ? "We'll email you a 3-page build guide. Good luck."
-                : "We'll email you a link to Google Maps. Nearest park."}
+                ? "We'll email you the build guide. Cancel some plans."
+                : "No build guide for this one. Some things you have to pay for."}
           </div>
         </div>
         <PurchaseCTA slug={v.slug} score={v.score} priceCents={guidePriceCents()} />

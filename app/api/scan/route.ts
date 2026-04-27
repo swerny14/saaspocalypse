@@ -1,6 +1,8 @@
 import type { NextRequest } from "next/server";
 import { runScan } from "@/lib/scanner/pipeline";
 import { sseFormat, type ScanEvent } from "@/lib/scanner/events";
+import { USER_SCAN_MESSAGES } from "@/lib/scanner/user_messages";
+import { logError } from "@/lib/error_log";
 
 export const runtime = "nodejs";
 // Cold scans (Claude + fetch) can run ~15-30s. Allow up to 60s for safety.
@@ -35,12 +37,23 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode(sseFormat(event)));
       };
       try {
-        await runScan({ url, ip }, emit);
+        // req.signal aborts when the client closes the SSE — propagates into
+        // the Anthropic call so we don't burn tokens on abandoned scans.
+        await runScan({ url, ip, signal: req.signal }, emit);
       } catch (e) {
+        // Last-resort catch: runScan should map all known failures via
+        // emitScanError. If we land here, it's an unhandled exception —
+        // log the real detail, surface generic copy.
+        await logError({
+          scope: "scan",
+          reason: "internal",
+          message: e instanceof Error ? e.message : String(e),
+          detail: { url, ip, source: "route_outer_catch" },
+        });
         emit({
           type: "error",
           reason: "internal",
-          message: e instanceof Error ? e.message : "Unknown error",
+          message: USER_SCAN_MESSAGES.internal,
         });
       } finally {
         controller.close();

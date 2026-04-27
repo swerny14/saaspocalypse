@@ -18,7 +18,7 @@ loadEnv({ path: ".env.local" });
 loadEnv({ path: ".env" });
 
 const SEEDS: Array<{ url: string; report: VerdictReport }> = [
-  {
+  /*{
     url: "notion-ish.com",
     report: {
       name: "notion-ish.com",
@@ -320,7 +320,7 @@ const SEEDS: Array<{ url: string; report: VerdictReport }> = [
         "your remaining tears",
       ],
     },
-  },
+  },*/
 ];
 
 async function main() {

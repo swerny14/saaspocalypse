@@ -5,6 +5,9 @@ import { TIER_FG } from "@/lib/scanner/schema";
 export const alt = "saaspocalypse verdict";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+// Cache for 1 hour. Matches the report page's ISR cadence — we're fine if
+// social previews lag the canonical view by up to an hour.
+export const revalidate = 3600;
 
 const INK = "#0a0a0a";
 const CREAM = "#f4f1e8";

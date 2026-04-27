@@ -130,7 +130,7 @@ export function Scanner() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") startScan(url);
               }}
-              placeholder="your-next-victim.com"
+              placeholder="overpriced-saas.com"
               aria-label="URL to scan"
               className="flex-1 border-none px-3 sm:px-5 py-3.5 sm:py-[18px] font-mono text-base sm:text-xl bg-transparent min-w-0 outline-none"
             />

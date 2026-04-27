@@ -84,6 +84,13 @@ export async function createPaidPurchase(input: {
   return data as StoredPurchase;
 }
 
+/**
+ * Promote a pending purchase to paid. Idempotent: only flips a row whose
+ * status is currently `pending`, so duplicate Stripe webhook deliveries (which
+ * are at-least-once) won't re-stamp `paid_at` or re-trigger the magic-link
+ * email. Returns the row that was updated, or `null` if there was nothing to
+ * promote (already paid, refunded, or no matching session).
+ */
 export async function markPurchasePaidBySessionId(
   stripeSessionId: string,
 ): Promise<StoredPurchase | null> {
@@ -92,10 +99,28 @@ export async function markPurchasePaidBySessionId(
     .from("build_guide_purchases")
     .update({ status: "paid", paid_at: new Date().toISOString() })
     .eq("stripe_session_id", stripeSessionId)
+    .eq("status", "pending")
     .select("*")
     .maybeSingle();
   if (error) {
     console.error("[purchases] markPurchasePaidBySessionId failed", error);
+    return null;
+  }
+  return (data as StoredPurchase | null) ?? null;
+}
+
+/** Read-only lookup. Lets the webhook distinguish "already paid" from "no such row". */
+export async function getPurchaseBySessionId(
+  stripeSessionId: string,
+): Promise<StoredPurchase | null> {
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin
+    .from("build_guide_purchases")
+    .select("*")
+    .eq("stripe_session_id", stripeSessionId)
+    .maybeSingle();
+  if (error) {
+    console.error("[purchases] getPurchaseBySessionId failed", error);
     return null;
   }
   return (data as StoredPurchase | null) ?? null;

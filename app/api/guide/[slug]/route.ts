@@ -9,10 +9,17 @@ import {
   type GuideErrorReason,
 } from "@/lib/build_guide/pipeline";
 import { logError } from "@/lib/error_log";
+import { getGuideRateLimiter } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 // Guide generation (cold) runs ~30-50s.
 export const maxDuration = 120;
+
+function getClientIp(req: NextRequest): string {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0]!.trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
 
 async function streamSingleError(
   reason: GuideErrorReason,
@@ -20,13 +27,18 @@ async function streamSingleError(
   slug: string,
   detail?: Record<string, unknown>,
 ): Promise<Response> {
-  await logError({
-    scope: "guide_gen",
-    reason,
-    refSlug: slug,
-    message: internalMessage,
-    detail,
-  });
+  // `invalid_token` covers typoed magic links + scanner traffic — neither is
+  // a system error and both can flood error_log. Skip persistence; the
+  // user-facing event is still emitted below.
+  if (reason !== "invalid_token") {
+    await logError({
+      scope: "guide_gen",
+      reason,
+      refSlug: slug,
+      message: internalMessage,
+      detail,
+    });
+  }
 
   const encoder = new TextEncoder();
   const event: GuideEvent = {
@@ -55,6 +67,21 @@ export async function GET(
   ctx: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await ctx.params;
+
+  // Rate-limit by IP first. Tokens are unguessable but lookups still hit the
+  // DB and write to error_log on misses; this caps amplification by a scanner.
+  const limiter = getGuideRateLimiter();
+  if (limiter) {
+    const { success } = await limiter.limit(getClientIp(req));
+    if (!success) {
+      return streamSingleError(
+        "internal",
+        "guide endpoint rate limit exceeded",
+        slug,
+      );
+    }
+  }
+
   const token = new URL(req.url).searchParams.get("t");
 
   if (!token) {
@@ -98,7 +125,9 @@ export async function GET(
         controller.enqueue(encoder.encode(sseFormatGuide(event)));
       };
       try {
-        await runGuideGeneration(report, emit);
+        // req.signal aborts on client disconnect → cancels the LLM call so
+        // we don't burn tokens (~$0.08/run) on a closed-tab guide gen.
+        await runGuideGeneration(report, emit, req.signal);
       } catch (e) {
         await logError({
           scope: "guide_gen",

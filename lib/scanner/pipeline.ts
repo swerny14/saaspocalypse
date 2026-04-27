@@ -17,7 +17,7 @@ import type { ScanErrorReason, ScanEvent } from "./events";
 import { STEP_LABELS } from "./events";
 import { USER_SCAN_MESSAGES } from "./user_messages";
 
-export type ScanInput = { url: string; ip: string };
+export type ScanInput = { url: string; ip: string; signal?: AbortSignal };
 export type ScanEmitter = (event: ScanEvent) => void | Promise<void>;
 
 const LOCK_TTL_SECONDS = 60;
@@ -145,7 +145,7 @@ export async function runScan(
 
     // 6. Call Claude (internally validates + retries).
     await emit({ type: "step", step: "analyze", label: STEP_LABELS.analyze });
-    const llmOut = await callClaudeForVerdict({ domain, html });
+    const llmOut = await callClaudeForVerdict({ domain, html, signal: input.signal });
     if (llmOut.kind === "error") {
       await emitScanError(emit, llmOut.reason, llmOut.message, {
         url: input.url,

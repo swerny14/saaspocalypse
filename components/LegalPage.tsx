@@ -7,6 +7,15 @@ type Props = {
   sections: LegalSection[];
 };
 
+/** "5. The Free Scan Service" → "the-free-scan-service". Stable for deep-linking. */
+function headingSlug(heading: string): string {
+  return heading
+    .replace(/^\s*\d+\.\s*/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function Block({ block }: { block: LegalBlock }) {
   switch (block.kind) {
     case "p":
@@ -47,9 +56,9 @@ export function LegalPage({ title, effectiveDate, intro, sections }: Props) {
 
         <article className="bru bg-paper p-8 md:p-12 mt-8">
           {sections.map((section, sIdx) => (
-            <section key={section.heading}>
+            <section key={section.heading} id={headingSlug(section.heading)}>
               <h2
-                className={`font-display text-[22px] font-bold tracking-[-0.02em] mb-4 ${
+                className={`font-display text-[22px] font-bold tracking-[-0.02em] mb-4 scroll-mt-8 ${
                   sIdx === 0 ? "mt-0" : "mt-10"
                 }`}
               >

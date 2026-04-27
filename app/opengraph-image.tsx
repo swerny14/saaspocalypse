@@ -3,6 +3,9 @@ import { ImageResponse } from "next/og";
 export const alt = "saaspocalypse — can I build this myself?";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+// Static art — render once per hour at most. Without this, every social
+// crawler unfurl re-runs Satori from scratch.
+export const revalidate = 3600;
 
 const INK = "#0a0a0a";
 const CREAM = "#f4f1e8";

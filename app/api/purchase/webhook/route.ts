@@ -1,7 +1,10 @@
 import type { NextRequest } from "next/server";
 import type Stripe from "stripe";
-import { getStripe, isStripeConfigured } from "@/lib/stripe";
-import { markPurchasePaidBySessionId } from "@/lib/db/purchases";
+import { getStripe, guidePriceCents, isStripeConfigured } from "@/lib/stripe";
+import {
+  getPurchaseBySessionId,
+  markPurchasePaidBySessionId,
+} from "@/lib/db/purchases";
 import { getSupabaseAdmin } from "@/lib/db/supabase";
 import { sendGuideMagicLink } from "@/lib/email";
 import { logError } from "@/lib/error_log";
@@ -23,13 +26,18 @@ function originFromRequest(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  const isProd = process.env.NODE_ENV === "production";
+
   if (!isStripeConfigured()) {
     await logError({
       scope: "webhook",
       reason: "stripe_not_configured",
       message: "Webhook received but STRIPE_SECRET_KEY is missing",
     });
-    // Stripe retries on 5xx; return 200 so we don't loop while misconfigured.
+    // In dev, swallow so a hand-replayed event doesn't loop. In prod a missing
+    // key means we'd silently lose payments — return 500 so Stripe retries
+    // once we fix the config.
+    if (isProd) return jsonError(500, "stripe not configured");
     return Response.json({ received: true, note: "stripe not configured" });
   }
 
@@ -40,6 +48,7 @@ export async function POST(req: NextRequest) {
       reason: "webhook_secret_missing",
       message: "STRIPE_WEBHOOK_SECRET not set",
     });
+    if (isProd) return jsonError(500, "webhook secret missing");
     return Response.json({ received: true, note: "webhook secret not set" });
   }
 
@@ -70,8 +79,37 @@ export async function POST(req: NextRequest) {
     return Response.json({ received: true, note: "session not paid" });
   }
 
-  const purchase = await markPurchasePaidBySessionId(session.id);
-  if (!purchase) {
+  // Defense-in-depth: Stripe locks line items server-side once a session is
+  // created, so a tampered amount shouldn't be possible. Still, refuse to
+  // grant access if the totals don't match what we charge.
+  const expected = guidePriceCents();
+  if (
+    typeof session.amount_total !== "number" ||
+    session.amount_total < expected ||
+    (session.currency ?? "").toLowerCase() !== "usd"
+  ) {
+    await logError({
+      scope: "webhook",
+      reason: "amount_mismatch",
+      message: "Session totals didn't match expected guide price",
+      detail: {
+        stripe_session_id: session.id,
+        amount_total: session.amount_total,
+        currency: session.currency,
+        expected_cents: expected,
+      },
+    });
+    return jsonError(400, "amount mismatch");
+  }
+
+  const updated = await markPurchasePaidBySessionId(session.id);
+  if (!updated) {
+    // Either the row was already promoted (duplicate webhook delivery) or it
+    // never existed. Distinguish so we don't double-send the magic link.
+    const existing = await getPurchaseBySessionId(session.id);
+    if (existing && existing.status === "paid") {
+      return Response.json({ received: true, note: "already paid" });
+    }
     await logError({
       scope: "webhook",
       reason: "purchase_not_found",
@@ -89,17 +127,17 @@ export async function POST(req: NextRequest) {
   const { data: reportRow } = await admin
     .from("reports")
     .select("name,slug")
-    .eq("id", purchase.report_id)
+    .eq("id", updated.report_id)
     .maybeSingle();
 
   const slug = (reportRow?.slug as string | undefined) ?? "";
   const reportName = (reportRow?.name as string | undefined) ?? "your product";
   const origin = originFromRequest(req);
-  const magicLink = `${origin}/r/${slug}/guide?t=${purchase.access_token}`;
+  const magicLink = `${origin}/r/${slug}/guide?t=${updated.access_token}`;
 
   try {
     await sendGuideMagicLink({
-      email: purchase.email,
+      email: updated.email,
       reportName,
       magicLink,
     });
@@ -109,7 +147,7 @@ export async function POST(req: NextRequest) {
     await logError({
       scope: "webhook",
       reason: "email_send",
-      refId: purchase.id,
+      refId: updated.id,
       refSlug: slug,
       message: e instanceof Error ? e.message : String(e),
     });

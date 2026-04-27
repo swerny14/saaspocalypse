@@ -14,8 +14,15 @@ import {
 } from "@/lib/stripe";
 import { sendGuideMagicLink } from "@/lib/email";
 import { logError } from "@/lib/error_log";
+import { getPurchaseRateLimiter } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
+
+function getClientIp(req: NextRequest): string {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0]!.trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
 
 const BodySchema = z.object({
   slug: z.string().min(1),
@@ -33,6 +40,8 @@ const USER_MSG = {
     "We don't sell build guides for DON'T-tier products (for everyone's sake).",
   server: "We couldn't start checkout. Try again in a moment.",
   config: "Checkout isn't available right now. Try again later.",
+  rate_limited:
+    "Too many checkout attempts from your network. Give it an hour.",
 } as const;
 
 function generateAccessToken(): string {
@@ -54,6 +63,17 @@ function originFromRequest(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate-limit before parsing the body so a flood of malformed POSTs can't
+  // burn cycles + log spam first.
+  const ip = getClientIp(req);
+  const limiter = getPurchaseRateLimiter();
+  if (limiter) {
+    const { success } = await limiter.limit(ip);
+    if (!success) {
+      return jsonError(429, USER_MSG.rate_limited);
+    }
+  }
+
   let raw: unknown;
   try {
     raw = await req.json();

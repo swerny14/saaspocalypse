@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PRICING_BULLETS } from "@/lib/content";
 
 export function Pricing() {
@@ -24,7 +25,19 @@ export function Pricing() {
                   >
                     ✓
                   </span>
-                  <span>{l}</span>
+                  <span>
+                    {l.text}
+                    {l.footnote && (
+                      <Link
+                        href={l.footnote.href}
+                        title={l.footnote.label}
+                        aria-label={l.footnote.label}
+                        className="text-[0.7em] align-super ml-0.5 opacity-60 hover:opacity-100 no-underline"
+                      >
+                        *
+                      </Link>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>

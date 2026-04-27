@@ -241,6 +241,8 @@ function isOnlyStringOverages(err: z.ZodError): boolean {
 export async function callClaudeForVerdict(input: {
   domain: string;
   html: string;
+  /** Aborts the LLM call if the upstream request is cancelled (e.g. client closed the SSE). */
+  signal?: AbortSignal;
 }): Promise<LLMOutput> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -293,7 +295,7 @@ Produce the full verdict now.`;
   ];
 
   // Attempt 1: initial call.
-  const first = await callOnce(client, messages, tools);
+  const first = await callOnce(client, messages, tools, input.signal);
   if (first.kind === "fatal") {
     return { kind: "error", reason: first.reason, message: first.message };
   }
@@ -342,7 +344,7 @@ Produce the full verdict now.`;
     ],
   });
 
-  const retry = await callOnce(client, messages, tools);
+  const retry = await callOnce(client, messages, tools, input.signal);
   if (retry.kind === "fatal") {
     return { kind: "error", reason: retry.reason, message: retry.message };
   }
@@ -377,23 +379,27 @@ async function callOnce(
   client: Anthropic,
   messages: Anthropic.MessageParam[],
   tools: Anthropic.Tool[],
+  signal?: AbortSignal,
 ): Promise<RawToolCall> {
   let response;
   try {
-    response = await client.messages.create({
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      system: [
-        {
-          type: "text",
-          text: SYSTEM_PROMPT,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      tool_choice: { type: "any" },
-      tools,
-      messages,
-    });
+    response = await client.messages.create(
+      {
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        system: [
+          {
+            type: "text",
+            text: SYSTEM_PROMPT,
+            cache_control: { type: "ephemeral" },
+          },
+        ],
+        tool_choice: { type: "any" },
+        tools,
+        messages,
+      },
+      { signal },
+    );
   } catch (e) {
     return {
       kind: "fatal",

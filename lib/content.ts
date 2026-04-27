@@ -116,11 +116,23 @@ export const MARQUEE_ITEMS = [
   "venture capital is cope",
 ];
 
-export const PRICING_BULLETS = [
-  "unlimited URLs (please don't actually)",
-  "itemized stack receipts",
-  "challenges ranked easy to nightmare, sorted accordingly",
-  "a sassy verdict (non-negotiable)",
-  "zero dark patterns, zero seat-based anything, zero recurring guilt",
-  'optional email nag 6 months later: "did u build it tho"',
+export type PricingBullet = {
+  text: string;
+  /** Optional footnote rendered as a small superscript link. */
+  footnote?: { href: string; label: string };
+};
+
+export const PRICING_BULLETS: PricingBullet[] = [
+  {
+    text: "unlimited URLs (please don't actually)",
+    footnote: {
+      href: "/terms#the-free-scan-service",
+      label: "subject to fair-use rate limits — see terms",
+    },
+  },
+  { text: "itemized stack receipts" },
+  { text: "challenges ranked easy to nightmare, sorted accordingly" },
+  { text: "a sassy verdict (non-negotiable)" },
+  { text: "zero dark patterns, zero seat-based anything, zero recurring guilt" },
+  { text: 'optional email nag 6 months later: "did u build it tho"' },
 ];

@@ -13,6 +13,9 @@ export const revalidate = 0;
 export const metadata: Metadata = {
   title: "your build guide · saaspocalypse",
   robots: { index: false, follow: false },
+  // The access token rides in the URL. Block referrer leakage so the token
+  // doesn't reach external links the guide may render.
+  referrer: "no-referrer",
 };
 
 type Params = Promise<{ slug: string }>;

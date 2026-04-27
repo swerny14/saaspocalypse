@@ -76,6 +76,10 @@ export async function createGuideCheckoutSession(args: CreateCheckoutArgs) {
     line_items: lineItems,
     success_url: successUrl,
     cancel_url: cancelUrl,
+    // Force a Stripe-issued receipt regardless of the dashboard's
+    // "Successful payments" toggle — that setting is off by default in test
+    // mode and easy to forget in live mode.
+    payment_intent_data: { receipt_email: args.email },
     metadata: {
       report_slug: args.reportSlug,
       access_token: args.accessToken,

@@ -133,6 +133,7 @@ type RawCall =
 
 export async function generateBuildGuide(
   report: StoredReport,
+  signal?: AbortSignal,
 ): Promise<LLMGuideOutput> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -182,7 +183,7 @@ Generate the full guide now. The buyer is a solo indie hacker. Assume the stack 
     { role: "user", content: userMessage },
   ];
 
-  const first = await callOnce(client, messages, tools);
+  const first = await callOnce(client, messages, tools, signal);
   if (first.kind === "fatal") return { kind: "error", message: first.message };
 
   // If the first call was TRUNCATED (stop_reason=max_tokens), its tool_use
@@ -196,7 +197,7 @@ Generate the full guide now. The buyer is a solo indie hacker. Assume the stack 
     return retryWithBrevity(client, userMessage, tools, {
       input_tokens: first.inputTokens,
       output_tokens: first.outputTokens,
-    });
+    }, signal);
   }
 
   const firstParsed = BuildGuideSchema.safeParse(first.input);
@@ -259,7 +260,7 @@ Call submit_build_guide AGAIN with the COMPLETE payload — ALL required top-lev
     ],
   });
 
-  const retry = await callOnce(client, messages, tools);
+  const retry = await callOnce(client, messages, tools, signal);
   if (retry.kind === "fatal") return { kind: "error", message: retry.message };
 
   // If the validation-feedback retry ALSO truncates, fall through to the
@@ -271,7 +272,7 @@ Call submit_build_guide AGAIN with the COMPLETE payload — ALL required top-lev
     return retryWithBrevity(client, userMessage, tools, {
       input_tokens: first.inputTokens + retry.inputTokens,
       output_tokens: first.outputTokens + retry.outputTokens,
-    });
+    }, signal);
   }
 
   const retryParsed = BuildGuideSchema.safeParse(retry.input);
@@ -310,6 +311,7 @@ async function retryWithBrevity(
   originalUserMessage: string,
   tools: Anthropic.Tool[],
   prevUsage: { input_tokens: number; output_tokens: number },
+  signal?: AbortSignal,
 ): Promise<LLMGuideOutput> {
   const brevityMessages: Anthropic.MessageParam[] = [
     {
@@ -318,7 +320,7 @@ async function retryWithBrevity(
     },
   ];
 
-  const call = await callOnce(client, brevityMessages, tools);
+  const call = await callOnce(client, brevityMessages, tools, signal);
   if (call.kind === "fatal") return { kind: "error", message: call.message };
 
   if (call.truncated) {
@@ -366,13 +368,16 @@ async function callOnce(
   client: Anthropic,
   messages: Anthropic.MessageParam[],
   tools: Anthropic.Tool[],
+  upstream?: AbortSignal,
 ): Promise<RawCall> {
   const started = Date.now();
   console.log(
     `[build_guide] → POST to Anthropic · model=${MODEL} max_tokens=${MAX_TOKENS}`,
   );
 
-  // Belt-and-suspenders timeout: the SDK's `timeout` option + our own AbortSignal.
+  // Belt-and-suspenders timeout: the SDK's `timeout` option + our own
+  // AbortSignal. We combine three sources of cancellation: local timeout,
+  // upstream client disconnect (req.signal), and the SDK's own timeout.
   const ac = new AbortController();
   const timer = setTimeout(() => {
     console.warn(
@@ -380,6 +385,18 @@ async function callOnce(
     );
     ac.abort();
   }, PER_CALL_TIMEOUT_MS);
+  let onUpstreamAbort: (() => void) | null = null;
+  if (upstream) {
+    if (upstream.aborted) {
+      ac.abort();
+    } else {
+      onUpstreamAbort = () => {
+        console.warn(`[build_guide] upstream aborted — cancelling Anthropic call`);
+        ac.abort();
+      };
+      upstream.addEventListener("abort", onUpstreamAbort, { once: true });
+    }
+  }
   // Heartbeat so we can see the call is still alive.
   const pulse = setInterval(() => {
     console.log(
@@ -433,6 +450,9 @@ async function callOnce(
   } finally {
     clearTimeout(timer);
     clearInterval(pulse);
+    if (upstream && onUpstreamAbort) {
+      upstream.removeEventListener("abort", onUpstreamAbort);
+    }
   }
 }
 

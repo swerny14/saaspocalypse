@@ -25,7 +25,7 @@ export function Hero() {
           </p>
         </div>
 
-        <div id="scanner" className="mt-6 sm:mt-9">
+        <div id="scanner" className="mt-6 sm:mt-9 scroll-mt-24">
           <Scanner />
         </div>
 

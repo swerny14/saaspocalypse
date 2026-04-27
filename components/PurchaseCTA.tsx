@@ -22,12 +22,12 @@ export function PurchaseCTA({ slug, score, priceCents }: Props) {
         className="font-display text-lg font-bold tracking-[-0.01em] bg-accent text-ink border-[2.5px] border-accent shadow-[5px_5px_0_0_var(--color-bg)] px-7 py-4 cursor-not-allowed whitespace-nowrap opacity-60 max-[720px]:justify-self-start"
         title="Not sold for DON'T-tier products"
       >
-        → go outside
+        → sorry, we tried
       </button>
     );
   }
 
-  const label = score >= 70 ? "→ get the build guide" : "→ email me anyway";
+  const label = "→ get the build guide";
 
   return (
     <>

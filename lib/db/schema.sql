@@ -155,3 +155,30 @@ create or replace function increment_report_view_count(p_slug text)
 returns void language sql as $$
   update reports set view_count = view_count + 1 where slug = p_slug;
 $$;
+
+-- 2026-04-27: error_log retention. The table grows on every scan/guide/webhook
+-- failure and has no natural pruning. Keep 90 days of history — anything older
+-- is no longer useful for ops. Uses pg_cron, which Supabase ships preinstalled
+-- but not enabled by default; the create extension is a no-op if already on.
+--
+-- Apply this block once via the Supabase SQL editor. Re-running is safe — the
+-- schedule replaces any prior job with the same name.
+create extension if not exists pg_cron;
+
+create or replace function prune_error_log()
+returns void language sql as $$
+  delete from error_log where created_at < now() - interval '90 days';
+$$;
+
+-- Replace any prior schedule, then enroll the daily prune at 03:17 UTC
+-- (off-peak, off-the-hour to avoid contention with other cron jobs).
+do $$
+declare
+  job_id bigint;
+begin
+  for job_id in select jobid from cron.job where jobname = 'prune-error-log' loop
+    perform cron.unschedule(job_id);
+  end loop;
+  perform cron.schedule('prune-error-log', '17 3 * * *', $job$select prune_error_log();$job$);
+end
+$$;

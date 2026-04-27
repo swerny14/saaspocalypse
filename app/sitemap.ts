@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
-import { getAllReports } from "@/lib/db/reports";
+import { getAllReportsForSitemap } from "@/lib/db/reports";
 import { SITE_URL } from "@/lib/seo/meta";
 
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const reports = await getAllReports();
+  const reports = await getAllReportsForSitemap();
 
   const staticEntries: MetadataRoute.Sitemap = [
     {

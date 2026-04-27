@@ -90,6 +90,7 @@ async function emitGuideError(
 export async function runGuideGeneration(
   report: StoredReport,
   emit: GuideEmitter,
+  signal?: AbortSignal,
 ): Promise<void> {
   const t0 = Date.now();
   console.log(`[guide_pipeline] start · report=${report.slug} id=${report.id}`);
@@ -134,7 +135,7 @@ export async function runGuideGeneration(
 
     await emit({ type: "step", step: "draft", label: GUIDE_STEP_LABELS.draft });
     console.log(`[guide_pipeline] calling Claude...`);
-    const llmOut = await generateBuildGuide(report);
+    const llmOut = await generateBuildGuide(report, signal);
     if (llmOut.kind === "error") {
       await emitGuideError(
         emit,
