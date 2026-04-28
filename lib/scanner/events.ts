@@ -1,15 +1,22 @@
 import type { StoredReport } from "@/lib/db/reports";
 
-export type ScanStepId = "normalize" | "fetch" | "analyze" | "verdict";
+export type ScanStepId = "normalize" | "fetch" | "fingerprint" | "analyze" | "verdict";
 
 export const STEP_LABELS: Record<ScanStepId, string> = {
   normalize: "Pinging URL...",
   fetch: "Sniffing <script> tags...",
+  fingerprint: "Reading the receipts...",
   analyze: "Consulting the indie hacker oracle...",
   verdict: "Printing verdict...",
 };
 
-export const STEP_ORDER: ScanStepId[] = ["normalize", "fetch", "analyze", "verdict"];
+export const STEP_ORDER: ScanStepId[] = [
+  "normalize",
+  "fetch",
+  "fingerprint",
+  "analyze",
+  "verdict",
+];
 
 export type ScanErrorReason =
   | "invalid_url"

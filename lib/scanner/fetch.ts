@@ -13,6 +13,7 @@ export class FetchError extends Error {
 
 const MAX_RESPONSE_BYTES = 200 * 1024; // 200KB raw HTML cap
 const MAX_TEXT_CHARS = 20_000; // ~5K tokens once handed to Claude
+const MAX_RAW_HEAD_CHARS = 50_000; // un-stripped slice retained for fingerprinting
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 3;
 const UA =
@@ -23,17 +24,32 @@ const UA =
 const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
+export type FetchResult = {
+  /** Cleaned, truncated text — what Claude sees. */
+  cleaned: string;
+  /** First ~50KB of un-stripped HTML — for fingerprint regex (script src, meta tags, inline configs). */
+  rawHead: string;
+  /** Response headers from the final hop, lowercased keys. set-cookie collapsed (use setCookies for names). */
+  headers: Record<string, string>;
+  /** Raw Set-Cookie header values from the final hop (one entry per cookie). */
+  setCookies: string[];
+  /** URL of the final hop after redirects. */
+  finalUrl: string;
+};
+
 /**
- * Fetch the homepage of `url` and return its cleaned, truncated text.
- * Strips scripts/styles/svg/comments, preserves rough block structure with
- * newlines, decodes common HTML entities, and caps output at 20KB.
+ * Fetch the homepage of `url` and return cleaned text plus raw signals
+ * (headers, set-cookies, un-stripped HTML head, final URL) for downstream
+ * fingerprinting. Strips scripts/styles/svg/comments from `cleaned`, preserves
+ * rough block structure with newlines, decodes common HTML entities, and caps
+ * the cleaned output at 20KB.
  *
  * Follows redirects manually (up to 3 hops) and resolves each hop's
  * hostname to verify it doesn't point at a private/internal IP. Without
  * this check, a SaaS that 301s to http://169.254.169.254/ (cloud metadata)
  * or http://10.0.0.x/ would let us inadvertently exfiltrate internal data.
  */
-export async function fetchAndCleanHomepage(url: string): Promise<string> {
+export async function fetchAndCleanHomepage(url: string): Promise<FetchResult> {
   let current = url;
   let useBrowserUa = false;
 
@@ -101,7 +117,25 @@ export async function fetchAndCleanHomepage(url: string): Promise<string> {
     const clipped =
       buf.byteLength > MAX_RESPONSE_BYTES ? buf.slice(0, MAX_RESPONSE_BYTES) : buf;
     const html = new TextDecoder("utf-8", { fatal: false }).decode(clipped);
-    return cleanHtml(html);
+
+    // Project headers to a plain lowercased object. Set-Cookie collapses to a
+    // single comma-joined value here — read it via getSetCookie() instead.
+    const headers: Record<string, string> = {};
+    res.headers.forEach((value, key) => {
+      headers[key.toLowerCase()] = value;
+    });
+    const setCookies =
+      typeof res.headers.getSetCookie === "function"
+        ? res.headers.getSetCookie()
+        : [];
+
+    return {
+      cleaned: cleanHtml(html),
+      rawHead: html.length > MAX_RAW_HEAD_CHARS ? html.slice(0, MAX_RAW_HEAD_CHARS) : html,
+      headers,
+      setCookies,
+      finalUrl: current,
+    };
   }
 
   throw new FetchError("too many redirects", "status");

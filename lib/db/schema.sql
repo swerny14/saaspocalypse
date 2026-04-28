@@ -26,6 +26,10 @@ create table if not exists reports (
   alternatives    jsonb not null,
   challenges      jsonb not null,
   stack           jsonb not null,
+  -- Server-authored fingerprint output (headers/cookies/HTML/CNAME → detected
+  -- hosting/framework/cms/analytics/payments/etc.). Nullable: pre-fingerprint
+  -- rows and any scan where detection soft-failed have NULL.
+  detected_stack  jsonb,
 
   view_count      integer not null default 0,
 
@@ -263,3 +267,8 @@ create index if not exists social_posts_status_created_at_idx
   on social_posts (status, created_at desc);
 
 alter table social_posts enable row level security;
+
+-- 2026-04-28: detected_stack on reports — server-authored fingerprint output
+-- (hosting, framework, cms, analytics/payments/auth lists, raw_signals).
+alter table reports
+  add column if not exists detected_stack jsonb;

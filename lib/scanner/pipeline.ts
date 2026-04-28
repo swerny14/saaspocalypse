@@ -11,7 +11,8 @@ import {
   getScanRateLimiter,
 } from "@/lib/ratelimit";
 import { logError } from "@/lib/error_log";
-import { fetchAndCleanHomepage, FetchError } from "./fetch";
+import { fetchAndCleanHomepage, FetchError, type FetchResult } from "./fetch";
+import { detectStack, formatDetectedStackForLLM, type DetectedStack } from "./fingerprint";
 import { callClaudeForVerdict } from "./llm";
 import type { ScanErrorReason, ScanEvent } from "./events";
 import { STEP_LABELS } from "./events";
@@ -118,9 +119,9 @@ export async function runScan(
   try {
     // 5. Fetch + clean homepage HTML.
     await emit({ type: "step", step: "fetch", label: STEP_LABELS.fetch });
-    let html: string;
+    let fetched: FetchResult;
     try {
-      html = await fetchAndCleanHomepage(`https://${domain}`);
+      fetched = await fetchAndCleanHomepage(`https://${domain}`);
     } catch (e) {
       const reason: ScanErrorReason =
         e instanceof FetchError ? "fetch_failed" : "internal";
@@ -133,19 +134,42 @@ export async function runScan(
       );
       return;
     }
-    if (!html || html.length < 100) {
+    if (!fetched.cleaned || fetched.cleaned.length < 100) {
       await emitScanError(
         emit,
         "empty_html",
-        `Homepage produced only ${html?.length ?? 0} chars of readable text`,
+        `Homepage produced only ${fetched.cleaned?.length ?? 0} chars of readable text`,
         { url: input.url, domain, ip: input.ip },
       );
       return;
     }
 
-    // 6. Call Claude (internally validates + retries).
+    // 6. Fingerprint stack from headers/cookies/HTML/CNAME. Soft-fail: detect
+    // failures must never block the scan, so we swallow any error here and
+    // proceed with a null detected_stack rather than aborting.
+    await emit({ type: "step", step: "fingerprint", label: STEP_LABELS.fingerprint });
+    let detectedStack: DetectedStack | null = null;
+    try {
+      detectedStack = await detectStack(fetched, domain);
+    } catch (e) {
+      await logError({
+        scope: "scan",
+        reason: "internal",
+        refSlug: domain,
+        message: `fingerprint detection failed: ${e instanceof Error ? e.message : String(e)}`,
+        detail: { url: input.url, ip: input.ip },
+      });
+    }
+    const detectedSignals = detectedStack ? formatDetectedStackForLLM(detectedStack) : "";
+
+    // 7. Call Claude (internally validates + retries).
     await emit({ type: "step", step: "analyze", label: STEP_LABELS.analyze });
-    const llmOut = await callClaudeForVerdict({ domain, html, signal: input.signal });
+    const llmOut = await callClaudeForVerdict({
+      domain,
+      html: fetched.cleaned,
+      detectedSignals,
+      signal: input.signal,
+    });
     if (llmOut.kind === "error") {
       await emitScanError(emit, llmOut.reason, llmOut.message, {
         url: input.url,
@@ -155,11 +179,11 @@ export async function runScan(
       return;
     }
 
-    // 7. Insert + announce.
+    // 8. Insert + announce.
     await emit({ type: "step", step: "verdict", label: STEP_LABELS.verdict });
     let row: StoredReport;
     try {
-      row = await insertReport(domain, llmOut.verdict);
+      row = await insertReport(domain, llmOut.verdict, detectedStack);
     } catch (e) {
       // Race: another worker beat us to the insert.
       const existing = await getReportByDomain(domain);

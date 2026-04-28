@@ -110,6 +110,7 @@ If the product runs LLMs at trivial scale (one prompt per user signup, etc.), us
 
 - Do NOT invent features not evidenced by the homepage text.
 - If pricing isn't shown, pick sane defaults and LOWER confidence accordingly.
+- A "Detected signals" block may appear above the homepage text. Treat those as ground truth — they were measured from response headers, cookies, and script tags, not inferred. Use them to anchor your stack and est_cost choices, and don't contradict them (e.g. don't write "Vercel" in stack if signals show Netlify).
 - If the homepage text is empty, blocked/paywalled, or the site clearly is not a SaaS product (personal blog, gov site, search engine, news site, e-commerce storefront), call submit_error — do NOT fill the schema with guesses.
 
 ## Output contract
@@ -322,6 +323,8 @@ function withComputedEstTotal(verdict: VerdictReport): VerdictReport {
 export async function callClaudeForVerdict(input: {
   domain: string;
   html: string;
+  /** Pre-formatted bullet block from detectStack() — empty string if nothing detected. */
+  detectedSignals?: string;
   /** Aborts the LLM call if the upstream request is cancelled (e.g. client closed the SSE). */
   signal?: AbortSignal;
 }): Promise<LLMOutput> {
@@ -339,10 +342,15 @@ export async function callClaudeForVerdict(input: {
     z.toJSONSchema(VerdictReportSchema),
   );
 
+  const detectedBlock =
+    input.detectedSignals && input.detectedSignals.trim().length > 0
+      ? `Detected signals (verified — trust over inference):\n${input.detectedSignals}\n\n`
+      : "";
+
   const initialUserMessage = `URL: https://${input.domain}
 Canonical domain: ${input.domain}
 
-Homepage text (cleaned, truncated):
+${detectedBlock}Homepage text (cleaned, truncated):
 ---
 ${input.html}
 ---

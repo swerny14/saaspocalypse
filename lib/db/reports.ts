@@ -1,4 +1,5 @@
 import { VerdictReportSchema, type VerdictReport } from "@/lib/scanner/schema";
+import type { DetectedStack } from "@/lib/scanner/fingerprint";
 import { getSupabaseAnon, getSupabaseAdmin } from "./supabase";
 import { wrapDbError } from "./errors";
 import { toSlug } from "@/lib/domain";
@@ -10,6 +11,9 @@ export type StoredReport = VerdictReport & {
   domain: string;
   slug: string;
   view_count: number;
+  /** Fingerprint output. Null on rows scanned before fingerprinting shipped, or
+   * when detection soft-failed during the scan. */
+  detected_stack: DetectedStack | null;
   scanned_at: string;
   created_at: string;
   updated_at: string;
@@ -34,6 +38,7 @@ const DB_ONLY_FIELDS = new Set([
   "domain",
   "slug",
   "view_count",
+  "detected_stack",
   "scanned_at",
   "created_at",
   "updated_at",
@@ -174,11 +179,13 @@ export async function incrementReportViewCount(slug: string): Promise<void> {
 export async function insertReport(
   domain: string,
   verdict: VerdictReport,
+  detectedStack: DetectedStack | null,
 ): Promise<StoredReport> {
   const admin = getSupabaseAdmin();
   const row = {
     domain,
     slug: toSlug(domain),
+    detected_stack: detectedStack,
     ...verdict,
   };
   const { data, error } = await admin
@@ -194,11 +201,13 @@ export async function insertReport(
 export async function upsertReport(
   domain: string,
   verdict: VerdictReport,
+  detectedStack: DetectedStack | null = null,
 ): Promise<StoredReport> {
   const admin = getSupabaseAdmin();
   const row = {
     domain,
     slug: toSlug(domain),
+    detected_stack: detectedStack,
     ...verdict,
   };
   const { data, error } = await admin

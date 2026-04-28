@@ -29,12 +29,21 @@ export const metadata: Metadata = {
       "Paste any SaaS URL. We'll tell you if it's a weekend or a life sentence.",
     type: "website",
     siteName: "saaspocalypse",
+    images: [
+      {
+        url: "/images/saaspocalypse-og.png",
+        width: 1200,
+        height: 630,
+        alt: "saaspocalypse — can I build this myself?",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "saaspocalypse — can I build this myself?",
     description:
       "Paste any SaaS URL. We'll tell you if it's a weekend or a life sentence.",
+    images: ["/images/saaspocalypse-og.png"],
   },
 };
 

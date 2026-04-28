@@ -1,4 +1,5 @@
 import type { StoredReport } from "@/lib/db/reports";
+import type { DetectedStack } from "@/lib/scanner/fingerprint";
 import type { Difficulty, Tier } from "@/lib/scanner/schema";
 import { DIFFICULTIES } from "@/lib/scanner/schema";
 import { guidePriceCents } from "@/lib/stripe";
@@ -42,6 +43,22 @@ function formatScannedAt(iso: string): string {
   const date = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
   const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   return `${date} · ${time}`;
+}
+
+/** Flatten DetectedStack into displayable pills, preserving category order. */
+function detectedPills(d: DetectedStack | null): { label: string; value: string }[] {
+  if (!d) return [];
+  const pills: { label: string; value: string }[] = [];
+  if (d.hosting) pills.push({ label: "hosting", value: d.hosting });
+  if (d.framework) pills.push({ label: "framework", value: d.framework });
+  if (d.cms) pills.push({ label: "cms", value: d.cms });
+  for (const v of d.cdn ?? []) pills.push({ label: "cdn", value: v });
+  for (const v of d.payments ?? []) pills.push({ label: "payments", value: v });
+  for (const v of d.auth ?? []) pills.push({ label: "auth", value: v });
+  for (const v of d.analytics ?? []) pills.push({ label: "analytics", value: v });
+  for (const v of d.support ?? []) pills.push({ label: "support", value: v });
+  for (const v of d.email ?? []) pills.push({ label: "email", value: v });
+  return pills;
 }
 
 export function VerdictReport({ report: v }: Props) {
@@ -299,10 +316,37 @@ export function VerdictReport({ report: v }: Props) {
           ))}
         </div>
 
+        {/* detected signals — server-fingerprinted, separate from inferred stack */}
+        {(() => {
+          const pills = detectedPills(v.detected_stack);
+          if (pills.length === 0) return null;
+          return (
+            <div className="mt-[22px] pt-[18px] border-t-[1.5px] border-dashed border-ink">
+              <div className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase opacity-60 mb-2.5 flex items-center gap-2">
+                <span>detected signals</span>
+                <span className="opacity-50">· we measured these</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {pills.map((p, i) => (
+                  <span
+                    key={i}
+                    className="font-mono text-xs border-2 border-ink max-w-full break-words flex items-center bg-paper"
+                  >
+                    <span className="bg-accent text-ink px-2 py-[5px] font-bold tracking-[0.1em] uppercase border-r-[1.5px] border-ink">
+                      {p.label}
+                    </span>
+                    <span className="px-2.5 py-[5px]">{p.value}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* stack pills */}
         <div className="mt-[22px] pt-[18px] border-t-[1.5px] border-dashed border-ink">
           <div className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase opacity-60 mb-2.5">
-            recommended stack
+            recommended stack <span className="opacity-50">· inferred</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {v.stack.map((s, i) => (
