@@ -14,7 +14,9 @@ const MoneyOrDescriptor = z.union([z.number(), z.string()]);
 
 export const CurrentCostSchema = z.object({
   label: z.string().min(1),
-  price: MoneyOrDescriptor,
+  price: MoneyOrDescriptor.describe(
+    "Number for single tier, string for tiered/usage pricing like '2.9% + $0.30'.",
+  ),
   unit: z.string().min(1),
   annual: MoneyOrDescriptor,
   note: z.string().optional(),
@@ -22,7 +24,9 @@ export const CurrentCostSchema = z.object({
 
 export const EstCostLineSchema = z.object({
   line: z.string().min(1),
-  cost: MoneyOrDescriptor,
+  cost: MoneyOrDescriptor.describe(
+    "Monthly USD run-rate at indie-hacker scale. Free tiers are 0. Use '???' for variable-cost services (LLM/data APIs).",
+  ),
 });
 
 export const AlternativeSchema = z.object({
@@ -31,7 +35,9 @@ export const AlternativeSchema = z.object({
 });
 
 export const ChallengeSchema = z.object({
-  diff: DifficultySchema,
+  diff: DifficultySchema.describe(
+    "Sorted ascending across the challenges array (easy → medium → hard → nightmare).",
+  ),
   name: z.string().min(1),
   note: z.string().min(1),
 });
@@ -56,7 +62,9 @@ export const VerdictReportSchema = z
     time_breakdown: z.string().min(1).max(200),
     break_even: z.string().min(1).max(200),
 
-    est_total: MoneyOrDescriptor,
+    est_total: MoneyOrDescriptor.describe(
+      "Monthly USD run-rate, equal to the sum of numeric est_cost lines. Use a descriptive string only if non-numeric lines dominate (e.g. DON'T-tier capex).",
+    ),
     current_cost: CurrentCostSchema,
     est_cost: z.array(EstCostLineSchema).min(1).max(10),
     alternatives: z.array(AlternativeSchema).length(3),

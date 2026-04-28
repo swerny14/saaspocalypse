@@ -59,15 +59,47 @@ const SYSTEM_PROMPT = `You are saaspocalypse — a snarky but honest analyst who
 - take_sub: 1–2 sentences of reasoning.
 - time_estimate: units "hours | days | weeks | months | ∞". Examples: "14 hours", "6 weeks".
 - time_breakdown: human phrasing with " · " separator.
-- break_even: human phrasing ("immediately", "approximately never", "6 team members — $48 vs $48").
+- break_even: at what point does running your own cost less than their subscription? Compare current_cost.price (× users/seats if seat-priced) against est_total. Cases:
+  · Their price > est_total at indie scale → "immediately" or a seat threshold ("6 team members — $48 vs $48").
+  · Their product is FREE with no visible upsell → "never — they're giving it away".
+  · Their product is free but the homepage clearly advertises an upsell (one-time purchase, premium tier, etc.) → use directional language only ("depends on conversion. enough upsell sales to cover est_total, then pure ego."). Do NOT write specific sale counts — the math is unreliable.
+  · DON'T tier with capex-dominated est_total → "approximately never".
 - current_cost.price: number if single, string if tiered ("2.9% + $0.30").
 - current_cost.annual: number or descriptive string.
-- est_cost[].cost: USD/mo number, or "???" or a descriptive string for unknowable costs.
-- est_total: number or descriptive string ("172000", "your 20s").
+- est_cost[].cost: monthly USD run-rate at indie-hacker scale. Number for known fixed prices (use the standard reference table below), "??? — scales with usage" for variable-cost services, descriptive string ("priceless", "your tears") only for joke lines on DON'T-tier reports. Free tiers are 0, not omitted.
+- est_total: monthly USD run-rate. MUST equal the sum of numeric est_cost lines (ignore "???" and string lines). Compute this AFTER you fill est_cost — do not pick a round number first and back-fill. If non-numeric lines dominate (DON'T tier with audit/legal capex), use a descriptive string ("approximately your 20s") instead of a number.
 - alternatives: EXACTLY 3 real options. Mix self-hosted, free-tier competitors, lower-tech substitutes. Do NOT recommend the scanned site itself unless it is genuinely the right call (e.g. Stripe for payments).
 - challenges: 4–6 items. MUST BE SORTED ASCENDING by difficulty (easy < medium < hard < nightmare).
 - stack: 3–5 concrete items ("Next.js 15 + TipTap", not "a frontend framework"). Prefer free tiers.
 - confidence: 0–100 integer. Your own certainty about this analysis.
+
+## Standard cost reference
+
+Use these monthly USD anchors. ALL costs in est_cost are monthly run-rate at indie-hacker scale (1 dev, <100 users on day one). Annual fees must be amortized to monthly — domain registrations are $1/mo, NOT $12 or $17.
+
+Default tier rule: assume FREE TIERS unless the product clearly requires more day one. A blog form-builder defaults to Vercel hobby + Supabase free. Linear-scale UX or live web research defaults to paid tiers because of bandwidth/DB/GPU needs. Pick one tier across the whole stack — don't mix "Vercel Pro + Supabase free" without a reason.
+
+FIXED-COST anchors (use these numbers):
+- Domain: 1 ($12/yr amortized — never enter the annual fee here)
+- Vercel hobby / Cloudflare Pages / Netlify free / Render free: 0
+- Vercel Pro / Netlify Pro: 20
+- Supabase free / Neon free / Turso free: 0
+- Supabase Pro / Neon Launch: 25
+- Postgres on Railway / Render small instance: 7
+- Resend / Loops free tier (≤3K emails/mo): 0
+- Resend Pro / Postmark starter: 20
+- Sentry free / Axiom free: 0
+- Cloudflare R2 / S3 (light usage): 1
+- OAuth providers (Google, GitHub, Apple): 0
+- Stripe: 0 in est_cost (the 2.9% + $0.30 belongs in current_cost, not here)
+
+VARIABLE-COST lines (use "???" or a descriptive string — DO NOT GUESS A NUMBER):
+- LLM APIs (OpenAI, Anthropic) where the product runs many requests per user: "??? — scales with usage"
+- Data provider APIs (Apollo, Clearbit, Hunter, Bright Data): "??? — depends on volume"
+- Scraping proxies / residential IPs: "??? — depends on volume"
+- Twilio / SendGrid where send volume is unknown: "??? — per message"
+
+If the product runs LLMs at trivial scale (one prompt per user signup, etc.), use 10. Otherwise prefer "???" over a guess. A consistent unknown is more honest than a randomly-different number.
 
 ## Tier ↔ score invariant (STRICT)
 
@@ -84,6 +116,16 @@ const SYSTEM_PROMPT = `You are saaspocalypse — a snarky but honest analyst who
 
 - You MUST call exactly one tool: submit_verdict (happy path) or submit_error (escape).
 - No free-form text output.
+
+## Break-even worked examples
+
+- Their $12/mo, your $1/mo build → "immediately — pays for itself on day one"
+- Their FREE, no upsell, your $5/mo build → "never — they're giving it away"
+- Their FREE with paid upsell visible, your $X/mo build → "depends on conversion. enough upsell sales to cover est_total, then pure ego." (directional phrasing only — never write specific sale counts)
+- Their $8/seat/mo, your $47/mo build → "6 seats — $48 vs $48"
+- Their 2.9% + $0.30, your $172k regulatory capex → "approximately never"
+
+If their price is FREE and your est_total > 0, break_even is NEVER "immediately." Building costs > 0; using costs 0; the gap never closes.
 
 ## Example 1 — WEEKEND (high score)
 
@@ -178,7 +220,7 @@ submit_verdict({
   "time_estimate": "∞",
   "time_breakdown": "Patrick started in 2010. Still working on it.",
   "break_even": "approximately never",
-  "est_total": 172000,
+  "est_total": "more than your house",
   "current_cost": { "label": "Standard rate", "price": "2.9% + $0.30", "unit": "per txn", "annual": "scales w/ GMV", "note": "no seat fees, no monthly minimum" },
   "est_cost": [
     { "line": "PCI DSS Level 1 audit", "cost": 50000 },
@@ -201,7 +243,19 @@ submit_verdict({
     { "diff": "nightmare", "name": "Chargebacks", "note": "You are the bank now. Have fun." }
   ],
   "stack": ["regulatory attorneys ($800/hr)", "a bank (several, actually)", "SOC 2 + PCI DSS", "your remaining tears"]
-})`;
+})
+
+## Before you submit
+
+Verify in your head:
+- Tier matches score bucket (WEEKEND ≥70, MONTH 30–69, DON'T <30).
+- Challenges sorted ascending: easy → medium → hard → nightmare.
+- est_cost uses the standard cost reference. Domain is 1 (not 12 or 17). Free tiers are 0 (and listed, not omitted).
+- est_cost is internally consistent — don't mix Vercel Pro with Supabase free unless the homepage justifies it.
+- est_total equals the sum of numeric est_cost lines. Add them up. If the answer is $3, est_total is 3, not 47.
+- Variable-cost services (LLM APIs, data providers, proxies) use "???" not a guessed number, unless the product runs them at clearly trivial scale.
+- break_even direction is correct: if the product is FREE (current_cost.price = 0), break_even is "never", NOT "immediately". You only break even when their fee exceeds your est_total.
+- Confidence drops below 70 if pricing wasn't shown on the homepage.`;
 
 /** Strip JSON Schema keys Anthropic's tool-use schema doesn't accept. */
 function sanitizeInputSchema(schema: unknown): Record<string, unknown> {
@@ -236,6 +290,33 @@ function isOnlyStringOverages(err: z.ZodError): boolean {
   return err.issues.every(
     (i) => i.code === "too_big" && "origin" in i && i.origin === "string",
   );
+}
+
+/**
+ * Recompute est_total deterministically from est_cost so the model can't
+ * disagree with arithmetic. Numeric lines sum; "???" / descriptive-string lines
+ * surface as a "+ usage" tail (or "usage-based" when no fixed costs exist).
+ */
+function computeEstTotal(
+  estCost: VerdictReport["est_cost"],
+): number | string {
+  let numericSum = 0;
+  let hasNonNumeric = false;
+  for (const line of estCost) {
+    if (typeof line.cost === "number") numericSum += line.cost;
+    else hasNonNumeric = true;
+  }
+  if (!hasNonNumeric) return numericSum;
+  if (numericSum === 0) return "usage-based";
+  const formatted =
+    numericSum < 100
+      ? `$${numericSum.toFixed(2)}`
+      : `$${numericSum.toLocaleString()}`;
+  return `${formatted} + usage`;
+}
+
+function withComputedEstTotal(verdict: VerdictReport): VerdictReport {
+  return { ...verdict, est_total: computeEstTotal(verdict.est_cost) };
 }
 
 export async function callClaudeForVerdict(input: {
@@ -309,14 +390,17 @@ Produce the full verdict now.`;
 
   const firstParsed = VerdictReportSchema.safeParse(first.input);
   if (firstParsed.success) {
-    return { kind: "verdict", verdict: firstParsed.data };
+    return { kind: "verdict", verdict: withComputedEstTotal(firstParsed.data) };
   }
 
   if (isOnlyStringOverages(firstParsed.error)) {
     console.warn(
       `[scanner] accepting verdict with string-length overages · ${formatZodIssues(firstParsed.error)}`,
     );
-    return { kind: "verdict", verdict: first.input as VerdictReport };
+    return {
+      kind: "verdict",
+      verdict: withComputedEstTotal(first.input as VerdictReport),
+    };
   }
 
   // Attempt 2: send validation feedback as a tool_result, let Claude fix + resubmit.
@@ -358,14 +442,17 @@ Produce the full verdict now.`;
 
   const retryParsed = VerdictReportSchema.safeParse(retry.input);
   if (retryParsed.success) {
-    return { kind: "verdict", verdict: retryParsed.data };
+    return { kind: "verdict", verdict: withComputedEstTotal(retryParsed.data) };
   }
 
   if (isOnlyStringOverages(retryParsed.error)) {
     console.warn(
       `[scanner] accepting retry verdict with string-length overages · ${formatZodIssues(retryParsed.error)}`,
     );
-    return { kind: "verdict", verdict: retry.input as VerdictReport };
+    return {
+      kind: "verdict",
+      verdict: withComputedEstTotal(retry.input as VerdictReport),
+    };
   }
 
   return {
@@ -387,6 +474,7 @@ async function callOnce(
       {
         model: MODEL,
         max_tokens: MAX_TOKENS,
+        temperature: 0.3,
         system: [
           {
             type: "text",

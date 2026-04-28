@@ -187,16 +187,18 @@ export function VerdictReport({ report: v }: Props) {
               {v.est_cost.map((line, i) => (
                 <div
                   key={i}
-                  className={`flex justify-between py-1 ${
+                  className={`flex justify-between gap-3 py-1 ${
                     i < v.est_cost.length - 1
                       ? "border-b border-dashed border-[#ccc]"
                       : ""
                   }`}
                 >
-                  <span className="opacity-75">
+                  <span className="opacity-75 min-w-0 break-words">
                     {String(i + 1).padStart(2, "0")} · {line.line}
                   </span>
-                  <span className="font-bold">{fmtMoney(line.cost)}</span>
+                  <span className="font-bold whitespace-nowrap">
+                    {fmtMoney(line.cost)}
+                  </span>
                 </div>
               ))}
               <div className="border-t-2 border-ink mt-2 pt-2 flex justify-between font-display text-lg font-bold">
@@ -228,7 +230,7 @@ export function VerdictReport({ report: v }: Props) {
           {v.alternatives.map((alt, i) => (
             <div
               key={i}
-              className="border-[2.5px] border-ink bg-paper px-[18px] py-4"
+              className="border-[2.5px] border-ink bg-paper px-[18px] py-4 min-w-0"
             >
               <div className="font-mono text-[10px] tracking-[0.15em] uppercase opacity-50">
                 option {String.fromCharCode(65 + i)}
@@ -236,7 +238,7 @@ export function VerdictReport({ report: v }: Props) {
               <div className="font-display text-[20px] sm:text-[22px] font-bold tracking-[-0.01em] mt-1 break-words">
                 {alt.name}
               </div>
-              <div className="text-sm leading-normal mt-2 opacity-80">
+              <div className="text-sm leading-normal mt-2 opacity-80 break-words">
                 {alt.why}
               </div>
             </div>
@@ -284,11 +286,13 @@ export function VerdictReport({ report: v }: Props) {
               >
                 {c.diff}
               </div>
-              <div>
-                <div className="font-display text-base font-semibold tracking-[-0.005em]">
+              <div className="min-w-0">
+                <div className="font-display text-base font-semibold tracking-[-0.005em] break-words">
                   {c.name}
                 </div>
-                <div className="text-[13px] opacity-70 mt-0.5">{c.note}</div>
+                <div className="text-[13px] opacity-70 mt-0.5 break-words">
+                  {c.note}
+                </div>
               </div>
             </div>
           ))}
@@ -303,7 +307,7 @@ export function VerdictReport({ report: v }: Props) {
             {v.stack.map((s, i) => (
               <span
                 key={i}
-                className={`font-mono text-xs px-2.5 py-[5px] border-2 border-ink ${
+                className={`font-mono text-xs px-2.5 py-[5px] border-2 border-ink max-w-full break-words ${
                   i % 2 === 0 ? "bg-paper" : "bg-bg"
                 }`}
               >
