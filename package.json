@@ -21,6 +21,7 @@
     "resend": "^6.12.2",
     "stripe": "^22.1.0",
     "tldts": "^7.0.28",
+    "twitter-api-v2": "^1.29.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

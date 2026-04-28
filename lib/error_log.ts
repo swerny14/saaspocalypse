@@ -7,7 +7,8 @@ export type ErrorScope =
   | "webhook"
   | "resend"
   | "view"
-  | "newsletter";
+  | "newsletter"
+  | "social";
 
 export type LogErrorArgs = {
   scope: ErrorScope;

@@ -115,6 +115,51 @@ create index if not exists purchases_email_idx on build_guide_purchases (email);
 alter table build_guide_purchases enable row level security;
 -- Same: purchases are server-side only. No anon policy.
 
+-- ─────────────────────────── social posts ────────────────────────────
+-- Daily X content engine. One row per (platform, scheduled_for, content_type)
+-- slot. The cron route claims a slot by inserting a `pending` row; the
+-- partial unique index below makes that an atomic lock.
+
+create table if not exists social_posts (
+  id                uuid primary key default gen_random_uuid(),
+  platform          text not null default 'x' check (platform in ('x')),
+  content_type      text not null check (content_type in ('report','original')),
+  template_id       text not null,
+  ref_id            uuid references reports(id) on delete set null,
+  ref_slug          text,
+  body              text not null,                                    -- HEAD tweet body
+  thread_bodies     text[],                                           -- additional tweet bodies (null = single tweet)
+  link_url          text,                                             -- URL embedded in head tweet (null if no link)
+  status            text not null default 'pending'
+                    check (status in ('pending','posted','failed','dry_run')),
+  tweet_id          text,                                             -- HEAD tweet's X-side id
+  tweet_url         text,                                             -- HEAD tweet URL (canonical share link)
+  thread_tweet_ids  text[],                                           -- X-side ids for reply tweets (parallel to thread_bodies)
+  error_reason      text,
+  error_detail      jsonb,
+  scheduled_for     date not null default current_date,
+  created_at        timestamptz not null default now(),
+  posted_at         timestamptz
+);
+
+-- Per-slot idempotency: only one posted/pending row per (platform, day, content_type).
+-- failed/dry_run rows do NOT claim the slot, so manual re-runs after a failure work.
+create unique index if not exists social_posts_one_slot_per_day
+  on social_posts (platform, scheduled_for, content_type)
+  where status in ('posted','pending');
+
+-- Cooldown lookup: "have we posted this slug recently?"
+create index if not exists social_posts_ref_slug_posted_at_idx
+  on social_posts (ref_slug, posted_at desc)
+  where status = 'posted';
+
+-- Anti-repetition feed for original posts.
+create index if not exists social_posts_status_created_at_idx
+  on social_posts (status, created_at desc);
+
+alter table social_posts enable row level security;
+-- No public read policy: admin-only writes, no anon visibility.
+
 -- ─────────────────────────── error log ────────────────────────────────
 
 create table if not exists error_log (
@@ -182,3 +227,39 @@ begin
   perform cron.schedule('prune-error-log', '17 3 * * *', $job$select prune_error_log();$job$);
 end
 $$;
+
+-- 2026-04-28: social_posts table for daily X content engine.
+create table if not exists social_posts (
+  id                uuid primary key default gen_random_uuid(),
+  platform          text not null default 'x' check (platform in ('x')),
+  content_type      text not null check (content_type in ('report','original')),
+  template_id       text not null,
+  ref_id            uuid references reports(id) on delete set null,
+  ref_slug          text,
+  body              text not null,
+  thread_bodies     text[],
+  link_url          text,
+  status            text not null default 'pending'
+                    check (status in ('pending','posted','failed','dry_run')),
+  tweet_id          text,
+  tweet_url         text,
+  thread_tweet_ids  text[],
+  error_reason      text,
+  error_detail      jsonb,
+  scheduled_for     date not null default current_date,
+  created_at        timestamptz not null default now(),
+  posted_at         timestamptz
+);
+
+create unique index if not exists social_posts_one_slot_per_day
+  on social_posts (platform, scheduled_for, content_type)
+  where status in ('posted','pending');
+
+create index if not exists social_posts_ref_slug_posted_at_idx
+  on social_posts (ref_slug, posted_at desc)
+  where status = 'posted';
+
+create index if not exists social_posts_status_created_at_idx
+  on social_posts (status, created_at desc);
+
+alter table social_posts enable row level security;
