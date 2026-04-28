@@ -8,13 +8,21 @@ type Props = {
   slug: string;
   score: number;
   priceCents: number;
+  dontTierGuidesEnabled: boolean;
 };
 
-export function PurchaseCTA({ slug, score, priceCents }: Props) {
+export function PurchaseCTA({
+  slug,
+  score,
+  priceCents,
+  dontTierGuidesEnabled,
+}: Props) {
   const [open, setOpen] = useState(false);
 
-  // Score < 30 (DON'T tier) → no purchase. Plan rule: bad voice, bad value.
-  if (score < 30) {
+  const isDontTier = score < 30;
+
+  // Flag-off DON'T tier → keep the original disabled "sorry, we tried" affordance.
+  if (isDontTier && !dontTierGuidesEnabled) {
     return (
       <button
         type="button"
@@ -27,7 +35,7 @@ export function PurchaseCTA({ slug, score, priceCents }: Props) {
     );
   }
 
-  const label = "→ get the build guide";
+  const label = isDontTier ? "→ get the MVP guide" : "→ get the build guide";
 
   return (
     <>
@@ -42,6 +50,7 @@ export function PurchaseCTA({ slug, score, priceCents }: Props) {
         <PurchaseModal
           slug={slug}
           priceCents={priceCents}
+          isDontTier={isDontTier}
           onClose={() => setOpen(false)}
         />
       )}
@@ -52,10 +61,12 @@ export function PurchaseCTA({ slug, score, priceCents }: Props) {
 function PurchaseModal({
   slug,
   priceCents,
+  isDontTier,
   onClose,
 }: {
   slug: string;
   priceCents: number;
+  isDontTier: boolean;
   onClose: () => void;
 }) {
   const [email, setEmail] = useState("");
@@ -120,13 +131,21 @@ function PurchaseModal({
           one-time purchase · {priceDisplay}
         </div>
         <h2 className="font-display text-[28px] font-bold leading-[1.1] tracking-[-0.02em] m-0 mb-3">
-          Get your build guide.
+          {isDontTier ? "Get your MVP guide." : "Get your build guide."}
         </h2>
         <p className="text-sm opacity-75 m-0 mb-5 leading-[1.5]">
           A step-by-step guide with ready-to-paste LLM prompts, stack specifics,
           and the pitfalls you&apos;ll hit. Magic link sent to your inbox —
           you keep it forever.
         </p>
+
+        {isDontTier && (
+          <div className="mb-5 px-3 py-2.5 border-2 border-dashed border-ink bg-sticky/30 font-mono text-[12px] leading-[1.5]">
+            Heads up: this is a DON&apos;T-tier verdict. The guide is for an MVP
+            starter, not a full clone. You&apos;ll ship something — just not
+            the original.
+          </div>
+        )}
 
         <form onSubmit={submit} className="grid gap-3">
           <label className="font-mono text-[11px] font-bold tracking-[0.1em] uppercase text-muted">

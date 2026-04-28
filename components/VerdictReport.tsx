@@ -2,6 +2,7 @@ import type { StoredReport } from "@/lib/db/reports";
 import type { Difficulty, Tier } from "@/lib/scanner/schema";
 import { DIFFICULTIES } from "@/lib/scanner/schema";
 import { guidePriceCents } from "@/lib/stripe";
+import { isDontTierGuidesEnabled } from "@/lib/feature_flags";
 import { PurchaseCTA } from "./PurchaseCTA";
 
 type Props = { report: StoredReport };
@@ -329,10 +330,17 @@ export function VerdictReport({ report: v }: Props) {
               ? "We'll email you the build guide. You'll be done by Sunday."
               : v.score >= 30
                 ? "We'll email you the build guide. Cancel some plans."
-                : "No build guide for this one. Some things you have to pay for."}
+                : isDontTierGuidesEnabled()
+                  ? "We'll email you the MVP guide. It won't be the original. But it'll ship."
+                  : "No build guide for this one. Some things you have to pay for."}
           </div>
         </div>
-        <PurchaseCTA slug={v.slug} score={v.score} priceCents={guidePriceCents()} />
+        <PurchaseCTA
+          slug={v.slug}
+          score={v.score}
+          priceCents={guidePriceCents()}
+          dontTierGuidesEnabled={isDontTierGuidesEnabled()}
+        />
       </div>
 
       {/* FOOTER */}

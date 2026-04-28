@@ -15,6 +15,7 @@ import {
 import { sendGuideMagicLink } from "@/lib/email";
 import { logError } from "@/lib/error_log";
 import { getPurchaseRateLimiter } from "@/lib/ratelimit";
+import { isDontTierGuidesEnabled } from "@/lib/feature_flags";
 
 export const runtime = "nodejs";
 
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
     return jsonError(404, USER_MSG.not_found);
   }
 
-  if (report.score < 30) {
+  if (report.score < 30 && !isDontTierGuidesEnabled()) {
     // Intentional user-facing rejection, not a system error — skip error_log.
     return jsonError(400, USER_MSG.dont_tier);
   }

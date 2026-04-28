@@ -162,11 +162,26 @@ export async function generateBuildGuide(
     stack: report.stack,
   };
 
+  const tierFraming =
+    report.tier === "DON'T"
+      ? `
+
+## DON'T-tier framing (READ FIRST)
+
+This verdict is DON'T-tier. The full clone is genuinely not happening (regulatory, research-grade, capital-intensive, or network-effect dependent). Do NOT pretend otherwise.
+
+Design this guide as the **indie-hacker MVP**: a stripped-down version that hits the core loop in a weekend, accepting clear gaps. Be honest in the overview about what the user IS and ISN'T building. Examples of the framing voice:
+- "You're not building Stripe — you're building a Stripe-Connect-flavored payments page for one niche."
+- "You're not rebuilding Figma — you're building a real-time whiteboard with five shapes."
+
+Steps target a shippable scope that ducks the regulatory/research/scale moats. Pitfalls explicitly call out which gaps NOT to try to close.`
+      : "";
+
   const userMessage = `Produce a build guide for this saaspocalypse verdict:
 
 \`\`\`json
 ${JSON.stringify(verdictForPrompt, null, 2)}
-\`\`\`
+\`\`\`${tierFraming}
 
 Generate the full guide now. The buyer is a solo indie hacker. Assume the stack listed in the verdict unless a challenge implies otherwise.`;
 
