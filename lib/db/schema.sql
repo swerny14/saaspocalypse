@@ -272,3 +272,259 @@ alter table social_posts enable row level security;
 -- (hosting, framework, cms, analytics/payments/auth lists, raw_signals).
 alter table reports
   add column if not exists detected_stack jsonb;
+
+-- 2026-04-29: proprietary normalization layer.
+-- Three layers, each in its own concern:
+--   (1) canonical taxonomy — small, hand-curated, source-of-truth in TS
+--       modules under lib/normalization/taxonomy and synced via
+--       scripts/sync_taxonomy.ts. Slow-changing.
+--   (2) per-report projection — auto-derived from the verdict + detected_stack
+--       by the deterministic engine in lib/normalization/engine.ts. Rebuildable.
+--   (3) review queue — unmatched terms surfaced for human curation.
+-- No LLM calls anywhere in the pipeline. Projection runs in-process during
+-- runScan and again any time scripts/recompute_projections.ts is run.
+
+-- ─── Layer 1: canonical taxonomy ───────────────────────────────────────────
+
+create table if not exists stack_components (
+  slug                  text primary key,
+  display_name          text not null,
+  category              text not null,            -- hosting | framework | ui | cms | db | payments | auth | cdn | analytics | email | support | crm | ml | search | queue | monitoring | devtools | integrations | infra
+  commoditization_level int  not null check (commoditization_level between 0 and 5),
+  aliases               jsonb not null default '[]'::jsonb,   -- string[] of lowercase synonyms
+  updated_at            timestamptz not null default now()
+);
+
+create index if not exists stack_components_category_idx on stack_components (category);
+
+create table if not exists capabilities (
+  slug             text primary key,
+  display_name     text not null,
+  category         text not null,                  -- collab | content | commerce | comm | ai | infra | data | workflow | identity
+  match_patterns   jsonb not null default '[]'::jsonb,   -- string[] of lowercase phrases to match against report text
+  moat_tags        jsonb not null default '[]'::jsonb,   -- string[] feeding moat scoring (multi_sided | ugc | marketplace | viral_loop | data_storage | workflow_lock_in | integration_hub | proprietary_dataset | training_data | behavioral | hipaa | finra | gdpr_critical | licensed)
+  updated_at       timestamptz not null default now()
+);
+
+create index if not exists capabilities_category_idx on capabilities (category);
+
+create table if not exists market_segments (
+  slug             text primary key,
+  display_name     text not null,
+  match_patterns   jsonb not null default '[]'::jsonb,
+  updated_at       timestamptz not null default now()
+);
+
+create table if not exists business_models (
+  slug             text primary key,
+  display_name     text not null,
+  match_patterns   jsonb not null default '[]'::jsonb,
+  updated_at       timestamptz not null default now()
+);
+
+drop trigger if exists stack_components_set_updated_at on stack_components;
+create trigger stack_components_set_updated_at
+  before update on stack_components
+  for each row execute function set_updated_at();
+drop trigger if exists capabilities_set_updated_at on capabilities;
+create trigger capabilities_set_updated_at
+  before update on capabilities
+  for each row execute function set_updated_at();
+drop trigger if exists market_segments_set_updated_at on market_segments;
+create trigger market_segments_set_updated_at
+  before update on market_segments
+  for each row execute function set_updated_at();
+drop trigger if exists business_models_set_updated_at on business_models;
+create trigger business_models_set_updated_at
+  before update on business_models
+  for each row execute function set_updated_at();
+
+alter table stack_components enable row level security;
+alter table capabilities      enable row level security;
+alter table market_segments   enable row level security;
+alter table business_models   enable row level security;
+
+drop policy if exists "taxonomy is publicly readable" on stack_components;
+create policy "taxonomy is publicly readable"
+  on stack_components for select to anon, authenticated using (true);
+drop policy if exists "taxonomy is publicly readable" on capabilities;
+create policy "taxonomy is publicly readable"
+  on capabilities for select to anon, authenticated using (true);
+drop policy if exists "taxonomy is publicly readable" on market_segments;
+create policy "taxonomy is publicly readable"
+  on market_segments for select to anon, authenticated using (true);
+drop policy if exists "taxonomy is publicly readable" on business_models;
+create policy "taxonomy is publicly readable"
+  on business_models for select to anon, authenticated using (true);
+
+-- ─── Layer 2: per-report projection ────────────────────────────────────────
+
+-- Junction: which canonical components this report uses.
+-- `source` records provenance: 'fingerprint' (server-authored, authoritative),
+-- 'text_match' (derived from LLM-authored fields), or 'both'. Fingerprint
+-- always wins on conflict — engine de-duplicates and merges.
+create table if not exists report_components (
+  report_id        uuid not null references reports(id) on delete cascade,
+  component_slug   text not null references stack_components(slug) on delete cascade,
+  source           text not null check (source in ('fingerprint','text_match','both')),
+  primary key (report_id, component_slug)
+);
+
+create index if not exists report_components_component_idx
+  on report_components (component_slug);
+
+create table if not exists report_capabilities (
+  report_id        uuid not null references reports(id) on delete cascade,
+  capability_slug  text not null references capabilities(slug) on delete cascade,
+  confidence       numeric(3,2) not null check (confidence between 0 and 1),
+  evidence_field   text not null,                 -- 'take' | 'take_sub' | 'challenges' | 'tagline' | 'est_cost' | 'multiple'
+  primary key (report_id, capability_slug)
+);
+
+create index if not exists report_capabilities_capability_idx
+  on report_capabilities (capability_slug);
+
+-- Single attribute row per report.
+create table if not exists report_attributes (
+  report_id                 uuid primary key references reports(id) on delete cascade,
+  segment_slug              text references market_segments(slug) on delete set null,
+  business_model_slug       text references business_models(slug) on delete set null,
+  monthly_floor_usd         numeric(10,2),                          -- sum of fixed est_cost lines, null if all usage-based
+  is_usage_based            boolean not null default false,
+  capital_intensity_bucket  text check (capital_intensity_bucket in ('low','mid','high')),
+  projection_version        int  not null default 1,                -- bump when engine output schema changes; triggers recompute
+  projected_at              timestamptz not null default now()
+);
+
+create index if not exists report_attributes_segment_idx
+  on report_attributes (segment_slug);
+create index if not exists report_attributes_business_model_idx
+  on report_attributes (business_model_slug);
+
+alter table report_components   enable row level security;
+alter table report_capabilities enable row level security;
+alter table report_attributes   enable row level security;
+
+drop policy if exists "report projections are publicly readable" on report_components;
+create policy "report projections are publicly readable"
+  on report_components for select to anon, authenticated using (true);
+drop policy if exists "report projections are publicly readable" on report_capabilities;
+create policy "report projections are publicly readable"
+  on report_capabilities for select to anon, authenticated using (true);
+drop policy if exists "report projections are publicly readable" on report_attributes;
+create policy "report projections are publicly readable"
+  on report_attributes for select to anon, authenticated using (true);
+
+-- ─── Layer 3: review queue ─────────────────────────────────────────────────
+
+-- Unmatched but stack-shaped terms found in report text. Reviewed periodically
+-- to decide what becomes a new alias on an existing component vs. a brand-new
+-- canonical entity. Status flow: open → (alias|added|ignored).
+create table if not exists normalization_unknowns (
+  id                  uuid primary key default gen_random_uuid(),
+  report_id           uuid references reports(id) on delete set null,
+  raw_term            text not null,
+  normalized_term     text not null,                                -- lowercased, trimmed
+  suggested_category  text,                                         -- engine's guess: stack_component | capability | unknown
+  occurrences         int  not null default 1,
+  status              text not null default 'open'
+                      check (status in ('open','aliased','added','ignored')),
+  resolution_slug     text,                                         -- canonical slug if status in ('aliased','added')
+  first_seen_at       timestamptz not null default now(),
+  last_seen_at        timestamptz not null default now()
+);
+
+create unique index if not exists normalization_unknowns_normalized_term_idx
+  on normalization_unknowns (normalized_term);
+create index if not exists normalization_unknowns_status_idx
+  on normalization_unknowns (status, last_seen_at desc);
+
+alter table normalization_unknowns enable row level security;
+-- No public policy: review queue is admin-only.
+
+-- 2026-05-01: Phase B — moat scoring. Six 0–10 axes derived deterministically
+-- from the per-report projection (capabilities, components, attributes) +
+-- the canonical taxonomy (commoditization_level, moat_tags). No LLM. The
+-- aggregate is a weighted average; weights live in lib/normalization/moat.ts
+-- as MOAT_RUBRIC_V1, so changing them is a code change with `rubric_version`
+-- bumped and a recompute. The data column is named `data_moat` because
+-- bare `data` is reserved/awkward in some SQL contexts; the TS type uses
+-- `data_moat` to match.
+create table if not exists report_moat_scores (
+  report_id        uuid primary key references reports(id) on delete cascade,
+  rubric_version   int not null,
+  capital          numeric(3,1) not null check (capital between 0 and 10),
+  technical        numeric(3,1) not null check (technical between 0 and 10),
+  network          numeric(3,1) not null check (network between 0 and 10),
+  switching        numeric(3,1) not null check (switching between 0 and 10),
+  data_moat        numeric(3,1) not null check (data_moat between 0 and 10),
+  regulatory       numeric(3,1) not null check (regulatory between 0 and 10),
+  aggregate        numeric(3,1) not null check (aggregate between 0 and 10),
+  computed_at      timestamptz not null default now()
+);
+
+create index if not exists report_moat_scores_aggregate_idx
+  on report_moat_scores (aggregate desc);
+
+-- Curator review state. `pending` = score is up for review and may surface
+-- in /admin/moat-anomalies; `verified` = curator confirmed the score is
+-- honest and the row should hide from the anomaly view. Stays sticky
+-- across recomputes — admin can re-flag manually if a taxonomy change
+-- materially shifts the score.
+alter table report_moat_scores
+  add column if not exists review_status text not null default 'pending'
+    check (review_status in ('pending','verified')),
+  add column if not exists reviewed_at   timestamptz;
+
+create index if not exists report_moat_scores_review_status_idx
+  on report_moat_scores (review_status);
+
+-- 2026-04-29: persisted LLM moat-audit suggestions. Populated by the
+-- per-row audit endpoint and the bulk audit endpoint at
+-- POST /api/admin/moat-anomalies/audit-batch. Same posture as the
+-- unknowns suggestion columns — pre-fills the triage UI, human still
+-- applies each suggestion individually, deterministic engine unchanged.
+-- Cleared on recompute since the underlying score moves.
+alter table report_moat_scores
+  add column if not exists audit_summary     text,
+  add column if not exists audit_suggestions jsonb,
+  add column if not exists audited_at        timestamptz;
+
+alter table report_moat_scores enable row level security;
+drop policy if exists "moat scores are publicly readable" on report_moat_scores;
+create policy "moat scores are publicly readable"
+  on report_moat_scores for select to anon, authenticated using (true);
+
+-- 2026-04-30: LLM-generated curation suggestions for the unknowns queue.
+-- Populated by POST /api/admin/unknowns/suggest (admin-only batch call).
+-- Pre-fills the triage UI; the human is still in the loop, and the
+-- deterministic normalization engine is unchanged. `llm_action` mirrors the
+-- three resolution paths in the admin UI.
+alter table normalization_unknowns
+  add column if not exists llm_action          text
+    check (llm_action in ('alias','promote','ignore')),
+  add column if not exists llm_target_slug     text,
+  add column if not exists llm_category        text,
+  add column if not exists llm_commoditization int
+    check (llm_commoditization between 0 and 5),
+  add column if not exists llm_note            text,
+  add column if not exists llm_suggested_at    timestamptz;
+
+-- 2026-04-29: capability taxonomy prune. The 8 slugs below were either
+-- duplicates of broader capabilities (multiple payment-licensing slugs for
+-- one moat, fraud-detection split into two) or single-report harvest noise
+-- that never generalized. Surviving capabilities (payment-rails,
+-- payments-licensing, fraud-detection, recruiter-relationship-network,
+-- candidate-profile-data) absorbed any unique patterns. Cascade FK on
+-- report_capabilities.capability_slug means projection rows clean up
+-- automatically; recompute afterwards to reflect.
+delete from capabilities where slug in (
+  'stablecoin-crypto-rails',
+  'acquiring-bank-relationships',
+  'sponsor-bank-network',
+  'transaction-fraud-dataset',
+  'talent-matching-dataset',
+  'ats-bypass-network',
+  'warm-intro-workflow',
+  'verdict-cache-corpus'
+);

@@ -4,6 +4,7 @@ import { getSupabaseAnon, getSupabaseAdmin } from "./supabase";
 import { wrapDbError } from "./errors";
 import { toSlug } from "@/lib/domain";
 import { logError } from "@/lib/error_log";
+import type { StoredMoatScore } from "./moat_scores";
 
 /** DB row: VerdictReport plus server-generated metadata. */
 export type StoredReport = VerdictReport & {
@@ -14,16 +15,22 @@ export type StoredReport = VerdictReport & {
   /** Fingerprint output. Null on rows scanned before fingerprinting shipped, or
    * when detection soft-failed during the scan. */
   detected_stack: DetectedStack | null;
+  /** Phase B moat score; null when the projection hasn't been run for this row
+   * (e.g. legacy reports prior to the recompute, or projection soft-failures). */
+  moat: StoredMoatScore | null;
   scanned_at: string;
   created_at: string;
   updated_at: string;
 };
 
 /**
- * SELECT * projection. Column names are already snake_case both in the DB
- * and in our Zod schema, so no key transformation is needed.
+ * Default SELECT projection. Joins `report_moat_scores` via the FK relationship
+ * (1:1 because moat's PK is `report_id`); Supabase returns it as a single
+ * object aliased to `moat`. Column names are already snake_case both in the
+ * DB and in our Zod schema, so no key transformation is needed.
  */
-const REPORT_COLUMNS = "*";
+const REPORT_COLUMNS =
+  "*, moat:report_moat_scores(rubric_version, capital, technical, network, switching, data_moat, regulatory, aggregate, computed_at, review_status, reviewed_at, audit_summary, audit_suggestions, audited_at)";
 
 /**
  * Defensive parse for rows we just read from the DB. Verifies the
@@ -39,14 +46,30 @@ const DB_ONLY_FIELDS = new Set([
   "slug",
   "view_count",
   "detected_stack",
+  "moat",
   "scanned_at",
   "created_at",
   "updated_at",
 ]);
 
+/**
+ * PostgREST returns embedded 1:1 relations as an object when the FK has a
+ * unique/PK constraint, but occasionally surfaces them as a single-element
+ * array depending on the schema-cache state. Normalize to `object | null`
+ * so downstream consumers don't have to care.
+ */
+function normalizeMoatShape(row: Record<string, unknown>): void {
+  if (Array.isArray(row.moat)) {
+    row.moat = row.moat.length > 0 ? row.moat[0] : null;
+  } else if (row.moat === undefined) {
+    row.moat = null;
+  }
+}
+
 function safeReadReport(data: unknown, ctx: string): StoredReport | null {
   if (!data || typeof data !== "object") return null;
   const row = data as Record<string, unknown> & { slug?: string };
+  normalizeMoatShape(row);
   // Strip the DB-only metadata before parsing so the verdict schema matches.
   const verdict: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(row)) {
@@ -108,6 +131,14 @@ export async function getReportBySlug(slug: string): Promise<StoredReport | null
   return safeReadReport(data, `getReportBySlug(${slug})`);
 }
 
+function normalizeRows(rows: unknown[]): StoredReport[] {
+  return rows.map((r) => {
+    const row = r as Record<string, unknown>;
+    normalizeMoatShape(row);
+    return row as StoredReport;
+  });
+}
+
 export async function getRecentReports(limit = 6): Promise<StoredReport[]> {
   const sb = getSupabaseAnon();
   if (!sb) return [];
@@ -120,7 +151,7 @@ export async function getRecentReports(limit = 6): Promise<StoredReport[]> {
     console.error("[reports] getRecentReports failed", error);
     return [];
   }
-  return (data as StoredReport[]) ?? [];
+  return data ? normalizeRows(data) : [];
 }
 
 export async function getAllReports(limit = 5000): Promise<StoredReport[]> {
@@ -135,7 +166,7 @@ export async function getAllReports(limit = 5000): Promise<StoredReport[]> {
     console.error("[reports] getAllReports failed", error);
     return [];
   }
-  return (data as StoredReport[]) ?? [];
+  return data ? normalizeRows(data) : [];
 }
 
 /**
@@ -194,7 +225,9 @@ export async function insertReport(
     .select(REPORT_COLUMNS)
     .single();
   if (error) throw wrapDbError(error, "reports insert");
-  return data as StoredReport;
+  const out = data as Record<string, unknown>;
+  normalizeMoatShape(out);
+  return out as StoredReport;
 }
 
 /** Upsert variant that overwrites on domain conflict — used by the seed script. */
@@ -216,5 +249,7 @@ export async function upsertReport(
     .select(REPORT_COLUMNS)
     .single();
   if (error) throw wrapDbError(error, "reports upsert");
-  return data as StoredReport;
+  const out = data as Record<string, unknown>;
+  normalizeMoatShape(out);
+  return out as StoredReport;
 }

@@ -17,6 +17,10 @@ import { callClaudeForVerdict } from "./llm";
 import type { ScanErrorReason, ScanEvent } from "./events";
 import { STEP_LABELS } from "./events";
 import { USER_SCAN_MESSAGES } from "./user_messages";
+import { projectReport } from "@/lib/normalization/engine";
+import { persistProjection } from "@/lib/db/projections";
+import { scoreMoat } from "@/lib/normalization/moat";
+import { persistMoatScore } from "@/lib/db/moat_scores";
 
 export type ScanInput = { url: string; ip: string; signal?: AbortSignal };
 export type ScanEmitter = (event: ScanEvent) => void | Promise<void>;
@@ -204,6 +208,55 @@ export async function runScan(
       );
       return;
     }
+
+    // 9. Project the verdict into the normalization layer (canonical
+    // components, capabilities, attributes, unknowns) and score the moat.
+    // Pure deterministic steps — no LLM, no extra latency to speak of.
+    // Soft-fails: errors here must not block the user-facing report, so
+    // we log and move on. The recompute script rebuilds anything missing.
+    try {
+      const projection = projectReport(llmOut.verdict, detectedStack);
+      await persistProjection(row.id, projection);
+      try {
+        const moat = scoreMoat({
+          verdict: llmOut.verdict,
+          capabilities: projection.capabilities,
+        });
+        await persistMoatScore(row.id, moat);
+        // Attach the freshly-computed score to the row so the SSE `done`
+        // event carries it — otherwise the inline-rendered VerdictReport
+        // would show no moat block until the user reloads. Fresh scans
+        // start as 'pending' review status (matches DB default).
+        row.moat = {
+          ...moat,
+          computed_at: new Date().toISOString(),
+          review_status: "pending",
+          reviewed_at: null,
+          audit_summary: null,
+          audit_suggestions: null,
+          audited_at: null,
+        };
+      } catch (e) {
+        await logError({
+          scope: "scan",
+          reason: "moat_scoring_failed",
+          refId: row.id,
+          refSlug: row.slug,
+          message: e instanceof Error ? e.message : String(e),
+          detail: { url: input.url },
+        });
+      }
+    } catch (e) {
+      await logError({
+        scope: "scan",
+        reason: "projection_failed",
+        refId: row.id,
+        refSlug: row.slug,
+        message: e instanceof Error ? e.message : String(e),
+        detail: { url: input.url },
+      });
+    }
+
     await emit({ type: "done", cached: false, slug: row.slug, report: row });
   } finally {
     await releaseDomainLock(domain);

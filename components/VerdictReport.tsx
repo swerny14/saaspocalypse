@@ -5,6 +5,7 @@ import { DIFFICULTIES } from "@/lib/scanner/schema";
 import { guidePriceCents } from "@/lib/stripe";
 import { isDontTierGuidesEnabled } from "@/lib/feature_flags";
 import { PurchaseCTA } from "./PurchaseCTA";
+import { MoatBreakdown } from "./MoatBreakdown";
 
 type Props = { report: StoredReport };
 
@@ -232,6 +233,11 @@ export function VerdictReport({ report: v }: Props) {
           <span>{v.break_even}</span>
         </div>
       </div>
+
+      {/* MOAT BREAKDOWN — Phase B. Only renders when the projection ran for
+          this report (i.e. v.moat is non-null). Legacy reports without a
+          projection just skip this block; they'll fill in on next recompute. */}
+      {v.moat ? <MoatBreakdown moat={v.moat} slug={v.slug} /> : null}
 
       {/* ALTERNATIVES */}
       <div className="px-5 sm:px-11 py-6 sm:py-8 border-b-[2.5px] border-ink bg-bg">

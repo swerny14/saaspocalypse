@@ -1,0 +1,109 @@
+import type { Capability } from "./types";
+
+/**
+ * Canonical capabilities. THIS FILE IS REGENERATED FROM SUPABASE.
+ *
+ * Source of truth flow:
+ *   1. The TS file is the seed (initial set + manual edits by hand).
+ *   2. /admin/moat-anomalies writes new patterns + new capabilities to the DB.
+ *   3. `pnpm tsx scripts/dump_taxonomy.ts` rewrites this file from DB rows.
+ *   4. `pnpm tsx scripts/sync_taxonomy.ts` pushes TS back to DB (idempotent).
+ *
+ * `moat_tags` are the load-bearing field for moat scoring. They map a
+ * capability onto the moat axes:
+ *   network:    multi_sided | ugc | marketplace | viral_loop
+ *   switching:  data_storage | workflow_lock_in | integration_hub
+ *   data:       proprietary_dataset | training_data | behavioral
+ *   regulatory: hipaa | finra | gdpr_critical | licensed
+ *
+ * Most capabilities carry zero tags — they exist for product-comparison
+ * features (capability overlap, "products like X") rather than moat math.
+ * Tag a capability only when its presence genuinely tilts a moat axis.
+ */
+export const CAPABILITIES: Capability[] = [
+
+  // ── collab ──
+  { slug: "comments-mentions", display_name: "Comments & mentions", category: "collab", match_patterns: ["comments", "@mentions", "threaded comments", "inline comments"], moat_tags: [] },
+  { slug: "document-sharing", display_name: "Document sharing", category: "collab", match_patterns: ["document sharing", "share link", "shareable link", "public share"], moat_tags: [] },
+  { slug: "realtime-collaboration", display_name: "Realtime collaboration", category: "collab", match_patterns: ["real-time collaboration", "realtime collaboration", "live cursors", "collaborative editing", "multiplayer", "operational transform", "crdt", "real-time sync across devices", "real-time sync optimistic updates"], moat_tags: ["workflow_lock_in"] },
+  { slug: "team-workspaces", display_name: "Team workspaces", category: "collab", match_patterns: ["team workspaces", "workspaces", "shared workspace", "multi-user workspace", "team availability"], moat_tags: ["workflow_lock_in"] },
+  // ── content ──
+  { slug: "media-storage", display_name: "Media storage", category: "content", match_patterns: ["media storage", "file uploads", "image upload", "video upload", "asset storage", "exported png/webp storage", "video library"], moat_tags: ["data_storage"] },
+  { slug: "ocr", display_name: "OCR", category: "content", match_patterns: ["ocr", "optical character recognition", "text extraction"], moat_tags: [] },
+  { slug: "pdf-generation", display_name: "PDF generation", category: "content", match_patterns: ["pdf generation", "pdf export", "pdf rendering"], moat_tags: [] },
+  { slug: "rich-text-editor", display_name: "Rich text editor", category: "content", match_patterns: ["rich text editor", "wysiwyg", "block editor", "tiptap", "prosemirror", "lexical"], moat_tags: [] },
+  { slug: "user-generated-content", display_name: "User-generated content", category: "content", match_patterns: ["user-generated content", "ugc", "user generated", "product submissions", "template library at scale", "1m+ templates"], moat_tags: ["ugc", "data_storage"] },
+  { slug: "video-streaming", display_name: "Video streaming", category: "content", match_patterns: ["video streaming", "live streaming", "hls streaming", "rtmp"], moat_tags: [] },
+  { slug: "video-transcoding", display_name: "Video transcoding", category: "content", match_patterns: ["video transcoding", "video processing", "ffmpeg", "hls", "video encoding"], moat_tags: [] },
+  // ── commerce ──
+  { slug: "card-issuing", display_name: "Card issuing", category: "commerce", match_patterns: ["card issuing", "card issuance", "virtual card issuing", "physical card issuing"], moat_tags: ["licensed", "workflow_lock_in"] },
+  { slug: "checkout", display_name: "Checkout", category: "commerce", match_patterns: ["checkout", "shopping cart", "stripe checkout"], moat_tags: [] },
+  { slug: "exclusive-content-licenses", display_name: "Exclusive content licensing deals", category: "commerce", match_patterns: ["exclusive content", "music rights", "publisher deals", "video licensing", "content licensing", "exclusive licenses", "exclusive licensing", "rights deals", "label deals", "studio deals", "exclusive catalog"], moat_tags: ["licensed", "workflow_lock_in"] },
+  { slug: "invoicing", display_name: "Invoicing", category: "commerce", match_patterns: ["invoicing", "invoice generation", "invoices"], moat_tags: [] },
+  { slug: "marketplace", display_name: "Marketplace", category: "commerce", match_patterns: ["marketplace", "two-sided marketplace", "buyer seller", "two-sided", "buyers and sellers", "supply and demand match", "bilateral marketplace cold-start", "bilateral network"], moat_tags: ["multi_sided", "marketplace"] },
+  { slug: "multi-currency-fx", display_name: "Multi-currency & FX infrastructure", category: "commerce", match_patterns: ["135+ currencies", "multi-currency", "real-time fx", "multi currency settlement", "foreign exchange rails", "currency conversion infrastructure"], moat_tags: ["licensed", "workflow_lock_in"] },
+  { slug: "payment-rails", display_name: "Payment rails", category: "commerce", match_patterns: ["payment rails", "money movement", "money transmission", "money transmitter", "interchange", "chargebacks", "card network", "card networks", "card issuing", "stablecoin", "stablecoin rails", "stablecoin settlement", "crypto rails", "crypto on/off ramps", "stablecoin and crypto", "multi-currency stablecoin", "real-time fx", "fx settlement", "cross-border payments", "cross-border", "international money", "trillion processed", "billions processed", "global payments"], moat_tags: ["workflow_lock_in", "integration_hub"] },
+  { slug: "subscription-billing-state", display_name: "Subscription billing state", category: "commerce", match_patterns: ["subscription state", "billing state", "proration", "subscription schedule", "billing cycles", "dunning", "metered billing", "usage-based billing state"], moat_tags: ["workflow_lock_in", "data_storage"] },
+  { slug: "subscriptions", display_name: "Subscriptions", category: "commerce", match_patterns: ["subscription", "subscriptions", "recurring billing", "saas billing"], moat_tags: [] },
+  { slug: "tax-compliance", display_name: "Tax compliance", category: "commerce", match_patterns: ["tax compliance", "vat", "sales tax", "tax calculation"], moat_tags: ["licensed"] },
+  // ── comm ──
+  { slug: "creator-network", display_name: "Creator network", category: "comm", match_patterns: ["creator network", "creator economy", "creator audience", "creator monetization", "makers and hunters"], moat_tags: ["multi_sided", "ugc"] },
+  { slug: "in-app-chat", display_name: "In-app chat", category: "comm", match_patterns: ["in-app chat", "live chat", "chat widget", "support chat"], moat_tags: [] },
+  { slug: "marketing-email", display_name: "Marketing email", category: "comm", match_patterns: ["marketing email", "email campaigns", "email marketing", "newsletter"], moat_tags: [] },
+  { slug: "push-notifications", display_name: "Push notifications", category: "comm", match_patterns: ["push notifications", "web push", "mobile push"], moat_tags: [] },
+  { slug: "sms", display_name: "SMS", category: "comm", match_patterns: ["sms", "text messaging", "twilio sms"], moat_tags: [] },
+  { slug: "social-graph", display_name: "Social graph", category: "comm", match_patterns: ["social graph", "follow graph", "friend network", "connections graph", "follower network", "social network", "family invite emails", "cold-start network effect", "slack connect"], moat_tags: ["multi_sided", "viral_loop"] },
+  { slug: "transactional-email", display_name: "Transactional email", category: "comm", match_patterns: ["transactional email", "transactional emails", "email delivery"], moat_tags: [] },
+  { slug: "video-conferencing", display_name: "Video conferencing", category: "comm", match_patterns: ["video conferencing", "video calls", "webrtc"], moat_tags: [] },
+  // ── ai ──
+  { slug: "embeddings", display_name: "Embeddings", category: "ai", match_patterns: ["embeddings", "vector embeddings", "semantic search"], moat_tags: [] },
+  { slug: "fine-tuning", display_name: "Fine-tuning", category: "ai", match_patterns: ["fine-tuning", "fine tuning", "model finetuning", "custom model"], moat_tags: ["training_data", "proprietary_dataset"] },
+  { slug: "foundation-model", display_name: "Foundation model", category: "ai", match_patterns: ["foundation model", "pretrained model", "pre-trained model", "trained from scratch", "model weights", "model parameters", "billion parameters", "pretraining", "pre-training", "trillion tokens", "model architecture", "petaflop-scale compute"], moat_tags: ["proprietary_dataset", "training_data"] },
+  { slug: "fraud-detection", display_name: "Fraud detection", category: "ai", match_patterns: ["fraud detection", "fraud models", "fraud infra", "fraud infrastructure", "transaction monitoring", "anomaly detection", "adversarial detection", "risk models", "risk scoring", "stripe radar", "radar-equivalent", "ml fraud models", "abuse detection", "billions of transactions", "trained on billions", "friendly fraud", "transaction fraud models", "bot filtering that actually works"], moat_tags: ["proprietary_dataset", "training_data", "behavioral"] },
+  { slug: "image-generation", display_name: "Image generation", category: "ai", match_patterns: ["image generation", "stable diffusion", "dalle", "midjourney"], moat_tags: [] },
+  { slug: "llm-inference", display_name: "LLM inference", category: "ai", match_patterns: ["llm", "language model", "gpt", "claude", "openai api", "anthropic api"], moat_tags: [] },
+  { slug: "rag", display_name: "Retrieval-augmented generation", category: "ai", match_patterns: ["rag", "retrieval augmented", "retrieval-augmented", "vector search"], moat_tags: [] },
+  { slug: "rlhf", display_name: "RLHF / human feedback training", category: "ai", match_patterns: ["rlhf", "reinforcement learning from human feedback", "human preference", "human feedback loop", "preference data", "massive annotation pipelines"], moat_tags: ["training_data", "behavioral", "proprietary_dataset"] },
+  { slug: "speech-to-text", display_name: "Speech-to-text", category: "ai", match_patterns: ["speech to text", "speech-to-text", "transcription", "whisper"], moat_tags: [] },
+  { slug: "text-to-speech", display_name: "Text-to-speech", category: "ai", match_patterns: ["text to speech", "text-to-speech", "voice synthesis", "tts"], moat_tags: [] },
+  { slug: "user-data-flywheel", display_name: "User-data flywheel", category: "ai", match_patterns: ["data flywheel", "feedback loop", "learns from users", "improves with usage", "user prompts", "training corpus from users", "telemetry-driven training", "terabytes of curated data", "decade of conversion-rate data", "deliverability reputation"], moat_tags: ["behavioral", "training_data"] },
+  // ── infra ──
+  { slug: "api-platform", display_name: "API platform", category: "infra", match_patterns: ["api platform", "rest api", "graphql api", "developer api", "public api"], moat_tags: ["integration_hub"] },
+  { slug: "background-jobs", display_name: "Background jobs", category: "infra", match_patterns: ["background jobs", "job queue", "task queue", "cron jobs"], moat_tags: [] },
+  { slug: "developer-ecosystem", display_name: "Developer ecosystem", category: "infra", match_patterns: ["developer ecosystem", "third-party apps", "third party apps", "app store", "extensions marketplace", "plugin marketplace", "app directory", "git-integrated ci/cd pipeline", "embeddable widget", "hundreds of integrations", "plugin sandboxing & ecosystem", "1.7m integrated apps"], moat_tags: ["integration_hub", "multi_sided"] },
+  { slug: "enterprise-sla", display_name: "Enterprise SLA / four-nines uptime", category: "infra", match_patterns: ["uptime sla", "uptime slas", "99.99%", "99.999%", "four nines", "five nines", "high availability", "ha cluster", "enterprise sla", "uptime guarantee", "enterprise security stack"], moat_tags: ["workflow_lock_in"] },
+  { slug: "rate-limiting", display_name: "Rate limiting", category: "infra", match_patterns: ["rate limiting", "rate limits", "throttling"], moat_tags: [] },
+  { slug: "web-scraping-pipeline", display_name: "Web scraping & signal detection pipeline", category: "infra", match_patterns: ["scraping pipeline", "url scraping", "fetch html", "parse headers", "sniff script tags", "framework fingerprints", "cached html snapshots", "proxy for scraping"], moat_tags: [] },
+  { slug: "webhooks", display_name: "Webhooks", category: "infra", match_patterns: ["webhooks", "webhook delivery", "outbound webhooks"], moat_tags: ["integration_hub"] },
+  // ── data ──
+  { slug: "behavioral-data", display_name: "Behavioral data", category: "data", match_patterns: ["behavioral data", "user behavior", "usage telemetry", "event tracking", "real-time traffic analysis", "viewer events", "bounce handling", "deliverability reputation", "engagement data", "billions of pageviews", "billions of clicks", "billions of monthly clicks", "click analytics utm tracking"], moat_tags: ["behavioral"] },
+  { slug: "candidate-profile-data", display_name: "Candidate profile & career data", category: "data", match_patterns: ["candidate profile storage", "79,000 candidates", "hand over their career", "role preferences and dealbreakers", "candidate yes/no", "career history", "resume upload", "placement history"], moat_tags: ["data_storage", "workflow_lock_in", "proprietary_dataset"] },
+  { slug: "creative-history", display_name: "Version history & creative timeline", category: "data", match_patterns: ["version history", "creative timeline", "edit history", "design history", "branch history", "rewind history", "audit logs", "template scaffolding"], moat_tags: ["data_storage", "workflow_lock_in"] },
+  { slug: "crowdsourced-listings-dataset", display_name: "Crowdsourced listings & reviews dataset", category: "data", match_patterns: ["business listings", "places database", "reviews dataset", "ratings corpus", "crowdsourced reviews", "crowdsourced listings", "review corpus", "millions of reviews", "user-contributed listings", "poi database", "yelp-style reviews"], moat_tags: ["proprietary_dataset", "ugc", "behavioral"] },
+  { slug: "data-warehouse", display_name: "Data warehouse", category: "data", match_patterns: ["data warehouse", "warehouse"], moat_tags: ["data_storage"] },
+  { slug: "design-asset-library", display_name: "Design asset library", category: "data", match_patterns: ["design files", "asset library", "component library", "design system files", "shared library", "design tokens library", "licensed stock library"], moat_tags: ["workflow_lock_in", "data_storage"] },
+  { slug: "etl", display_name: "ETL / data pipeline", category: "data", match_patterns: ["etl", "data pipeline", "data ingestion"], moat_tags: ["integration_hub"] },
+  { slug: "proprietary-dataset", display_name: "Proprietary dataset", category: "data", match_patterns: ["proprietary dataset", "proprietary data", "curated dataset", "exclusive data", "first-party data", "training corpus", "trained on years", "years of data", "years of training data", "billions of tokens", "trillion tokens", "trillions of tokens", "trained on billions", "billions of records", "billions of events"], moat_tags: ["proprietary_dataset"] },
+  { slug: "proprietary-file-format", display_name: "Proprietary file format", category: "data", match_patterns: ["proprietary file format", "native file format", ".fig", ".sketch", ".psd", "proprietary export", "vendor lock-in", "binary format", "custom webgl/canvas vector renderer"], moat_tags: ["workflow_lock_in", "data_storage"] },
+  { slug: "team-chat-history", display_name: "Team chat history", category: "data", match_patterns: ["chat history", "message history", "team channels", "channel archive", "conversation history", "team conversations", "searchable history"], moat_tags: ["data_storage", "workflow_lock_in"] },
+  { slug: "team-workspace-state", display_name: "Team workspace state", category: "data", match_patterns: ["shared workspace state", "team dashboard", "team-wide state", "shared whiteboard", "team activity", "relational links between tables", "multi-region replication"], moat_tags: ["workflow_lock_in", "data_storage"] },
+  { slug: "user-data-storage", display_name: "User data storage", category: "data", match_patterns: ["user data", "user-generated data", "user records", "data storage", "landing page configs analytics events", "responses + contacts db", "subscriber list", "booking link", "100m-record scale", "utm tracking", "bookings table"], moat_tags: ["data_storage"] },
+  // ── workflow ──
+  { slug: "approvals", display_name: "Approvals", category: "workflow", match_patterns: ["approvals", "approval workflow", "review workflow"], moat_tags: ["workflow_lock_in"] },
+  { slug: "automations", display_name: "Automations", category: "workflow", match_patterns: ["automations", "workflow automation", "if this then that", "zapier-style", "rules engine", "contact automation + email workflows", "round-robin routing", "workflow engine"], moat_tags: ["workflow_lock_in"] },
+  { slug: "integrations", display_name: "Integrations", category: "workflow", match_patterns: ["integrations", "third-party integrations", "connectors", "integration marketplace"], moat_tags: ["integration_hub"] },
+  { slug: "kanban", display_name: "Kanban / board view", category: "workflow", match_patterns: ["kanban", "board view", "trello-style"], moat_tags: [] },
+  { slug: "recruiter-relationship-network", display_name: "Recruiter / employer relationship network", category: "workflow", match_patterns: ["founder relationships", "founders and hiring managers to trust", "founders and hiring managers", "hiring managers to trust", "bypass their ats", "skip the ats", "employer-side network", "warm handoff", "warm intro", "hiring manager", "sales and relationship problem"], moat_tags: ["multi_sided", "workflow_lock_in"] },
+  // ── identity ──
+  { slug: "audit-log", display_name: "Audit log", category: "identity", match_patterns: ["audit log", "audit trail", "activity log"], moat_tags: [] },
+  { slug: "clinical-data", display_name: "Clinical / EHR data", category: "identity", match_patterns: ["clinical data", "patient records", "ehr", "electronic health records", "medical records", "phi storage"], moat_tags: ["hipaa", "data_storage"] },
+  { slug: "finra-compliance", display_name: "FINRA compliance", category: "identity", match_patterns: ["finra", "broker-dealer", "sec compliance"], moat_tags: ["finra", "licensed"] },
+  { slug: "gdpr-compliance", display_name: "GDPR compliance", category: "identity", match_patterns: ["gdpr", "right to erasure", "data subject access", "can-spam", "tcpa", "eu-only data residency", "cookieless fingerprint-free visitor deduplication"], moat_tags: ["gdpr_critical"] },
+  { slug: "hipaa-compliance", display_name: "HIPAA compliance", category: "identity", match_patterns: ["hipaa", "phi", "protected health information"], moat_tags: ["hipaa", "licensed"] },
+  { slug: "kyc-aml", display_name: "KYC / AML", category: "identity", match_patterns: ["kyc", "aml", "know your customer", "anti-money laundering", "ofac screening", "sanctions screening"], moat_tags: ["licensed"] },
+  { slug: "payments-licensing", display_name: "Payments licensing & banking relationships", category: "identity", match_patterns: ["money transmitter", "money transmission", "acquiring bank", "acquiring bank relationships", "acquiring bank relationship", "sponsor bank", "sponsor bank relationships", "card network relationships", "visa and mastercard", "payment processor license", "payment institution", "interchange", "card networks", "money transmitter licensing", "money transmitter licenses"], moat_tags: ["licensed", "workflow_lock_in"] },
+  { slug: "pci-dss-level-1", display_name: "PCI DSS Level 1", category: "identity", match_patterns: ["pci dss", "pci-dss", "pci compliance", "pci dss level 1", "card data", "cardholder data"], moat_tags: ["licensed"] },
+  { slug: "rbac", display_name: "Role-based access control", category: "identity", match_patterns: ["rbac", "role-based access", "permissions", "access control"], moat_tags: [] },
+  { slug: "social-login", display_name: "Social login", category: "identity", match_patterns: ["social login", "oauth", "google login", "github login", "sign in with"], moat_tags: [] },
+  { slug: "sso-saml", display_name: "SSO (SAML/OIDC)", category: "identity", match_patterns: ["sso", "saml", "oidc", "single sign-on", "single sign on", "enterprise sso"], moat_tags: ["workflow_lock_in"] },
+];

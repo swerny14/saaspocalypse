@@ -31,6 +31,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: newestPostDate ? new Date(newestPostDate) : new Date(),
     },
     {
+      url: `${SITE_URL}/methodology`,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
       url: `${SITE_URL}/terms`,
       changeFrequency: "monthly",
       priority: 0.3,
