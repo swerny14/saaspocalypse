@@ -21,13 +21,16 @@ export type CapabilityRow = {
   category: string;
   match_patterns: string[];
   moat_tags: string[];
+  is_descriptor: boolean;
 };
+
+const SELECT_COLUMNS = "slug, display_name, category, match_patterns, moat_tags, is_descriptor";
 
 export async function getAllCapabilities(): Promise<CapabilityRow[]> {
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from("capabilities")
-    .select("slug, display_name, category, match_patterns, moat_tags")
+    .select(SELECT_COLUMNS)
     .order("category")
     .order("slug");
   if (error) throw wrapDbError(error, "capabilities list");
@@ -38,7 +41,7 @@ export async function getCapability(slug: string): Promise<CapabilityRow | null>
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from("capabilities")
-    .select("slug, display_name, category, match_patterns, moat_tags")
+    .select(SELECT_COLUMNS)
     .eq("slug", slug)
     .maybeSingle();
   if (error) throw wrapDbError(error, "capabilities get");
@@ -80,6 +83,7 @@ export async function insertCapability(input: {
   category: CapabilityCategory;
   match_patterns: string[];
   moat_tags: MoatTag[];
+  is_descriptor?: boolean;
 }): Promise<void> {
   const admin = getSupabaseAdmin();
   const row = {
@@ -90,6 +94,7 @@ export async function insertCapability(input: {
       .map((p) => p.trim().toLowerCase())
       .filter(Boolean),
     moat_tags: input.moat_tags,
+    is_descriptor: input.is_descriptor ?? false,
   };
   const { error } = await admin.from("capabilities").insert(row);
   if (error) throw wrapDbError(error, "capabilities insert");
@@ -102,5 +107,6 @@ function normalizeRow(row: CapabilityRow): CapabilityRow {
     category: row.category,
     match_patterns: Array.isArray(row.match_patterns) ? row.match_patterns : [],
     moat_tags: Array.isArray(row.moat_tags) ? row.moat_tags : [],
+    is_descriptor: row.is_descriptor === true,
   };
 }

@@ -45,6 +45,7 @@ export async function syncTaxonomyToDb(): Promise<{
     category: c.category,
     match_patterns: c.match_patterns,
     moat_tags: c.moat_tags,
+    is_descriptor: c.is_descriptor ?? false,
   }));
   {
     const { error } = await admin

@@ -1,12 +1,16 @@
 import type { MetadataRoute } from "next";
 import { getAllReportsForSitemap } from "@/lib/db/reports";
+import { getAllNeighborPairs } from "@/lib/db/neighbors";
 import { getAllPosts, getPublishedPosts } from "@/lib/blog/posts";
 import { SITE_URL } from "@/lib/seo/meta";
 
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const reports = await getAllReportsForSitemap();
+  const [reports, neighborPairs] = await Promise.all([
+    getAllReportsForSitemap(),
+    getAllNeighborPairs(),
+  ]);
   const allPosts = getAllPosts();
   const publishedPosts = getPublishedPosts();
   const newestPostDate = allPosts[0]?.date;
@@ -61,5 +65,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(p.date),
   }));
 
-  return [...staticEntries, ...reportEntries, ...blogEntries];
+  const compareEntries: MetadataRoute.Sitemap = neighborPairs.map((p) => ({
+    url: `${SITE_URL}/compare/${p.slugA}-vs-${p.slugB}`,
+    changeFrequency: "weekly",
+    priority: 0.65,
+    lastModified: new Date(p.lastModified),
+  }));
+
+  return [...staticEntries, ...reportEntries, ...blogEntries, ...compareEntries];
 }

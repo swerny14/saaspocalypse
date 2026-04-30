@@ -303,6 +303,7 @@ create table if not exists capabilities (
   category         text not null,                  -- collab | content | commerce | comm | ai | infra | data | workflow | identity
   match_patterns   jsonb not null default '[]'::jsonb,   -- string[] of lowercase phrases to match against report text
   moat_tags        jsonb not null default '[]'::jsonb,   -- string[] feeding moat scoring (multi_sided | ugc | marketplace | viral_loop | data_storage | workflow_lock_in | integration_hub | proprietary_dataset | training_data | behavioral | hipaa | finra | gdpr_critical | licensed)
+  is_descriptor    boolean not null default false,       -- true when capability defines a product category (form-builder, appointment-booking) — similarity engine 2× boost
   updated_at       timestamptz not null default now()
 );
 
@@ -463,7 +464,7 @@ create table if not exists report_moat_scores (
   computed_at      timestamptz not null default now()
 );
 
-create index if not exists report_moat_scores_aggregate_idx
+create index if not exists report_moat_sc/cores_aggregate_idx
   on report_moat_scores (aggregate desc);
 
 -- Curator review state. `pending` = score is up for review and may surface
@@ -494,6 +495,54 @@ alter table report_moat_scores enable row level security;
 drop policy if exists "moat scores are publicly readable" on report_moat_scores;
 create policy "moat scores are publicly readable"
   on report_moat_scores for select to anon, authenticated using (true);
+
+-- 2026-04-30: per-capability descriptor flag. True when the capability
+-- defines what a product CATEGORICALLY IS (form-builder, appointment-
+-- booking, ai-agent-platform) rather than a sub-feature it has
+-- (rich-text-editor, social-login, push-notifications). Drives a 2× boost
+-- in similarity scoring so category-defining caps outrank shared
+-- infrastructure in "products like X" rankings. Distinct from
+-- moat_tags: empty moat_tags means "doesn't grant a moat axis" — most
+-- such capabilities are sub-features, not categories.
+alter table capabilities
+  add column if not exists is_descriptor boolean not null default false;
+
+-- 2026-04-30: similarity gaps queue. Pairs of reports the heuristic
+-- thinks SHOULD cluster as similar (high text-Jaccard over tagline+take)
+-- but the deterministic engine doesn't (low capability-overlap score).
+-- Surfaces taxonomy gaps — pairs where a missing descriptor capability
+-- prevents real twins from converging in `/admin/similarity-gaps`.
+--
+-- Posture mirrors normalization_unknowns + moat-anomalies: deterministic
+-- engine unchanged, LLM is curation aid only, human applies each fix.
+--
+-- (report_a_id, report_b_id) is canonically ordered (a < b alphabetically)
+-- so the unique constraint dedupes pairs regardless of which side was
+-- the source when the gap was detected.
+create table if not exists similarity_gaps (
+  id              uuid primary key default gen_random_uuid(),
+  report_a_id     uuid not null references reports(id) on delete cascade,
+  report_b_id     uuid not null references reports(id) on delete cascade,
+  text_similarity numeric(4,3) not null,
+  engine_score    numeric(4,3) not null,
+  status          text not null default 'open' check (status in ('open','applied','dismissed')),
+  -- LLM-suggested fix (populated lazily on per-row "suggest" click).
+  llm_action      text check (llm_action in ('add_pattern','new_capability','no_action')),
+  llm_payload     jsonb,
+  llm_note        text,
+  llm_suggested_at timestamptz,
+  applied_at      timestamptz,
+  dismissed_at    timestamptz,
+  detected_at     timestamptz not null default now(),
+  unique (report_a_id, report_b_id),
+  check (report_a_id < report_b_id)
+);
+
+create index if not exists similarity_gaps_status_idx on similarity_gaps (status);
+create index if not exists similarity_gaps_detected_at_idx on similarity_gaps (detected_at desc);
+
+alter table similarity_gaps enable row level security;
+-- No public read policy — admin-only via service-role client.
 
 -- 2026-04-30: LLM-generated curation suggestions for the unknowns queue.
 -- Populated by POST /api/admin/unknowns/suggest (admin-only batch call).

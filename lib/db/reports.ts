@@ -154,6 +154,58 @@ export async function getRecentReports(limit = 6): Promise<StoredReport[]> {
   return data ? normalizeRows(data) : [];
 }
 
+/**
+ * Tiny id→slug map. Used by similarity-rail diagnostics so console dumps are
+ * human-readable (`notion-ish-com` vs a UUID). Keep this lightweight — it
+ * SELECTs only two columns and is called from a logging path.
+ */
+export async function getAllReportIdSlugMap(): Promise<Map<string, string>> {
+  const sb = getSupabaseAnon();
+  if (!sb) return new Map();
+  const { data, error } = await sb
+    .from("reports")
+    .select("id, slug")
+    .range(0, 49_999);
+  if (error) {
+    console.error("[reports] getAllReportIdSlugMap failed", error);
+    return new Map();
+  }
+  const out = new Map<string, string>();
+  for (const r of (data ?? []) as Array<{ id: string; slug: string }>) {
+    out.set(r.id, r.slug);
+  }
+  return out;
+}
+
+/**
+ * Fetch reports by id, preserving the input order. Used by the similarity rail
+ * (`/r/[slug]` "products like X") which scores all reports against the source
+ * and then renders cards for the top-K winners — input order = ranked order.
+ * Returns only rows that resolve; callers tolerate a shorter array.
+ */
+export async function getReportsByIds(ids: string[]): Promise<StoredReport[]> {
+  if (ids.length === 0) return [];
+  const sb = getSupabaseAnon();
+  if (!sb) return [];
+  const { data, error } = await sb
+    .from("reports")
+    .select(REPORT_COLUMNS)
+    .in("id", ids);
+  if (error) {
+    console.error("[reports] getReportsByIds failed", error);
+    return [];
+  }
+  if (!data) return [];
+  const byId = new Map<string, StoredReport>();
+  for (const r of normalizeRows(data)) byId.set(r.id, r);
+  const out: StoredReport[] = [];
+  for (const id of ids) {
+    const row = byId.get(id);
+    if (row) out.push(row);
+  }
+  return out;
+}
+
 export async function getAllReports(limit = 5000): Promise<StoredReport[]> {
   const sb = getSupabaseAnon();
   if (!sb) return [];

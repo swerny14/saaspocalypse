@@ -97,6 +97,40 @@ export function blogPostJsonLd(post: Post): JsonLd {
   };
 }
 
+/**
+ * Compare-page JSON-LD: a `WebPage` whose mainEntity is an `ItemList` of two
+ * `Review`s — one per report, with the same shape as `reportJsonLd`. The
+ * canonical URL is the alphabetical pair URL; the caller is responsible for
+ * passing reports in canonical order.
+ */
+export function comparePageJsonLd(a: StoredReport, b: StoredReport): JsonLd {
+  const url = `${SITE_URL}/compare/${a.slug}-vs-${b.slug}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${url}#compare`,
+    url,
+    name: `${a.name} vs ${b.name}: which is easier to build?`,
+    description: `${a.name} vs ${b.name}. Buildability ${a.score} vs ${b.score}.`,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListOrder: "https://schema.org/ItemListOrderAscending",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          item: reportJsonLd(a),
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          item: reportJsonLd(b),
+        },
+      ],
+    },
+  };
+}
+
 export function reportJsonLd(report: StoredReport): JsonLd {
   return {
     "@context": "https://schema.org",

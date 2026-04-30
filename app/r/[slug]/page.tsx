@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { VerdictReport } from "@/components/VerdictReport";
+import { SimilarProducts } from "@/components/SimilarProducts";
 import { TrackView } from "@/components/TrackView";
 import { getReportBySlug } from "@/lib/db/reports";
 import {
@@ -59,6 +60,7 @@ export default async function ReportPage({ params }: { params: Params }) {
     <main className="bg-bg min-h-screen py-10">
       <div className="container">
         <VerdictReport report={report} />
+        <SimilarProducts sourceId={report.id} sourceSlug={report.slug} />
         <TrackView slug={report.slug} />
         <script
           type="application/ld+json"

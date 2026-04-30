@@ -1,6 +1,7 @@
-import { getSupabaseAdmin } from "./supabase";
+import { getSupabaseAdmin, getSupabaseAnon } from "./supabase";
 import { wrapDbError } from "./errors";
 import type { ReportProjection } from "@/lib/normalization/engine";
+import type { SimilarityCandidate } from "@/lib/normalization/similarity";
 
 /**
  * Persist a normalization projection. Admin-only — the projection writer is
@@ -132,3 +133,84 @@ export type ReportAttributeRow = {
   projection_version: number;
   projected_at: string;
 };
+
+/**
+ * Bulk-read the projection slice the similarity engine needs: capability set
+ * + segment + business model per report. Two anon SELECTs (capabilities,
+ * attributes), zipped in JS by report_id.
+ *
+ * Two anon calls instead of one nested embed because Supabase's PostgREST
+ * embed payloads at this scale ship a row-per-capability with the parent
+ * report fields duplicated; the flat shape we'd build here is identical
+ * either way and easier to reason about.
+ *
+ * Returns a Map keyed by report_id. Reports without a `report_attributes`
+ * row (legacy / projection-failed) still appear if they have capabilities,
+ * with `segment_slug` / `business_model_slug` null. Reports with neither
+ * are absent — they can't contribute to similarity rankings.
+ */
+export async function getAllSimilarityCandidates(): Promise<
+  Map<string, SimilarityCandidate>
+> {
+  const sb = getSupabaseAnon();
+  if (!sb) return new Map();
+
+  // Explicit ranges so we don't hit the PostgREST default 1000-row cap once
+  // the corpus crosses ~150 reports (5 capabilities × 200 reports = 1000 rows).
+  // 50K is comfortably above when we'd swap to a materialized `report_neighbors`
+  // table anyway. Reach for streaming/pagination if/when this becomes false.
+  const [capsRes, attrsRes] = await Promise.all([
+    sb.from("report_capabilities").select("report_id, capability_slug").range(0, 49_999),
+    sb
+      .from("report_attributes")
+      .select("report_id, segment_slug, business_model_slug")
+      .range(0, 49_999),
+  ]);
+
+  if (capsRes.error) {
+    console.error("[projections] getAllSimilarityCandidates capabilities", capsRes.error);
+    return new Map();
+  }
+  if (attrsRes.error) {
+    console.error("[projections] getAllSimilarityCandidates attributes", attrsRes.error);
+    return new Map();
+  }
+
+  const out = new Map<string, SimilarityCandidate>();
+  for (const row of (capsRes.data ?? []) as Array<{
+    report_id: string;
+    capability_slug: string;
+  }>) {
+    let entry = out.get(row.report_id);
+    if (!entry) {
+      entry = {
+        report_id: row.report_id,
+        capabilities: new Set(),
+        segment_slug: null,
+        business_model_slug: null,
+      };
+      out.set(row.report_id, entry);
+    }
+    entry.capabilities.add(row.capability_slug);
+  }
+  for (const row of (attrsRes.data ?? []) as Array<{
+    report_id: string;
+    segment_slug: string | null;
+    business_model_slug: string | null;
+  }>) {
+    let entry = out.get(row.report_id);
+    if (!entry) {
+      entry = {
+        report_id: row.report_id,
+        capabilities: new Set(),
+        segment_slug: row.segment_slug,
+        business_model_slug: row.business_model_slug,
+      };
+      out.set(row.report_id, entry);
+    } else {
+      entry.segment_slug = row.segment_slug;
+      entry.business_model_slug = row.business_model_slug;
+    }
+  }
+  return out;
+}

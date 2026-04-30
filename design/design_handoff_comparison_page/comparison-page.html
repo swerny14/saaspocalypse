@@ -1,0 +1,987 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Saaspocalypse — head-to-head: notion-ish vs calendly-ish</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0a0a0a;
+    --bg: #ece9dc;
+    --paper: #ffffff;
+    --paper-alt: #fafaf5;
+    --cream: #f4f1e8;
+    --lime: #c6ff00;
+    --coral: #ff6b4a;
+    --pink: #ff3366;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --muted: #666666;
+    --muted-2: #999999;
+    --hairline: #e7e3d3;
+    --display: "Space Grotesk", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    font-family: var(--display);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 28px 60px;
+  }
+
+  /* ============ HEADER (site chrome) ============ */
+  .top-rail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 18px;
+  }
+  .top-rail .crumbs a { color: var(--muted); text-decoration: none; }
+  .top-rail .crumbs .sep { opacity: 0.4; padding: 0 6px; }
+  .top-rail .crumbs strong { color: var(--ink); font-weight: 700; }
+
+  /* ============ PAGE TITLE ============ */
+  .title-wrap { padding: 4px 0 22px; border-bottom: 2.5px solid var(--ink); margin-bottom: 28px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .eyebrow .dot { width: 8px; height: 8px; background: var(--coral); border-radius: 999px; }
+  .eyebrow .meta { color: var(--muted); font-weight: 500; }
+  h1.page-title {
+    font-family: var(--display);
+    font-size: 64px; font-weight: 700;
+    letter-spacing: -0.035em; line-height: 0.96;
+    margin: 0 0 12px; text-wrap: balance;
+  }
+  h1.page-title em {
+    font-style: normal;
+    background: var(--ink); color: var(--lime);
+    padding: 0 10px;
+    display: inline-block; transform: translateY(-2px);
+    box-shadow: 4px 4px 0 0 var(--ink);
+    margin: 0 4px;
+  }
+  .title-sub {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .title-sub .pill {
+    background: var(--ink); color: var(--lime);
+    padding: 3px 9px;
+    font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; font-size: 10.5px;
+  }
+  .title-sub .verdict-pill {
+    background: var(--lime); color: var(--ink);
+    border: 2.5px solid var(--ink);
+    box-shadow: 3px 3px 0 0 var(--ink);
+    padding: 4px 10px;
+    font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; font-size: 11px;
+  }
+
+  /* ============ HEAD-TO-HEAD CARD ============ */
+  .h2h {
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    box-shadow: 6px 6px 0 0 var(--ink);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .h2h-grid {
+    display: grid;
+    grid-template-columns: 1fr 86px 1fr;
+  }
+  .h2h-side { padding: 26px 30px 22px; min-height: 240px; position: relative; }
+  .h2h-side.left  { background: var(--paper); }
+  .h2h-side.right { background: var(--paper-alt); }
+  .h2h-side .row1 {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 14px;
+    margin-bottom: 18px;
+  }
+  .scan-meta {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+    line-height: 1.55;
+  }
+  .scan-meta .when { color: var(--ink); }
+  .tier-stamp {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 4px 9px;
+    border: 2px solid var(--ink);
+    box-shadow: 2px 2px 0 0 var(--ink);
+    white-space: nowrap;
+  }
+  .tier-stamp.weekend  { background: var(--green); color: var(--ink); }
+  .tier-stamp.month    { background: var(--yellow); color: var(--ink); }
+  .tier-stamp.dont     { background: var(--pink); color: var(--ink); }
+  .tier-stamp.weekend2 { background: var(--lime); color: var(--ink); }
+
+  .product-name {
+    font-family: var(--display); font-size: 56px; font-weight: 700;
+    letter-spacing: -0.04em; line-height: 0.95; margin: 0 0 6px;
+  }
+  .product-tag {
+    font-family: var(--display); font-size: 15px; font-weight: 500;
+    color: var(--muted); letter-spacing: -0.005em;
+    margin-bottom: 22px;
+  }
+  .score-row {
+    display: flex; align-items: baseline; gap: 14px;
+    margin-bottom: 14px;
+  }
+  .score-num {
+    font-family: var(--display); font-weight: 700;
+    font-size: 96px; letter-spacing: -0.06em; line-height: 0.85;
+  }
+  .score-num.gold { color: var(--yellow); }
+  .score-num.go   { color: var(--green); }
+  .score-suffix {
+    font-family: var(--display); font-weight: 500; font-size: 22px;
+    opacity: 0.5; letter-spacing: -0.03em;
+  }
+  .score-bar {
+    height: 6px; background: var(--cream); border: 1.5px solid var(--ink);
+    position: relative; margin-bottom: 14px;
+  }
+  .score-bar i { position: absolute; inset: 0; }
+  .score-bar i.fill { background: var(--ink); }
+  .score-bar i.tick {
+    width: 1.5px; background: var(--ink); opacity: 0.25; left: var(--x);
+  }
+  .row-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+  }
+  .row-foot a { color: var(--ink); text-decoration: none; border-bottom: 2px solid var(--ink); padding-bottom: 1px; }
+  .row-foot a:hover { color: var(--coral); border-color: var(--coral); }
+
+  /* The "vs" gutter */
+  .h2h-vs {
+    border-left: 2.5px solid var(--ink);
+    border-right: 2.5px solid var(--ink);
+    background:
+      repeating-linear-gradient(
+        45deg,
+        var(--cream) 0 6px,
+        transparent 6px 12px
+      ), var(--paper);
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    padding: 16px 0;
+    position: relative;
+  }
+  .h2h-vs .vs-text {
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-family: var(--display); font-size: 56px; font-weight: 700;
+    letter-spacing: -0.04em; color: var(--ink);
+  }
+  .h2h-vs .delta {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    background: var(--ink); color: var(--lime);
+    padding: 5px 8px; white-space: nowrap;
+    box-shadow: 3px 3px 0 0 var(--ink);
+    border: 2px solid var(--ink);
+    transform: rotate(-90deg) translateY(0);
+  }
+  .h2h-vs .delta b { color: var(--paper); }
+  .h2h-vs .winner-arrow {
+    font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--ink);
+  }
+
+  /* ============ SECTION CARD (shared) ============ */
+  .card {
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    box-shadow: 6px 6px 0 0 var(--ink);
+    margin-bottom: 24px;
+  }
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 2.5px solid var(--ink);
+    background: var(--cream);
+    gap: 14px;
+  }
+  .card-head .left { display: flex; align-items: baseline; gap: 12px; }
+  .badge {
+    background: var(--ink); color: var(--lime);
+    padding: 4px 9px;
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .badge.coral { background: var(--coral); color: var(--ink); }
+  .badge.lime  { background: var(--lime); color: var(--ink); }
+  .h2 {
+    font-family: var(--display); font-size: 26px; font-weight: 700;
+    letter-spacing: -0.02em; margin: 0;
+  }
+  .head-meta {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .head-meta a { color: var(--ink); text-decoration: none; border-bottom: 2px solid var(--ink); padding-bottom: 1px; }
+  .head-meta .winner {
+    background: var(--lime); border: 2px solid var(--ink); padding: 3px 8px;
+    box-shadow: 2px 2px 0 0 var(--ink); color: var(--ink);
+    letter-spacing: 0.14em;
+  }
+
+  /* ============ MOAT (per-axis rows) ============ */
+  .moat-summary {
+    display: grid; grid-template-columns: 1fr 130px 1fr;
+    border-bottom: 2.5px solid var(--ink);
+    align-items: stretch;
+  }
+  .moat-summary .col { padding: 22px 28px; }
+  .moat-summary .col.center {
+    border-left: 2.5px solid var(--ink); border-right: 2.5px solid var(--ink);
+    background: var(--ink); color: var(--lime);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px;
+  }
+  .moat-summary .col.center .lbl {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.7;
+  }
+  .moat-summary .col.center .delta {
+    font-family: var(--display); font-size: 38px; font-weight: 700;
+    letter-spacing: -0.03em; line-height: 1; color: var(--lime);
+  }
+  .moat-summary .col.center .arrow {
+    font-family: var(--mono); font-size: 13px; opacity: 0.7;
+  }
+  .moat-summary .agg {
+    display: flex; align-items: baseline; gap: 10px;
+    font-family: var(--display);
+  }
+  .moat-summary .agg .num { font-size: 46px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+  .moat-summary .agg .den { font-size: 18px; opacity: 0.4; }
+  .moat-summary .agg-label {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .moat-summary .agg-bar {
+    height: 10px; background: var(--cream); border: 2px solid var(--ink);
+    position: relative; margin-top: 12px;
+  }
+  .moat-summary .agg-bar i { position: absolute; inset: 0; background: var(--ink); }
+  .moat-summary .col.right { background: var(--paper-alt); }
+  .moat-summary .col .who {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .axis-row {
+    display: grid;
+    grid-template-columns: 1fr 130px 1fr;
+    border-bottom: 1.5px solid var(--hairline);
+    align-items: center;
+  }
+  .axis-row:last-child { border-bottom: 0; }
+  .axis-row .side {
+    padding: 16px 28px;
+    display: grid; grid-template-columns: 1fr 70px;
+    align-items: center; gap: 16px;
+  }
+  .axis-row .side.left  { justify-items: stretch; }
+  .axis-row .side.right { background: var(--paper-alt); }
+  .axis-row .axis-label {
+    border-left: 2.5px solid var(--ink); border-right: 2.5px solid var(--ink);
+    text-align: center; padding: 14px 6px;
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    background: var(--cream);
+    align-self: stretch;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px;
+  }
+  .axis-label .delta-mini {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.12em;
+  }
+  .axis-label .delta-mini.pos { color: var(--green); }
+  .axis-label .delta-mini.neg { color: var(--coral); }
+  .axis-label .delta-mini.tie { color: var(--muted-2); }
+
+  .bar-wrap {
+    height: 14px; background: var(--cream);
+    border: 2px solid var(--ink); position: relative;
+  }
+  .bar-wrap.right-aligned { transform: scaleX(-1); }
+  .bar-wrap i { position: absolute; inset: 0; }
+  .bar-wrap i.fill { background: var(--ink); }
+  .bar-wrap i.fill.fortress { background: var(--pink); }
+  .bar-wrap i.fill.coral { background: var(--coral); }
+  .bar-wrap i.fill.muted { background: #888; }
+  .bar-wrap i.fill.faint { background: #d8d4c4; }
+  .axis-row .num {
+    font-family: var(--display); font-weight: 700; font-size: 22px;
+    letter-spacing: -0.03em; text-align: right;
+    line-height: 1;
+  }
+  .axis-row .num.zero { color: var(--muted-2); }
+  .axis-row .num.lead { color: var(--coral); }
+  .axis-row .side.right .num { text-align: left; }
+
+  /* ============ STACK / OVERLAP TRIPTYCH ============ */
+  .triptych {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+  }
+  .triptych .col {
+    padding: 18px 22px 22px;
+    border-right: 2.5px solid var(--ink);
+    min-height: 184px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .triptych .col:last-child { border-right: 0; }
+  .triptych .col.shared { background: var(--cream); }
+  .triptych .col-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+  }
+  .triptych .col-title {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink);
+  }
+  .triptych .col-count {
+    font-family: var(--display); font-weight: 700; font-size: 28px;
+    letter-spacing: -0.03em; line-height: 1;
+    background: var(--ink); color: var(--lime);
+    padding: 4px 10px 5px;
+    box-shadow: 3px 3px 0 0 var(--ink);
+  }
+  .triptych .col-count.coral { background: var(--coral); color: var(--ink); }
+  .triptych .col-count.lime  { background: var(--lime); color: var(--ink); }
+  .triptych .col-count.zero  { background: var(--paper); color: var(--muted-2); border: 2px solid var(--muted-2); box-shadow: 3px 3px 0 0 var(--muted-2); }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    padding: 3px 8px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper); color: var(--ink);
+    line-height: 1.4;
+  }
+  .tag.solid-coral { background: var(--coral); color: var(--ink); border-color: var(--ink); }
+  .tag.solid-lime  { background: var(--lime); color: var(--ink); border-color: var(--ink); }
+  .tag.solid-ink   { background: var(--ink); color: var(--paper); }
+  .tag.muted       { color: var(--muted); border-color: var(--muted-2); background: transparent; }
+  .empty-line {
+    font-family: var(--mono); font-size: 12px; color: var(--muted-2);
+    letter-spacing: 0.05em;
+  }
+  .empty-line .blink { color: var(--ink); font-weight: 700; }
+
+  /* ============ COST + TIME ============ */
+  .floor {
+    display: grid; grid-template-columns: 1fr 1fr;
+  }
+  .floor .quad {
+    padding: 24px 28px 26px;
+    border-right: 2.5px solid var(--ink);
+  }
+  .floor .quad:last-child { border-right: 0; }
+  .quad-head {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+    margin-bottom: 18px;
+  }
+  .quad-head .winner {
+    background: var(--ink); color: var(--lime);
+    padding: 3px 8px;
+  }
+  .quad-grid {
+    display: grid; grid-template-columns: 1fr 28px 1fr;
+    align-items: end; gap: 10px;
+  }
+  .quad-side .sublabel {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .quad-side .big {
+    font-family: var(--display); font-weight: 700; font-size: 56px;
+    letter-spacing: -0.04em; line-height: 0.9;
+  }
+  .quad-side.win .big { color: var(--ink); }
+  .quad-side.lose .big { color: var(--muted-2); }
+  .quad-arrow {
+    font-family: var(--mono); font-size: 18px; color: var(--ink);
+    text-align: center; padding-bottom: 12px;
+  }
+  .quad-foot {
+    margin-top: 18px;
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink);
+    border-top: 1.5px dashed var(--ink); padding-top: 14px;
+  }
+  .quad-foot .delta-pill {
+    background: var(--lime); border: 2px solid var(--ink);
+    box-shadow: 2px 2px 0 0 var(--ink);
+    padding: 3px 8px;
+  }
+  .quad-foot .narration { color: var(--muted); font-weight: 500; letter-spacing: 0; text-transform: none; font-family: var(--display); font-size: 13.5px; }
+
+  /* ============ VERDICT BAND ============ */
+  .verdict-band {
+    background: var(--ink); color: var(--paper);
+    border: 2.5px solid var(--ink);
+    box-shadow: 6px 6px 0 0 var(--ink);
+    padding: 22px 28px;
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 24px;
+    margin-bottom: 28px;
+  }
+  .verdict-band .vlabel {
+    background: var(--lime); color: var(--ink);
+    padding: 5px 10px;
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    align-self: start;
+  }
+  .verdict-band .vline {
+    font-family: var(--display); font-size: 22px; font-weight: 500;
+    letter-spacing: -0.01em; line-height: 1.3; text-wrap: balance;
+  }
+  .verdict-band .vline em {
+    font-style: normal; color: var(--lime); font-weight: 700;
+  }
+  .verdict-band .vbtn {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    background: var(--lime); color: var(--ink);
+    border: 2px solid var(--lime);
+    padding: 8px 12px;
+    box-shadow: 3px 3px 0 0 #000;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .verdict-band .vbtn:hover { background: var(--paper); border-color: var(--paper); }
+
+  /* ============ FOOTER ============ */
+  .links-row {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    margin-top: 8px;
+    color: var(--muted);
+  }
+  .links-row a { color: var(--ink); text-decoration: none; border-bottom: 2px solid var(--ink); padding-bottom: 1px; margin-right: 22px; }
+  .links-row a:hover { color: var(--coral); border-color: var(--coral); }
+  .footer-rail {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 36px; padding-top: 18px;
+    border-top: 1.5px solid var(--ink);
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+  }
+
+  /* ============ SITE NAV (matches existing site) ============ */
+  .site-nav {
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    box-shadow: 6px 6px 0 0 var(--ink);
+    padding: 10px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .site-nav .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: -0.02em;
+  }
+  .site-nav .brand img { width: 30px; height: 30px; display: block; }
+  .site-nav .brand .beta {
+    background: var(--lime); color: var(--ink);
+    padding: 3px 7px;
+    font-family: var(--mono); font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    border: 1.5px solid var(--ink);
+  }
+  .site-nav .links {
+    display: flex; align-items: center; gap: 22px;
+    font-family: var(--display); font-size: 14px; font-weight: 500;
+  }
+  .site-nav .links a { color: var(--ink); text-decoration: none; }
+  .site-nav .links a:hover { color: var(--coral); }
+  .site-nav .cta {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    background: var(--lime); color: var(--ink);
+    border: 2px solid var(--ink); box-shadow: 3px 3px 0 0 var(--ink);
+    padding: 8px 12px; text-decoration: none;
+  }
+  .site-nav .cta:hover { background: var(--paper); }
+
+  /* tiny mobile */
+  @media (max-width: 880px) {
+    .h2h-grid, .moat-summary, .axis-row, .triptych, .floor { grid-template-columns: 1fr; }
+    .h2h-vs { display: none; }
+    h1.page-title { font-size: 40px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ── breadcrumb / top rail ── -->
+    <div class="top-rail">
+      <div class="crumbs">
+        <a href="#">← directory</a>
+        <span class="sep">/</span>
+        <span>compare</span>
+        <span class="sep">/</span>
+        <strong>notion-ish vs calendly-ish</strong>
+      </div>
+      <div>scan #04 · last updated 14h ago</div>
+    </div>
+
+    <!-- ── page title ── -->
+    <div class="title-wrap">
+      <div class="eyebrow">
+        <span class="dot"></span>
+        head-to-head
+        <span class="meta">· buildability comparison</span>
+      </div>
+      <h1 class="page-title">can I build <em>notion-ish</em> or <em>calendly-ish</em>?</h1>
+      <div class="title-sub">
+        <span class="pill">verdict</span>
+        <span class="verdict-pill">build calendly-ish first</span>
+        <span>shorter clone time, smaller stack, identical moat depth.</span>
+      </div>
+    </div>
+
+    <!-- ── HEAD-TO-HEAD CARD ── -->
+    <div class="h2h">
+      <div class="h2h-grid">
+
+        <!-- LEFT product (notion-ish) -->
+        <div class="h2h-side left">
+          <div class="row1">
+            <div class="scan-meta">
+              clone time<br/>
+              <span class="when">a month · 6 weeks</span>
+            </div>
+            <span class="tier-stamp month">month</span>
+          </div>
+          <h2 class="product-name">notion-ish.com</h2>
+          <div class="product-tag">rich-text + database with collaborative editing</div>
+          <div class="score-row">
+            <span class="score-num gold">48</span>
+            <span class="score-suffix">/ 100</span>
+          </div>
+          <div class="score-bar">
+            <i class="fill" style="width: 48%;"></i>
+            <i class="tick" style="--x: 25%;"></i>
+            <i class="tick" style="--x: 50%;"></i>
+            <i class="tick" style="--x: 75%;"></i>
+          </div>
+          <div class="row-foot">
+            <span>buildability score</span>
+            <a href="#">full report ↗</a>
+          </div>
+        </div>
+
+        <!-- VS GUTTER -->
+        <div class="h2h-vs">
+          <div class="winner-arrow">→</div>
+          <div class="vs-text">vs</div>
+          <div class="winner-arrow">↑</div>
+        </div>
+
+        <!-- RIGHT product (calendly-ish) -->
+        <div class="h2h-side right">
+          <div class="row1">
+            <div class="scan-meta">
+              clone time<br/>
+              <span class="when">18 hours</span>
+            </div>
+            <span class="tier-stamp weekend2">weekend</span>
+          </div>
+          <h2 class="product-name">calendly-ish.com</h2>
+          <div class="product-tag">online appointment scheduling form</div>
+          <div class="score-row">
+            <span class="score-num go">84</span>
+            <span class="score-suffix">/ 100</span>
+          </div>
+          <div class="score-bar">
+            <i class="fill" style="width: 84%; background: var(--green);"></i>
+            <i class="tick" style="--x: 25%;"></i>
+            <i class="tick" style="--x: 50%;"></i>
+            <i class="tick" style="--x: 75%;"></i>
+          </div>
+          <div class="row-foot">
+            <span>buildability score</span>
+            <a href="#">full report ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MOAT (per-axis) ── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="left">
+          <span class="badge">§ moat</span>
+          <h3 class="h2">how deep is each moat.</h3>
+        </div>
+        <div class="head-meta">
+          <span>aggregate</span>
+          <span class="winner">tie · ±0.4</span>
+          <a href="#">methodology →</a>
+        </div>
+      </div>
+
+      <!-- aggregate row (ink "delta" stripe in the middle) -->
+      <div class="moat-summary">
+        <div class="col left">
+          <div class="agg-label">notion-ish · aggregate</div>
+          <div class="agg">
+            <span class="num">3.4</span><span class="den">/10</span>
+            <span style="font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-left: auto;">shallow ditch</span>
+          </div>
+          <div class="agg-bar"><i style="width: 34%;"></i></div>
+        </div>
+        <div class="col center">
+          <div class="lbl">moat delta</div>
+          <div class="delta">+0.4</div>
+          <div class="arrow">→ calendly-ish</div>
+        </div>
+        <div class="col right">
+          <div class="agg-label">calendly-ish · aggregate</div>
+          <div class="agg">
+            <span class="num">3.8</span><span class="den">/10</span>
+            <span style="font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-left: auto;">shallow ditch</span>
+          </div>
+          <div class="agg-bar"><i style="width: 38%;"></i></div>
+        </div>
+      </div>
+
+      <!-- per-axis rows -->
+      <!-- CAPITAL -->
+      <div class="axis-row">
+        <div class="side left">
+          <div class="bar-wrap right-aligned"><i class="fill" style="width: 60%;"></i></div>
+          <div class="num">6.0</div>
+        </div>
+        <div class="axis-label">
+          capital
+          <span class="delta-mini neg">−3.0 →</span>
+        </div>
+        <div class="side right">
+          <div class="num">3.0</div>
+          <div class="bar-wrap"><i class="fill muted" style="width: 30%;"></i></div>
+        </div>
+      </div>
+
+      <!-- TECHNICAL -->
+      <div class="axis-row">
+        <div class="side left">
+          <div class="bar-wrap right-aligned"><i class="fill" style="width: 51%;"></i></div>
+          <div class="num">5.1</div>
+        </div>
+        <div class="axis-label">
+          technical
+          <span class="delta-mini neg">−2.5 →</span>
+        </div>
+        <div class="side right">
+          <div class="num">2.6</div>
+          <div class="bar-wrap"><i class="fill muted" style="width: 26%;"></i></div>
+        </div>
+      </div>
+
+      <!-- NETWORK -->
+      <div class="axis-row">
+        <div class="side left">
+          <div class="bar-wrap right-aligned"><i class="fill coral" style="width: 80%;"></i></div>
+          <div class="num lead">8.0</div>
+        </div>
+        <div class="axis-label">
+          network
+          <span class="delta-mini neg">−8.0 →</span>
+        </div>
+        <div class="side right">
+          <div class="num zero">0.0</div>
+          <div class="bar-wrap"><i class="fill faint" style="width: 0%;"></i></div>
+        </div>
+      </div>
+
+      <!-- SWITCHING -->
+      <div class="axis-row">
+        <div class="side left">
+          <div class="bar-wrap right-aligned"><i class="fill fortress" style="width: 100%;"></i></div>
+          <div class="num lead">10.0</div>
+        </div>
+        <div class="axis-label">
+          switching
+          <span class="delta-mini neg">−2.0 →</span>
+        </div>
+        <div class="side right">
+          <div class="num">8.0</div>
+          <div class="bar-wrap"><i class="fill" style="width: 80%;"></i></div>
+        </div>
+      </div>
+
+      <!-- DATA -->
+      <div class="axis-row">
+        <div class="side left">
+          <div class="bar-wrap right-aligned"><i class="fill faint" style="width: 0%;"></i></div>
+          <div class="num zero">0.0</div>
+        </div>
+        <div class="axis-label">
+          data
+          <span class="delta-mini tie">±0</span>
+        </div>
+        <div class="side right">
+          <div class="num zero">0.0</div>
+          <div class="bar-wrap"><i class="fill faint" style="width: 0%;"></i></div>
+        </div>
+      </div>
+
+      <!-- REGULATORY -->
+      <div class="axis-row">
+        <div class="side left">
+          <div class="bar-wrap right-aligned"><i class="fill faint" style="width: 0%;"></i></div>
+          <div class="num zero">0.0</div>
+        </div>
+        <div class="axis-label">
+          regulatory
+          <span class="delta-mini tie">±0</span>
+        </div>
+        <div class="side right">
+          <div class="num zero">0.0</div>
+          <div class="bar-wrap"><i class="fill faint" style="width: 0%;"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SITE NAV (matches site chrome from screenshot) ── -->
+    <div class="site-nav">
+      <div class="brand">
+        <img src="logo-s.png" alt="" />
+        saaspocalypse
+        <span class="beta">beta, probably</span>
+      </div>
+      <div class="links">
+        <a href="#">Directory</a>
+        <a href="#">Blog</a>
+        <a href="#">How it works</a>
+        <a href="#">FAQ</a>
+      </div>
+      <a class="cta" href="#">scan a URL ↓</a>
+    </div>
+
+    <!-- ── OVERLAP TRIPTYCH ── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="left">
+          <span class="badge coral">§ overlap</span>
+          <h3 class="h2">where they fight, where they don't.</h3>
+        </div>
+        <div class="head-meta">
+          <span>features only one of them ships, plus the small middle they share.</span>
+        </div>
+      </div>
+      <div class="triptych">
+        <div class="col">
+          <div class="col-head">
+            <span class="col-title">only notion-ish · 7</span>
+            <span class="col-count coral">7</span>
+          </div>
+          <div class="tags">
+            <span class="tag solid-coral">serverless / edge platform</span>
+            <span class="tag">automations</span>
+            <span class="tag">developer ecosystem</span>
+            <span class="tag">marketplace</span>
+            <span class="tag">team workspaces</span>
+            <span class="tag">transactional email</span>
+            <span class="tag">webhooks</span>
+          </div>
+        </div>
+
+        <div class="col shared">
+          <div class="col-head">
+            <span class="col-title">shared · 4</span>
+            <span class="col-count lime">4</span>
+          </div>
+          <div class="tags">
+            <span class="tag solid-lime">appointment booking</span>
+            <span class="tag">integrations</span>
+            <span class="tag">social login</span>
+            <span class="tag">user data storage</span>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="col-head">
+            <span class="col-title">only calendly-ish · 0</span>
+            <span class="col-count zero">0</span>
+          </div>
+          <div class="tags">
+            <span class="tag muted">— nothing exclusive —</span>
+          </div>
+          <div class="empty-line" style="margin-top: auto;">
+            <span class="blink">_</span> calendly-ish is a strict subset of the shared surface.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STACK (what they're built on) ── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="left">
+          <span class="badge">§ stack</span>
+          <h3 class="h2">what they're built on.</h3>
+        </div>
+        <div class="head-meta">
+          <span>1 shared key · ‑1× connectivity</span>
+        </div>
+      </div>
+      <div class="triptych">
+        <div class="col">
+          <div class="col-head">
+            <span class="col-title">only notion-ish · 0</span>
+            <span class="col-count zero">0</span>
+          </div>
+          <div class="empty-line">
+            <span class="blink">_</span> uses public infra only.
+          </div>
+        </div>
+        <div class="col shared">
+          <div class="col-head">
+            <span class="col-title">shared infra · 1</span>
+            <span class="col-count lime">1</span>
+          </div>
+          <div class="tags">
+            <span class="tag solid-lime">postgres</span>
+          </div>
+          <div class="empty-line" style="margin-top: auto;">
+            <span class="blink">_</span> both lean on a managed pg + a CDN. nothing exotic.
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-head">
+            <span class="col-title">only calendly-ish · 1</span>
+            <span class="col-count coral">1</span>
+          </div>
+          <div class="tags">
+            <span class="tag solid-coral">salesforce</span>
+          </div>
+          <div class="empty-line" style="margin-top: auto;">
+            <span class="blink">_</span> enterprise CRM shim. surprising for a calendar app.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── COST + TIME (FLOOR) ── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="left">
+          <span class="badge">§ floor</span>
+          <h3 class="h2">cost + time, side by side.</h3>
+        </div>
+        <div class="head-meta">
+          <a href="#">how we estimate ↗</a>
+        </div>
+      </div>
+
+      <div class="floor">
+        <!-- monthly floor -->
+        <div class="quad">
+          <div class="quad-head">
+            <span>monthly floor</span>
+            <span class="winner">calendly-ish wins</span>
+          </div>
+          <div class="quad-grid">
+            <div class="quad-side lose">
+              <div class="sublabel">notion-ish</div>
+              <div class="big">$57</div>
+            </div>
+            <div class="quad-arrow">→</div>
+            <div class="quad-side win">
+              <div class="sublabel">calendly-ish</div>
+              <div class="big">$3</div>
+            </div>
+          </div>
+          <div class="quad-foot">
+            <span class="delta-pill">delta −$54</span>
+            <span class="narration">notion-ish costs ~19× more per month to keep the lights on.</span>
+          </div>
+        </div>
+
+        <!-- time to clone -->
+        <div class="quad">
+          <div class="quad-head">
+            <span>time to clone</span>
+            <span class="winner">calendly-ish wins</span>
+          </div>
+          <div class="quad-grid">
+            <div class="quad-side lose">
+              <div class="sublabel">notion-ish</div>
+              <div class="big">6 wks</div>
+            </div>
+            <div class="quad-arrow">→</div>
+            <div class="quad-side win">
+              <div class="sublabel">calendly-ish</div>
+              <div class="big">18 hrs</div>
+            </div>
+          </div>
+          <div class="quad-foot">
+            <span class="delta-pill">delta −56× faster</span>
+            <span class="narration">a long weekend vs. nearly two months of nights and weekends.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VERDICT BAND ── -->
+    <div class="verdict-band">
+      <span class="vlabel">the verdict</span>
+      <div class="vline">
+        same shallow ditch, same single shared dependency. <em>build the calendar app this weekend.</em> revisit notion-ish only if you need the editor.
+      </div>
+      <a class="vbtn" href="#">read the full reports →</a>
+    </div>
+
+    <!-- ── footer links ── -->
+    <div class="links-row">
+      <span>
+        <a href="#">→ full report on notion-ish</a>
+        <a href="#">→ full report on calendly-ish</a>
+      </span>
+    </div>
+    <div class="footer-rail">
+      <span>← saaspocalypse · directory</span>
+      <span>scan #04 · v1.2</span>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -42,6 +42,7 @@ type CapabilityRow = {
   category: string;
   match_patterns: unknown;
   moat_tags: unknown;
+  is_descriptor: unknown;
 };
 
 type SegmentOrModelRow = {
@@ -67,7 +68,7 @@ export async function loadTaxonomyFromDb(): Promise<{
       .select("slug, display_name, category, commoditization_level, aliases"),
     admin
       .from("capabilities")
-      .select("slug, display_name, category, match_patterns, moat_tags"),
+      .select("slug, display_name, category, match_patterns, moat_tags, is_descriptor"),
     admin
       .from("market_segments")
       .select("slug, display_name, match_patterns"),
@@ -100,6 +101,7 @@ export async function loadTaxonomyFromDb(): Promise<{
       category: row.category as CapabilityCategory,
       match_patterns: asStringArray(row.match_patterns),
       moat_tags: asStringArray(row.moat_tags) as MoatTag[],
+      is_descriptor: row.is_descriptor === true ? true : undefined,
     };
   });
 

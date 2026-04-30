@@ -83,6 +83,7 @@ type CapRow = {
   category: string;
   match_patterns: string[] | null;
   moat_tags: string[] | null;
+  is_descriptor: boolean | null;
 };
 
 /* ──────────────────────────── stack components ───────────────────────────── */
@@ -164,7 +165,8 @@ const CAPS_FOOTER = `];
 function emitCapRow(c: CapRow): string {
   const patterns = (c.match_patterns ?? []).map(jsString).join(", ");
   const tags = (c.moat_tags ?? []).map(jsString).join(", ");
-  return `  { slug: ${jsString(c.slug)}, display_name: ${jsString(c.display_name)}, category: ${jsString(c.category)}, match_patterns: [${patterns}], moat_tags: [${tags}] },`;
+  const descriptor = c.is_descriptor === true ? `, is_descriptor: true` : "";
+  return `  { slug: ${jsString(c.slug)}, display_name: ${jsString(c.display_name)}, category: ${jsString(c.category)}, match_patterns: [${patterns}], moat_tags: [${tags}]${descriptor} },`;
 }
 
 /* ───────────────────────────── shared helpers ───────────────────────────── */
@@ -234,7 +236,7 @@ async function main() {
   {
     const { data, error } = await admin
       .from("capabilities")
-      .select("slug, display_name, category, match_patterns, moat_tags")
+      .select("slug, display_name, category, match_patterns, moat_tags, is_descriptor")
       .order("category")
       .order("slug");
     if (error) {

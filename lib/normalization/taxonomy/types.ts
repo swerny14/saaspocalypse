@@ -93,6 +93,23 @@ export type Capability = {
    */
   match_patterns: string[];
   moat_tags: MoatTag[];
+  /**
+   * True when this capability defines what a product CATEGORICALLY IS
+   * ("form builder", "appointment booking", "ai agent platform"), not just
+   * a feature it has. The similarity engine boosts shared descriptor caps
+   * 2× on top of their IDF² weight so category-defining caps outrank
+   * shared infrastructure in "products like X" rankings.
+   *
+   * Distinct from `moat_tags: []`: most descriptors don't move moat axes
+   * (the *category* "form builder" doesn't grant a moat — specific
+   * capabilities like `marketplace` do), but most non-moat capabilities
+   * (`pdf-generation`, `comments-mentions`, `social-login`) aren't
+   * categories either — they're sub-features many products incorporate.
+   *
+   * Optional: omit on non-descriptors (default = false). Set true only on
+   * capabilities that name a product category.
+   */
+  is_descriptor?: boolean;
 };
 
 export type MarketSegment = {

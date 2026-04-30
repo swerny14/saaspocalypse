@@ -42,4 +42,33 @@ export function reportCanonical(slug: string): string {
   return `${SITE_URL}/r/${slug}`;
 }
 
+/** Canonical compare URL — alphabetical slug ordering enforced by caller. */
+export function compareCanonical(slugA: string, slugB: string): string {
+  return `${SITE_URL}/compare/${slugA}-vs-${slugB}`;
+}
+
+/**
+ * Title targets *comparison* intent (`X vs Y: which is easier to build`),
+ * not the per-report "Can I build X" intent. Keeps the long-tail comparison
+ * query phrase up front for SERP CTR.
+ */
+export function comparePageTitle(a: StoredReport, b: StoredReport): string {
+  return `${a.name} vs ${b.name}: which is easier to build? — ${BRAND}`;
+}
+
+/** Longer share-card form. Adds tier + score signal so previews aren't bare. */
+export function comparePageOgTitle(a: StoredReport, b: StoredReport): string {
+  return `${a.name} vs ${b.name}: head-to-head buildability — ${a.score}/100 vs ${b.score}/100 · ${BRAND}`;
+}
+
+/**
+ * ≤155 chars when possible. Stack lists keep brand names readable; falls back
+ * to a stack-less form when the full version overflows.
+ */
+export function comparePageDescription(a: StoredReport, b: StoredReport): string {
+  const full = `${a.name} vs ${b.name}. Buildability ${a.score} vs ${b.score}. ${a.time_estimate} vs ${b.time_estimate}. Stack, capabilities, cost — side by side.`;
+  if (full.length <= 155) return full;
+  return `${a.name} vs ${b.name}. Buildability ${a.score} vs ${b.score}. ${a.time_estimate} vs ${b.time_estimate}.`;
+}
+
 export { SITE_URL, BRAND };

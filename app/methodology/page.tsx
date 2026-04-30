@@ -11,12 +11,14 @@ export const metadata: Metadata = {
 };
 
 /**
- * `?from=/r/<slug>` lets the moat-section link round-trip the user back
- * to their report instead of always landing them on the homepage. We
- * whitelist the path shape strictly to defeat any open-redirect or
- * javascript: trickery — only `/r/<kebab-slug>` is honored.
+ * `?from=…` lets the moat-section / compare-page link round-trip the user
+ * back to where they came from. Whitelisted strictly to defeat any
+ * open-redirect or javascript: trickery — we only honor:
+ *   - `/r/<kebab-slug>` (per-report page)
+ *   - `/compare/<slug-a>-vs-<slug-b>` (head-to-head page)
  */
 const REPORT_PATH_RE = /^\/r\/[a-z0-9][a-z0-9-]{0,128}$/;
+const COMPARE_PATH_RE = /^\/compare\/[a-z0-9][a-z0-9-]{0,128}-vs-[a-z0-9][a-z0-9-]{0,128}$/;
 
 function parseBackTarget(raw: string | string[] | undefined): {
   href: string;
@@ -25,6 +27,9 @@ function parseBackTarget(raw: string | string[] | undefined): {
   const candidate = typeof raw === "string" ? raw : "";
   if (candidate && REPORT_PATH_RE.test(candidate)) {
     return { href: candidate, label: "← back to report" };
+  }
+  if (candidate && COMPARE_PATH_RE.test(candidate)) {
+    return { href: candidate, label: "← back to comparison" };
   }
   return { href: "/", label: "← back home" };
 }
