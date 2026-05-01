@@ -34,7 +34,7 @@ export function DirectoryCard({ report, scanIndex }: Props) {
       />
       <div className="px-5 pt-[18px] pb-4 flex-1 flex flex-col">
         <div className="flex justify-between font-mono text-[10px] font-bold tracking-[0.15em] uppercase opacity-65 mb-2.5">
-          <span>scan №&nbsp;{String(scanIndex).padStart(3, "0")}</span>
+          <span>scan #{String(scanIndex).padStart(3, "0")}</span>
           <span>{scannedAt}</span>
         </div>
 

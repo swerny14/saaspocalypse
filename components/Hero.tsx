@@ -10,19 +10,32 @@ export function Hero() {
   return (
     <section className="overflow-hidden px-6 sm:px-12 pt-16 sm:pt-20 pb-[60px]">
       <div className="mx-auto grid max-w-[1100px] justify-items-center gap-7 text-center">
-        <div className="select-none inline-flex items-center gap-2.5 rounded-full border-[1.5px] border-ink bg-white px-3.5 py-[7px] font-display text-xs font-semibold tracking-[0.05em] text-ink">
-          <span className="h-[7px] w-[7px] rounded-full border-[1.5px] border-ink bg-accent" />
+        <div className="eh-pill select-none inline-flex items-center gap-3 rounded-full border-2 border-ink bg-white px-4 py-2 font-display text-[13px] font-semibold tracking-[0.06em] text-ink shadow-[2px_2px_0_0_var(--color-ink)]">
+          <span className="h-2 w-2 rounded-full border-[1.5px] border-ink bg-accent" />
           SaaS wedge scanner
         </div>
 
         <div className="grid justify-items-center">
-          <h1 className="font-display m-0 text-[clamp(62px,9vw,140px)] font-bold leading-[0.98] tracking-[-0.04em] text-ink text-balance">
+          <h1 className="eh-h1 font-display m-0 text-[clamp(62px,9vw,140px)] font-bold leading-[0.98] tracking-[-0.04em] text-ink text-balance">
             Scan any SaaS.
           </h1>
-          <h2 className="font-display m-0 mt-[0.25em] max-w-[20ch] text-[clamp(34px,4.4vw,60px)] font-medium leading-[1.1] tracking-[-0.02em] text-[#3a3a3a] text-balance">
+          <h2 className="eh-h2 font-display m-0 mt-[0.25em] max-w-[20ch] text-[clamp(34px,4.4vw,60px)] font-medium leading-[1.1] tracking-[-0.02em] text-[#3a3a3a] text-balance">
             Find the{" "}
-            <span className="bg-[linear-gradient(var(--color-accent),var(--color-accent))] bg-[length:100%_0.22em] bg-[position:0_88%] bg-no-repeat pb-[0.04em] text-ink">
-              weak spot
+            <span className="relative inline-block whitespace-nowrap">
+              <span className="font-serif italic font-semibold tracking-[-0.01em] text-ink">
+                weak spot
+              </span>
+              <svg
+                className="absolute left-[-3%] right-[-3%] bottom-[-0.18em] w-[106%] h-[0.34em] overflow-visible pointer-events-none"
+                viewBox="0 0 320 28"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <path
+                  className="eh-mark-path"
+                  d="M6 18 C 60 6, 130 24, 200 12 S 290 16, 314 10"
+                />
+              </svg>
             </span>
             .
           </h2>
