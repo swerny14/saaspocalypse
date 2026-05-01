@@ -554,7 +554,7 @@ function ScoreExpectationPanel({
 
       {!expectation ? (
         <p className="m-0 font-mono text-[12px] opacity-65">
-          no stored expectation check yet. run "check score expectation" above
+          no stored expectation check yet. run &quot;check score expectation&quot; above
           to ask the LLM for qualitative axis bands and compare them to the
           deterministic score.
         </p>
