@@ -243,6 +243,7 @@ function isPublicIPv6(addr: string): boolean {
 
 export function cleanHtml(html: string): string {
   let out = html;
+  const metadataText = extractMetadataText(html);
 
   // 1. Strip noise entirely (with their content).
   out = out.replace(/<!--[\s\S]*?-->/g, " ");
@@ -270,11 +271,20 @@ export function cleanHtml(html: string): string {
     .replace(/&#39;/gi, "'")
     .replace(/&apos;/gi, "'");
 
+  if (metadataText) {
+    out = `${metadataText}\n${out}`;
+  }
+
   // 5. Collapse horizontal whitespace, preserve newlines, drop empty lines.
+  const seen = new Set<string>();
   out = out
     .split("\n")
     .map((line) => line.replace(/\s+/g, " ").trim())
-    .filter(Boolean)
+    .filter((line) => {
+      if (!line || seen.has(line)) return false;
+      seen.add(line);
+      return true;
+    })
     .join("\n");
 
   // 6. Truncate.
@@ -283,4 +293,62 @@ export function cleanHtml(html: string): string {
   }
 
   return out;
+}
+
+function extractMetadataText(html: string): string {
+  const parts: string[] = [];
+
+  const title = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1];
+  if (title) parts.push(title);
+
+  for (const tag of html.matchAll(/<meta\b[^>]*>/gi)) {
+    const rawTag = tag[0];
+    const key =
+      getHtmlAttr(rawTag, "name") ??
+      getHtmlAttr(rawTag, "property") ??
+      getHtmlAttr(rawTag, "itemprop");
+    if (!key || !isUsefulMetaKey(key)) continue;
+
+    const content = getHtmlAttr(rawTag, "content");
+    if (content) parts.push(content);
+  }
+
+  return normalizeExtractedText(parts.join("\n"));
+}
+
+function isUsefulMetaKey(key: string): boolean {
+  return /^(description|og:(title|description|site_name)|twitter:(title|description)|application-name|keywords)$/i.test(
+    key,
+  );
+}
+
+function getHtmlAttr(tag: string, name: string): string | null {
+  const unquotedValue = "[^\\s\"'=<>`]+";
+  const attr = tag.match(
+    new RegExp(
+      `${escapeRegExp(name)}\\s*=\\s*("([^"]*)"|'([^']*)'|(${unquotedValue}))`,
+      "i",
+    ),
+  );
+  return attr?.[2] ?? attr?.[3] ?? attr?.[4] ?? null;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeExtractedText(text: string): string {
+  return text
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n");
 }
