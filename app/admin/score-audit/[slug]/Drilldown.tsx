@@ -112,12 +112,40 @@ type CapabilityHit = {
   evidence_text?: string;
 };
 
+type Axis =
+  | "capital"
+  | "technical"
+  | "network"
+  | "switching"
+  | "data_moat"
+  | "regulatory"
+  | "distribution";
+type AxisBand = "low" | "medium" | "high" | "unknown";
+type ScoreExpectationFlag = {
+  axis: Axis;
+  kind: "overfire" | "underfire";
+  expected: "low" | "medium" | "high";
+  actual: "low" | "medium" | "high";
+  score: number;
+  rationale: string;
+};
+type ScoreExpectationSummary = {
+  rubric_version: number;
+  verdict_hash: string;
+  bands: Record<Axis, AxisBand>;
+  rationale: Partial<Record<Axis, string>>;
+  flags: ScoreExpectationFlag[];
+  generated_at: string;
+  stale: boolean;
+};
+
 type Props = {
   report: ReportSummary;
   moat: MoatScore;
   breakdown: Breakdown;
   patterns: PatternRow[];
   weights: WeightRow[];
+  scoreExpectation: ScoreExpectationSummary | null;
   capabilities: CapabilityOption[];
 };
 
@@ -137,11 +165,18 @@ export function ScoreAuditDrilldown({
   breakdown,
   patterns,
   weights,
+  scoreExpectation,
   capabilities,
 }: Props) {
   const [openAxis, setOpenAxis] = useState<string | null>("capital");
   const [busy, setBusy] = useState<
-    null | "recompute" | "audit" | "moatAudit" | "review" | "distribution"
+    | null
+    | "recompute"
+    | "audit"
+    | "moatAudit"
+    | "review"
+    | "distribution"
+    | "expectation"
   >(null);
   const [auditMsg, setAuditMsg] = useState<string | null>(null);
   const [reviewStatus, setReviewStatus] = useState(report.review_status);
@@ -288,6 +323,26 @@ export function ScoreAuditDrilldown({
     }
   };
 
+  const runExpectation = async () => {
+    setBusy("expectation");
+    setAuditMsg(null);
+    try {
+      const res = await fetch(`/api/admin/reports/${report.slug}/score-expectation`, {
+        method: "POST",
+      });
+      const json = (await res.json()) as { ok?: boolean; message?: string };
+      if (!res.ok || !json.ok) {
+        setAuditMsg(json.message ?? `score expectation failed (${res.status})`);
+      } else {
+        startTransition(() => router.refresh());
+      }
+    } catch (e) {
+      setAuditMsg(e instanceof Error ? e.message : "score expectation failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <>
       {/* Header */}
@@ -360,6 +415,18 @@ export function ScoreAuditDrilldown({
         >
           {busy === "distribution" ? "refreshing..." : "refresh distribution"}
         </button>
+        <button
+          onClick={runExpectation}
+          disabled={busy !== null}
+          className="font-mono text-[11px] tracking-[0.1em] uppercase font-bold bg-paper px-3 py-2 border-2 border-ink text-ink cursor-pointer disabled:opacity-50"
+          title="Runs the LLM expectation check that compares qualitative axis bands to the deterministic score."
+        >
+          {busy === "expectation"
+            ? "checking..."
+            : scoreExpectation
+              ? "recheck score expectation"
+              : "check score expectation"}
+        </button>
         {reviewStatus === "pending" ? (
           <button
             onClick={() => setReview("verified")}
@@ -405,6 +472,8 @@ export function ScoreAuditDrilldown({
         </div>
       ) : null}
 
+      <ScoreExpectationPanel expectation={scoreExpectation} moat={moat} />
+
       {/* Axes panels */}
       <div className="grid gap-3 mb-7">
         {AXES.map((axis) => (
@@ -439,6 +508,122 @@ export function ScoreAuditDrilldown({
       {/* Weights table */}
       <WeightsAdmin weights={weights} />
     </>
+  );
+}
+
+function ScoreExpectationPanel({
+  expectation,
+  moat,
+}: {
+  expectation: ScoreExpectationSummary | null;
+  moat: MoatScore;
+}) {
+  const flagsByAxis = new Map(
+    (expectation?.flags ?? []).map((f) => [f.axis, f] as const),
+  );
+
+  return (
+    <div className="bru bg-paper px-4 py-3 mb-5">
+      <div className="flex items-baseline justify-between gap-3 mb-2 flex-wrap">
+        <h2 className="font-display text-lg lowercase m-0">
+          score expectation check.
+        </h2>
+        {expectation ? (
+          <div className="flex flex-wrap gap-2 font-mono text-[10px] uppercase tracking-[0.1em]">
+            <span
+              className={`border border-ink px-1.5 py-0.5 ${
+                expectation.stale
+                  ? "bg-sticky"
+                  : expectation.flags.length > 0
+                    ? "bg-coral text-paper"
+                    : "bg-success text-ink"
+              }`}
+            >
+              {expectation.stale
+                ? "stale"
+                : expectation.flags.length > 0
+                  ? `${expectation.flags.length} flag${expectation.flags.length === 1 ? "" : "s"}`
+                  : "clean"}
+            </span>
+            <span className="opacity-55">
+              {new Date(expectation.generated_at).toLocaleString()}
+            </span>
+          </div>
+        ) : null}
+      </div>
+
+      {!expectation ? (
+        <p className="m-0 font-mono text-[12px] opacity-65">
+          no stored expectation check yet. run "check score expectation" above
+          to ask the LLM for qualitative axis bands and compare them to the
+          deterministic score.
+        </p>
+      ) : (
+        <>
+          {expectation.stale ? (
+            <div className="mb-3 border border-ink bg-sticky px-2 py-1.5 font-mono text-[11px]">
+              this check was generated against an older verdict or rubric.
+              recheck before using it to verify the score.
+            </div>
+          ) : null}
+          {expectation.flags.length === 0 && !expectation.stale ? (
+            <div className="mb-3 border border-success bg-paper-alt px-2 py-1.5 font-mono text-[11px] text-success">
+              no high-confidence mismatches. still worth glancing, but the
+              reviewer did not see a screaming score/prose disagreement.
+            </div>
+          ) : null}
+          <div className="grid gap-2">
+            {AXES.map((axis) => {
+              const flag = flagsByAxis.get(axis);
+              const score = moat[axis];
+              return (
+                <div
+                  key={axis}
+                  className={`grid gap-2 border px-2 py-2 font-mono text-[11px] sm:grid-cols-[110px_80px_80px_1fr] sm:items-start ${
+                    flag ? "border-coral bg-paper-alt" : "border-ink/20 bg-bg/40"
+                  }`}
+                >
+                  <div className="font-bold uppercase tracking-[0.1em]">
+                    {axis.replace("_", " ")}
+                  </div>
+                  <div>
+                    <span className="opacity-55">score </span>
+                    <span className="font-bold">
+                      {score === null ? "null" : score.toFixed(1)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="opacity-55">expected </span>
+                    <span
+                      className={`font-bold ${
+                        expectation.bands[axis] === "high"
+                          ? "text-coral"
+                          : expectation.bands[axis] === "low"
+                            ? "text-success"
+                            : ""
+                      }`}
+                    >
+                      {expectation.bands[axis]}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    {flag ? (
+                      <div className="mb-1 font-bold uppercase tracking-[0.08em] text-coral">
+                        {flag.kind}: expected {flag.expected}, actual{" "}
+                        {flag.actual}
+                      </div>
+                    ) : null}
+                    <div className="break-words opacity-80">
+                      {expectation.rationale[axis] || "no rationale returned."}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 

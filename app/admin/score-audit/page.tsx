@@ -2,9 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin/auth";
 import { getAllReports } from "@/lib/db/reports";
+import { getScoreExpectationMap } from "@/lib/db/score_expectations";
 import { getRecentAudit } from "@/lib/db/scoring_config";
 import { detectAnomalies } from "@/lib/normalization/moat_anomalies";
+import { scoreExpectationHash } from "@/lib/normalization/score_expectation_llm";
 import { RecomputeAllButton } from "@/app/admin/moat-anomalies/RecomputeAllButton";
+import { ScoreTableActions } from "./ScoreTableActions";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +87,9 @@ export default async function ScoreAuditPage({
     getAllReports(10_000),
     getRecentAudit(10),
   ]);
+  const expectationByReport = await getScoreExpectationMap(
+    reports.filter((r) => r.moat).map((r) => r.id),
+  );
   const anomalies = detectAnomalies(reports);
   const anomalyBySlug = new Map(anomalies.map((a) => [a.report.slug, a]));
 
@@ -227,7 +233,7 @@ export default async function ScoreAuditPage({
       </div>
 
       <div className="border-2 border-ink bg-paper">
-        <div className="grid grid-cols-[1fr_60px_60px_60px_60px_60px_60px_60px_60px_60px] gap-2 px-4 py-2 border-b-2 border-ink font-mono text-[10px] tracking-[0.1em] uppercase opacity-65 bg-bg">
+        <div className="grid grid-cols-[minmax(210px,1fr)_60px_60px_54px_54px_54px_54px_54px_54px_54px_150px_150px] gap-2 px-4 py-2 border-b-2 border-ink font-mono text-[10px] tracking-[0.1em] uppercase opacity-65 bg-bg">
           <span>slug · name</span>
           <span className="text-right">tier</span>
           <span className="text-right">wedge</span>
@@ -238,45 +244,93 @@ export default async function ScoreAuditPage({
           <span className="text-right">data</span>
           <span className="text-right">reg</span>
           <span className="text-right">dist</span>
+          <span>llm flags</span>
+          <span className="text-right">actions</span>
         </div>
         {sorted.length === 0 ? (
           <div className="px-4 py-8 text-center font-mono text-xs opacity-60">
             no reports match this filter.
           </div>
         ) : (
-          sorted.map((r) => (
-            <Link
-              key={r.id}
-              href={`/admin/score-audit/${r.slug}`}
-              className="grid grid-cols-[1fr_60px_60px_60px_60px_60px_60px_60px_60px_60px] gap-2 px-4 py-2 border-b border-ink/15 no-underline text-ink hover:bg-bg font-mono text-[12px] items-center"
-            >
-              <span className="truncate">
-                <span className="font-bold">{r.slug}</span>
-                <span className="opacity-60"> · {r.tagline}</span>
-              </span>
-              <span className="text-right opacity-80">{r.tier}</span>
-              <span className="text-right font-bold">{r.wedge_score}</span>
-              <span className="text-right">{r.moat?.capital.toFixed(1) ?? "—"}</span>
-              <span className="text-right">
-                {r.moat?.technical.toFixed(1) ?? "—"}
-              </span>
-              <span className="text-right">
-                {r.moat?.network.toFixed(1) ?? "—"}
-              </span>
-              <span className="text-right">
-                {r.moat?.switching.toFixed(1) ?? "—"}
-              </span>
-              <span className="text-right">
-                {r.moat?.data_moat.toFixed(1) ?? "—"}
-              </span>
-              <span className="text-right">
-                {r.moat?.regulatory.toFixed(1) ?? "—"}
-              </span>
-              <span className="text-right">
-                {r.moat?.distribution?.toFixed(1) ?? "—"}
-              </span>
-            </Link>
-          ))
+          sorted.map((r) => {
+            const expectation = expectationByReport.get(r.id);
+            const stale =
+              !!expectation &&
+              !!r.moat &&
+              (expectation.rubric_version !== r.moat.rubric_version ||
+                expectation.verdict_hash !== scoreExpectationHash(r));
+            const flags = stale ? [] : (expectation?.flags ?? []);
+            return (
+              <div
+                key={r.id}
+                className="grid grid-cols-[minmax(210px,1fr)_60px_60px_54px_54px_54px_54px_54px_54px_54px_150px_150px] gap-2 px-4 py-2 border-b border-ink/15 text-ink hover:bg-bg font-mono text-[12px] items-center"
+              >
+                <Link
+                  href={`/admin/score-audit/${r.slug}`}
+                  className="truncate text-ink no-underline hover:underline"
+                >
+                  <span className="font-bold">{r.slug}</span>
+                  <span className="opacity-60"> · {r.tagline}</span>
+                </Link>
+                <span className="text-right opacity-80">{r.tier}</span>
+                <span className="text-right font-bold">{r.wedge_score}</span>
+                <span className="text-right">{r.moat?.capital.toFixed(1) ?? "—"}</span>
+                <span className="text-right">
+                  {r.moat?.technical.toFixed(1) ?? "—"}
+                </span>
+                <span className="text-right">
+                  {r.moat?.network.toFixed(1) ?? "—"}
+                </span>
+                <span className="text-right">
+                  {r.moat?.switching.toFixed(1) ?? "—"}
+                </span>
+                <span className="text-right">
+                  {r.moat?.data_moat.toFixed(1) ?? "—"}
+                </span>
+                <span className="text-right">
+                  {r.moat?.regulatory.toFixed(1) ?? "—"}
+                </span>
+                <span className="text-right">
+                  {r.moat?.distribution?.toFixed(1) ?? "—"}
+                </span>
+                <span className="flex min-w-0 flex-wrap gap-1">
+                  {!r.moat ? (
+                    <span className="opacity-45">unscored</span>
+                  ) : stale ? (
+                    <span className="border border-ink bg-sticky px-1.5 py-0.5 text-[10px] uppercase tracking-[0.08em]">
+                      stale
+                    </span>
+                  ) : !expectation ? (
+                    <span className="opacity-45">not checked</span>
+                  ) : flags.length === 0 ? (
+                    <span className="border border-success bg-paper-alt px-1.5 py-0.5 text-[10px] uppercase tracking-[0.08em] text-success">
+                      clean
+                    </span>
+                  ) : (
+                    flags.slice(0, 2).map((f) => (
+                      <span
+                        key={`${f.axis}-${f.kind}`}
+                        className="border border-coral bg-paper px-1.5 py-0.5 text-[10px] uppercase tracking-[0.08em] text-coral"
+                        title={f.rationale}
+                      >
+                        {f.kind} {f.axis.replace("_", " ")}
+                      </span>
+                    ))
+                  )}
+                  {flags.length > 2 ? (
+                    <span className="opacity-60">+{flags.length - 2}</span>
+                  ) : null}
+                </span>
+                <ScoreTableActions
+                  slug={r.slug}
+                  reviewStatus={r.moat?.review_status ?? "pending"}
+                  hasMoat={!!r.moat}
+                  hasExpectation={!!expectation && !stale}
+                  flagCount={flags.length}
+                />
+              </div>
+            );
+          })
         )}
       </div>
 

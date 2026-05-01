@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin/auth";
 import { getReportBySlug } from "@/lib/db/reports";
+import { getScoreExpectationMap } from "@/lib/db/score_expectations";
 import { computeScoreAudit } from "@/lib/normalization/score_audit";
+import { scoreExpectationHash } from "@/lib/normalization/score_expectation_llm";
 import {
   getAllScoringPatterns,
   getAllScoringWeights,
@@ -27,15 +29,22 @@ export default async function ScoreAuditDetailPage({
   const report = await getReportBySlug(slug);
   if (!report) notFound();
 
-  const [{ context, capabilities }, allPatterns, allWeights] = await Promise.all([
+  const [{ context, capabilities }, allPatterns, allWeights, expectations] = await Promise.all([
     loadEngineContextFromDb(),
     getAllScoringPatterns(),
     getAllScoringWeights(),
+    getScoreExpectationMap([report.id]),
   ]);
   const auditResult = await computeScoreAudit(report, {
     context,
     catalog: capabilities,
   });
+  const expectation = expectations.get(report.id) ?? null;
+  const expectationStale =
+    !!expectation &&
+    !!report.moat &&
+    (expectation.rubric_version !== report.moat.rubric_version ||
+      expectation.verdict_hash !== scoreExpectationHash(report));
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -81,6 +90,19 @@ export default async function ScoreAuditDetailPage({
           value: w.value,
           description: w.description,
         }))}
+        scoreExpectation={
+          expectation
+            ? {
+                rubric_version: expectation.rubric_version,
+                verdict_hash: expectation.verdict_hash,
+                bands: expectation.bands,
+                rationale: expectation.rationale,
+                flags: expectation.flags,
+                generated_at: expectation.generated_at,
+                stale: expectationStale,
+              }
+            : null
+        }
         capabilities={capabilities.map((c) => ({
           slug: c.slug,
           display_name: c.display_name,

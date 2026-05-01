@@ -508,6 +508,26 @@ drop policy if exists "moat scores are publicly readable" on report_moat_scores;
 create policy "moat scores are publicly readable"
   on report_moat_scores for select to anon, authenticated using (true);
 
+-- 2026-05-01: admin-only LLM expectation check for score calibration.
+-- Stores qualitative axis bands inferred from the verdict prose plus only
+-- high-confidence mismatch flags. This lets /admin/score-audit highlight
+-- likely overfires/underfires without calling the LLM during table render.
+create table if not exists report_score_expectations (
+  report_id      uuid primary key references reports(id) on delete cascade,
+  rubric_version int not null,
+  verdict_hash   text not null,
+  bands          jsonb not null,
+  rationale      jsonb not null default '{}'::jsonb,
+  flags          jsonb not null default '[]'::jsonb,
+  generated_at   timestamptz not null default now()
+);
+
+create index if not exists report_score_expectations_generated_at_idx
+  on report_score_expectations (generated_at desc);
+
+alter table report_score_expectations enable row level security;
+-- No public policy: admin endpoints use service-role access.
+
 -- 2026-04-30: per-capability descriptor flag. True when the capability
 -- defines what a product CATEGORICALLY IS (form-builder, appointment-
 -- booking, ai-agent-platform) rather than a sub-feature it has
