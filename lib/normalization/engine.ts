@@ -1,4 +1,4 @@
-import type { VerdictReport, EstCostLine } from "@/lib/scanner/schema";
+import type { LLMVerdict, EstCostLine } from "@/lib/scanner/schema";
 import type { DetectedStack } from "@/lib/scanner/fingerprint";
 import {
   STACK_COMPONENTS,
@@ -157,7 +157,7 @@ function containsPhrase(haystack: string, needle: string): boolean {
   return isBoundary(before) && isBoundary(after);
 }
 
-function joinReportText(verdict: VerdictReport): {
+function joinReportText(verdict: LLMVerdict): {
   full: string;
   byField: Record<string, string>;
 } {
@@ -185,7 +185,7 @@ function lowerAll(o: Record<string, string>): Record<string, string> {
  * deduped rows with the right `source` flag.
  */
 function projectComponents(
-  verdict: VerdictReport,
+  verdict: LLMVerdict,
   detectedStack: DetectedStack | null,
   fullText: string,
   ctx: EngineContext,
@@ -304,7 +304,7 @@ function costToNumber(cost: EstCostLine["cost"]): number | null {
 }
 
 function projectAttributes(
-  verdict: VerdictReport,
+  verdict: LLMVerdict,
   capabilitySlugs: Set<string>,
   fullText: string,
   byField: Record<string, string>,
@@ -391,7 +391,7 @@ function atomizeStackItem(raw: string): Array<{ raw: string; norm: string }> {
 }
 
 function harvestUnknowns(
-  verdict: VerdictReport,
+  verdict: LLMVerdict,
   matchedComponents: Set<string>,
   ctx: EngineContext,
 ): ProjectedUnknown[] {
@@ -455,7 +455,7 @@ function harvestUnknowns(
  * lib/db/projections.ts::persistProjection for the canonical writer.
  */
 export function projectReport(
-  verdict: VerdictReport,
+  verdict: LLMVerdict,
   detectedStack: DetectedStack | null,
   ctx: EngineContext = DEFAULT_ENGINE_CONTEXT,
 ): ReportProjection {

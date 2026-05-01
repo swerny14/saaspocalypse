@@ -64,9 +64,9 @@ const COOLDOWN_DAYS_FALLBACK = 14;
 const MIN_REPORTS_FOR_DIRECTORY_RIFF = 20;
 
 const TIER_WEIGHTS: { tier: Tier; weight: number }[] = [
-  { tier: "WEEKEND", weight: 60 },
-  { tier: "MONTH", weight: 25 },
-  { tier: "DON'T", weight: 15 },
+  { tier: "SOFT", weight: 60 },
+  { tier: "CONTESTED", weight: 25 },
+  { tier: "FORTRESS", weight: 15 },
 ];
 
 export async function runDailySocial(
@@ -437,9 +437,9 @@ async function pickReport(): Promise<{ report: StoredReport } | null> {
 function weightedTierPick(reports: StoredReport[]): StoredReport | null {
   if (reports.length === 0) return null;
   const byTier: Record<Tier, StoredReport[]> = {
-    WEEKEND: [],
-    MONTH: [],
-    "DON'T": [],
+    SOFT: [],
+    CONTESTED: [],
+    FORTRESS: [],
   };
   for (const r of reports) byTier[r.tier].push(r);
 

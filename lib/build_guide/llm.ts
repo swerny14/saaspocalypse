@@ -148,7 +148,9 @@ export async function generateBuildGuide(
     name: report.name,
     tagline: report.tagline,
     tier: report.tier,
-    score: report.score,
+    wedge_score: report.wedge_score,
+    weakest_moat_axis: report.weakest_moat_axis,
+    wedge_thesis: report.wedge_thesis,
     take: report.take,
     take_sub: report.take_sub,
     time_estimate: report.time_estimate,
@@ -163,14 +165,14 @@ export async function generateBuildGuide(
   };
 
   const tierFraming =
-    report.tier === "DON'T"
+    report.tier === "FORTRESS"
       ? `
 
-## DON'T-tier framing (READ FIRST)
+## FORTRESS-tier framing (READ FIRST)
 
-This verdict is DON'T-tier. The full clone is genuinely not happening (regulatory, research-grade, capital-intensive, or network-effect dependent). Do NOT pretend otherwise.
+This verdict is FORTRESS-tier. The full clone is genuinely not happening head-on (regulatory, research-grade, capital-intensive, or network-effect dependent). Do NOT pretend otherwise.
 
-Design this guide as the **indie-hacker MVP**: a stripped-down version that hits the core loop in a weekend, accepting clear gaps. Be honest in the overview about what the user IS and ISN'T building. Examples of the framing voice:
+Design this guide as a **wedge play**: a stripped-down niche or flank that hits the core loop in a weekend, accepting clear gaps. Be honest in the overview about what the user IS and ISN'T building. Examples of the framing voice:
 - "You're not building Stripe — you're building a Stripe-Connect-flavored payments page for one niche."
 - "You're not rebuilding Figma — you're building a real-time whiteboard with five shapes."
 

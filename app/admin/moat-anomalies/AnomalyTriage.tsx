@@ -12,7 +12,7 @@ export type CapabilityOption = {
   moat_tags: string[];
 };
 
-type Suggestion =
+export type Suggestion =
   | {
       kind: "add_pattern";
       capability_slug: string;
@@ -645,7 +645,7 @@ function AxisChip({ label, value }: { label: string; value: number }) {
   );
 }
 
-function AuditResults({
+export function AuditResults({
   summary,
   suggestions,
   capabilities,
@@ -802,8 +802,7 @@ function AuditResults({
         );
       })}
       <div className="text-[11px] text-muted">
-        After applying, click &ldquo;Recompute all reports&rdquo; at the top to
-        refresh scores.
+        After applying, recompute this report to verify the score movement.
       </div>
     </div>
   );
@@ -838,7 +837,7 @@ const CATEGORIES = [
   "identity",
 ] as const;
 
-function FixForms({ capabilities }: { capabilities: CapabilityOption[] }) {
+export function FixForms({ capabilities }: { capabilities: CapabilityOption[] }) {
   const [openForm, setOpenForm] = useState<"none" | "add_pattern" | "new_cap">("none");
 
   return (

@@ -7,9 +7,9 @@ import { CAPABILITIES, STACK_COMPONENTS } from "@/lib/normalization/taxonomy";
  * alphabetical) so the same pair always renders identically — important for
  * ISR cache hits.
  *
- * Convention: deltas are signed `b - a`. Positive `score_delta` means B is
- * easier to clone than A; positive `cost_delta` means B's monthly floor is
- * higher.
+ * Convention: deltas are signed `b - a`. Positive `score_delta` means B
+ * has thinner walls than A (= more wedgeable); positive `cost_delta` means
+ * B's monthly floor is higher.
  */
 
 export type CapabilityBucket = {
@@ -26,10 +26,19 @@ export type ComponentBucket = {
 };
 
 export type MoatAxisDiff = {
-  axis: "capital" | "technical" | "network" | "switching" | "data_moat" | "regulatory" | "aggregate";
+  axis:
+    | "capital"
+    | "technical"
+    | "network"
+    | "switching"
+    | "data_moat"
+    | "regulatory"
+    | "distribution"
+    | "aggregate";
   a: number | null;
   b: number | null;
-  /** b - a; null when either side is missing a moat score. */
+  /** b - a; null when either side is missing a moat score (or one side's
+   *  axis is null — e.g. legacy reports with no distribution data). */
   delta: number | null;
 };
 
@@ -45,8 +54,10 @@ export type CompareDiff = {
   stack_diff: ComponentBucket;
   /** Same shape, no commoditization filter. */
   stack_diff_all: ComponentBucket;
-  /** 6 axes + aggregate. Aggregate is last so the UI can pull it out
-   *  separately as a hero number. */
+  /** 7 axes + aggregate. Aggregate is last so the UI can pull it out
+   *  separately as a hero number. Distribution may be null on either
+   *  side for legacy/backfill-failed reports — UI should treat null
+   *  axes as "uncomputable" rather than zero. */
   moat_diff: MoatAxisDiff[];
   tier_match: boolean;
 };
@@ -70,6 +81,7 @@ const MOAT_AXES: MoatAxisDiff["axis"][] = [
   "switching",
   "data_moat",
   "regulatory",
+  "distribution",
   "aggregate",
 ];
 
@@ -97,7 +109,7 @@ export function diffPair(pair: ComparePair): CompareDiff {
       : null;
 
   return {
-    score_delta: b.report.score - a.report.score,
+    score_delta: b.report.wedge_score - a.report.wedge_score,
     cost_delta,
     capability_diff: capDiff,
     stack_diff: stackDiff,

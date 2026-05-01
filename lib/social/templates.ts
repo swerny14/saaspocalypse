@@ -6,8 +6,8 @@ export type ReportTemplateId =
   | "report.verdict_quote"
   | "report.score_card"
   | "report.cost_punchline"
-  | "report.weekend_pitch"
-  | "report.dont_riff";
+  | "report.soft_pitch"
+  | "report.fortress_riff";
 
 export type OriginalTemplateId =
   | "original.aphorism"
@@ -21,7 +21,7 @@ export type ReportTemplate = {
   id: ReportTemplateId;
   kind: "report";
   tweet_count: TweetCount;
-  /** Optional tier restriction. WEEKEND-only / DON'T-only templates use this. */
+  /** Optional tier restriction. SOFT-only / FORTRESS-only templates use this. */
   tier?: Tier;
   description: string;
   examples: string[];
@@ -47,14 +47,14 @@ export const REPORT_TEMPLATES: ReportTemplate[] = [
     kind: "report",
     tweet_count: 1,
     description:
-      "Lead with a short quote pulled (or distilled) from the report's `take`. Then on a new line: name + tier + time_estimate + URL. Voice: lowercase-deadpan for the quote line, sentence case fine for the verdict line.",
+      "Lead with a short quote pulled (or distilled) from the report's `wedge_thesis` or `take`. Then on a new line: name + tier + wedge score + URL. Voice: lowercase-deadpan for the quote line, sentence case fine for the verdict line.",
     examples: [
-      `"you're charging $12/mo for an if-statement and a calendar invite. respect."
+      `"the door is build complexity — there isn't any. an if-statement and a calendar invite, charged at $12/seat/mo."
 
-calendly.com — WEEKEND, 9 hours. https://www.saaspocalypse.dev/r/calendly-com`,
-      `"the bug tracker is a weekend. the feel is a month."
+calendly.com — SOFT, wedge score 86. https://www.saaspocalypse.dev/r/calendly-com`,
+      `"the door is switching cost: their data exports as JSON in 20 lines of TypeScript."
 
-linear.app — MONTH, 6 weeks. https://www.saaspocalypse.dev/r/linear-app`,
+linear.app — CONTESTED, wedge score 52. https://www.saaspocalypse.dev/r/linear-app`,
     ],
   },
   {
@@ -62,10 +62,10 @@ linear.app — MONTH, 6 weeks. https://www.saaspocalypse.dev/r/linear-app`,
     kind: "report",
     tweet_count: 1,
     description:
-      "One-line score-forward receipt. Format: `<name>: <score>/100. <TIER> tier. <time_estimate> if you hate yourself a little. stack: <2-3 stack items separated by  ·  >. <URL>`. Stack items are concrete (Next.js, Supabase, cmdk), not categories.",
+      "One-line wedge-forward receipt. Format: `<name>: wedge score <n>/100. <TIER> tier. <time_estimate> if you hate yourself a little. stack: <2-3 stack items separated by  ·  >. <URL>`. Stack items are concrete (Next.js, Supabase, cmdk), not categories.",
     examples: [
-      `notion.so: 78/100. WEEKEND tier. 14 hours if you hate yourself a little. stack: Next.js · TipTap · Postgres. https://www.saaspocalypse.dev/r/notion-so`,
-      `figma.com: 8/100. DON'T tier. ∞ if you hate yourself enough. stack: a renderer · a CRDT · a decade. https://www.saaspocalypse.dev/r/figma-com`,
+      `notion.so: wedge score 78/100. SOFT tier. 14 hours if you hate yourself a little. stack: Next.js · TipTap · Postgres. https://www.saaspocalypse.dev/r/notion-so`,
+      `figma.com: wedge score 8/100. FORTRESS tier. ∞ if you hate yourself enough. stack: a renderer · a CRDT · a decade. https://www.saaspocalypse.dev/r/figma-com`,
     ],
   },
   {
@@ -88,33 +88,33 @@ the actual stack: Next.js · Google Calendar API · Resend.`,
     ],
   },
   {
-    id: "report.weekend_pitch",
+    id: "report.soft_pitch",
     kind: "report",
     tweet_count: 1,
     description:
-      "WEEKEND-tier only. Direct challenge tone: '<name> is a weekend.' followed by one parenthetical or sentence about what the actual hard part is (and why it's smaller than people think). Then the URL.",
-    tier: "WEEKEND",
+      "SOFT-tier only. Direct challenge tone: '<name> is wedgeable.' followed by one parenthetical or sentence about which wall is thinnest (the wedge_thesis is your raw material). Then the URL.",
+    tier: "SOFT",
     examples: [
-      `notion.so is a weekend. there, i said it. (the bar is "the editing loop", not "the parser".) https://www.saaspocalypse.dev/r/notion-so`,
-      `calendly.com is a saturday morning. honestly. (the hard part is timezone math, and you can buy that off Luxon.) https://www.saaspocalypse.dev/r/calendly-com`,
+      `notion.so is wedgeable. there, i said it. (the door is the editing loop, not the parser.) https://www.saaspocalypse.dev/r/notion-so`,
+      `calendly.com is wedgeable on a saturday morning. (the hard part is timezone math, and you can buy that off Luxon.) https://www.saaspocalypse.dev/r/calendly-com`,
     ],
   },
   {
-    id: "report.dont_riff",
+    id: "report.fortress_riff",
     kind: "report",
     tweet_count: 2,
     description:
-      "DON'T-tier only. TWO TWEETS. Tweet 1: head — sincere 'don't' line + score on its own line + URL on its own line. No snark, just respect. Tweet 2: reply — one short concrete reason it's actually impossible (a regulator, a research problem, a network effect). Always includes a real concrete name when possible (e.g. 'patrick started in 2010', 'PCI DSS Level 1', 'Visa interchange'). The URL must appear ONLY on tweet 1.",
-    tier: "DON'T",
+      "FORTRESS-tier only. TWO TWEETS. Tweet 1: head — sincere 'fortress' line + wedge score on its own line + URL on its own line. No snark, just respect. Tweet 2: reply — one short concrete reason wedging head-on is impossible (a regulator, a research problem, a network effect). Always includes a real concrete name when possible (e.g. 'patrick started in 2010', 'PCI DSS Level 1', 'Visa interchange'). The URL must appear ONLY on tweet 1.",
+    tier: "FORTRESS",
     examples: [
-      `we ran the numbers on figma. don't.
-score: 8.
+      `we ran the numbers on figma. fortress.
+wedge score: 8.
 
 https://www.saaspocalypse.dev/r/figma-com
 ---
 their renderer is a research project, not a feature. evan started in 2012 and is still at it.`,
-      `we ran the numbers on stripe. don't.
-score: 6.
+      `we ran the numbers on stripe. fortress.
+wedge score: 6.
 
 https://www.saaspocalypse.dev/r/stripe-com
 ---
@@ -168,10 +168,10 @@ export const ORIGINAL_TEMPLATES: OriginalTemplate[] = [
     tweet_count: 1,
     links_to_directory: true,
     description:
-      "Soft directory plug. Lead with a real-feeling stat about the directory (median tier, total scanned, cheapest run-rate, etc.) — the LLM is given the actual count and can riff. End with the URL. Format: `<observation>. → <URL>`. URL is `https://www.saaspocalypse.dev/directory`.",
+      "Soft directory plug. Lead with a real-feeling stat about the directory (median tier, total scanned, thinnest walls, etc.) — the LLM is given the actual count and can riff. End with the URL. Format: `<observation>. → <URL>`. URL is `https://www.saaspocalypse.dev/directory`.",
     examples: [
-      `we've now scanned 47 saas products. 31 are weekend tier. the median founder is, statistically, you. → https://www.saaspocalypse.dev/directory`,
-      `the saaspocalypse leaderboard's cheapest-to-clone tier averages $4/mo run-rate. cheaper than the founder's coffee. → https://www.saaspocalypse.dev/directory`,
+      `we've now scanned 47 saas products. 31 are SOFT tier. the median founder is, statistically, you. → https://www.saaspocalypse.dev/directory`,
+      `the saaspocalypse leaderboard's thinnest-walls tier averages $4/mo run-rate to compete with. cheaper than the founder's coffee. → https://www.saaspocalypse.dev/directory`,
     ],
   },
 ];

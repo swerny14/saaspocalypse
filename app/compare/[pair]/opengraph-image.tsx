@@ -11,9 +11,9 @@ const INK = "#0a0a0a";
 const CREAM = "#f4f1e8";
 const LIME = "#c6ff00";
 const TIER_BG: Record<string, string> = {
-  WEEKEND: "#dcfce7",
-  MONTH: "#fef9c3",
-  "DON'T": "#fee2e2",
+  SOFT: "#dcfce7",
+  CONTESTED: "#fef9c3",
+  FORTRESS: "#fee2e2",
 };
 
 type Params = Promise<{ pair: string }>;
@@ -81,14 +81,14 @@ export default async function Image({ params }: { params: Params }) {
             <span style={{ opacity: 0.6, display: "flex" }}>head-to-head</span>
           </div>
           <div style={{ opacity: 0.6, display: "flex", fontSize: 16 }}>
-            buildability comparison
+            wedge comparison
           </div>
         </div>
 
         {/* Body — split panels */}
         <div style={{ display: "flex", flex: 1, position: "relative" }}>
           <Side report={a} align="left" />
-          <Divider score_delta={b.score - a.score} />
+          <Divider score_delta={b.wedge_score - a.wedge_score} />
           <Side report={b} align="right" />
         </div>
       </div>
@@ -139,7 +139,7 @@ function Side({ report, align }: { report: StoredReport; align: "left" | "right"
           marginBottom: 14,
         }}
       >
-        {String(report.score)}
+        {String(report.wedge_score)}
       </div>
       <div
         style={{

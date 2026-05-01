@@ -7,9 +7,9 @@ type Props = {
 };
 
 const TIER_BG: Record<string, string> = {
-  WEEKEND: "var(--color-accent)",
-  MONTH: "var(--color-sticky)",
-  "DON'T": "var(--color-coral)",
+  SOFT: "var(--color-accent)",
+  CONTESTED: "var(--color-sticky)",
+  FORTRESS: "var(--color-coral)",
 };
 
 function scoreColor(score: number): string {
@@ -44,7 +44,7 @@ export function VerdictTwin({ a, b, score_delta }: Props) {
 function SidePanel({ side, align }: { side: CompareSide; align: "left" | "right" }) {
   const r = side.report;
   const tierBg = TIER_BG[r.tier] ?? "var(--color-paper)";
-  const score = r.score;
+  const score = r.wedge_score;
   const pct = Math.max(0, Math.min(100, score));
 
   return (
@@ -63,7 +63,7 @@ function SidePanel({ side, align }: { side: CompareSide; align: "left" | "right"
           className="font-mono text-[11px] font-bold tracking-[0.16em] uppercase px-2.5 py-1 border-2 border-ink shadow-[2px_2px_0_0_var(--color-ink)] whitespace-nowrap text-ink"
           style={{ background: tierBg }}
         >
-          {r.tier === "DON'T" ? "don't" : r.tier.toLowerCase()}
+          {r.tier.toLowerCase()}
         </span>
       </div>
 
@@ -97,7 +97,7 @@ function SidePanel({ side, align }: { side: CompareSide; align: "left" | "right"
       </div>
 
       <div className="flex justify-between items-center font-mono text-[10.5px] font-bold tracking-[0.18em] uppercase text-muted">
-        <span>buildability score</span>
+        <span>wedge score</span>
         <a
           href={`/r/${r.slug}`}
           className="text-ink no-underline border-b-2 border-ink pb-[1px] hover:text-coral hover:border-coral"

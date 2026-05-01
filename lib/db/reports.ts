@@ -30,7 +30,7 @@ export type StoredReport = VerdictReport & {
  * DB and in our Zod schema, so no key transformation is needed.
  */
 const REPORT_COLUMNS =
-  "*, moat:report_moat_scores(rubric_version, capital, technical, network, switching, data_moat, regulatory, aggregate, computed_at, review_status, reviewed_at, audit_summary, audit_suggestions, audited_at)";
+  "*, moat:report_moat_scores(rubric_version, capital, technical, network, switching, data_moat, regulatory, distribution, aggregate, computed_at, review_status, reviewed_at, audit_summary, audit_suggestions, audited_at)";
 
 /**
  * Defensive parse for rows we just read from the DB. Verifies the
@@ -280,6 +280,33 @@ export async function insertReport(
   const out = data as Record<string, unknown>;
   normalizeMoatShape(out);
   return out as StoredReport;
+}
+
+/**
+ * Update the server-derived wedge fields on a report row. Used by the
+ * recompute path: when the moat aggregate changes (rubric bump, taxonomy
+ * edit), the displayed `wedge_score` / `tier` / `weakest_moat_axis` need
+ * to follow. The pipeline writes these via `insertReport(...verdict)` on
+ * fresh scans; recompute writes them here.
+ */
+export async function updateReportWedgeFields(
+  reportId: string,
+  fields: {
+    wedge_score: number;
+    tier: VerdictReport["tier"];
+    weakest_moat_axis: VerdictReport["weakest_moat_axis"];
+  },
+): Promise<void> {
+  const admin = getSupabaseAdmin();
+  const { error } = await admin
+    .from("reports")
+    .update({
+      wedge_score: fields.wedge_score,
+      tier: fields.tier,
+      weakest_moat_axis: fields.weakest_moat_axis,
+    })
+    .eq("id", reportId);
+  if (error) throw wrapDbError(error, "reports updateWedgeFields");
 }
 
 /** Upsert variant that overwrites on domain conflict — used by the seed script. */

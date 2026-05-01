@@ -29,6 +29,7 @@ export async function persistMoatScore(
         switching: score.switching,
         data_moat: score.data_moat,
         regulatory: score.regulatory,
+        distribution: score.distribution,
         aggregate: score.aggregate,
         computed_at: new Date().toISOString(),
         audit_summary: null,

@@ -15,7 +15,6 @@ import {
 import { sendGuideMagicLink } from "@/lib/email";
 import { logError } from "@/lib/error_log";
 import { getPurchaseRateLimiter } from "@/lib/ratelimit";
-import { isDontTierGuidesEnabled } from "@/lib/feature_flags";
 
 export const runtime = "nodejs";
 
@@ -37,8 +36,6 @@ const BodySchema = z.object({
 const USER_MSG = {
   bad_request: "That request didn't look right. Refresh and try again.",
   not_found: "Report not found. Refresh the page and try again.",
-  dont_tier:
-    "We don't sell build guides for DON'T-tier products (for everyone's sake).",
   server: "We couldn't start checkout. Try again in a moment.",
   config: "Checkout isn't available right now. Try again later.",
   rate_limited:
@@ -117,10 +114,9 @@ export async function POST(req: NextRequest) {
     return jsonError(404, USER_MSG.not_found);
   }
 
-  if (report.score < 30 && !isDontTierGuidesEnabled()) {
-    // Intentional user-facing rejection, not a system error — skip error_log.
-    return jsonError(400, USER_MSG.dont_tier);
-  }
+  // Wedge-frame Phase 2: every tier including FORTRESS gets a guide. The
+  // build-guide LLM applies tier-specific framing (wedge play vs. clone)
+  // via lib/build_guide/llm.ts.
 
   const amountCents = guidePriceCents();
   const accessToken = generateAccessToken();

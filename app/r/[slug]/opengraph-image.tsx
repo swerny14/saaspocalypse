@@ -14,9 +14,9 @@ const CREAM = "#f4f1e8";
 const PAPER = "#ffffff";
 const LIME = "#c6ff00";
 const TIER_BG: Record<string, string> = {
-  WEEKEND: "#dcfce7",
-  MONTH: "#fef9c3",
-  "DON'T": "#fee2e2",
+  SOFT: "#dcfce7",
+  CONTESTED: "#fef9c3",
+  FORTRESS: "#fee2e2",
 };
 
 type Params = Promise<{ slug: string }>;
@@ -166,7 +166,7 @@ export default async function Image({ params }: { params: Params }) {
                 display: "flex",
               }}
             >
-              buildability
+              wedge score
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
               <div
@@ -179,7 +179,7 @@ export default async function Image({ params }: { params: Params }) {
                   color: tierColor,
                 }}
               >
-                {String(report.score)}
+                {String(report.wedge_score)}
               </div>
               <div style={{ fontSize: 40, opacity: 0.5, fontWeight: 500, display: "flex" }}>
                 /100

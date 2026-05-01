@@ -3,13 +3,13 @@
  *
  * Today we dump:
  *   - lib/normalization/taxonomy/stack_components.ts (edited via /admin/unknowns)
- *   - lib/normalization/taxonomy/capabilities.ts     (edited via /admin/moat-anomalies)
+ *   - lib/normalization/taxonomy/capabilities.ts     (edited via score workbench)
  *
  * market_segments.ts and business_models.ts are still TS-only — no admin
  * write path exists yet, so the DB never holds changes the TS file doesn't.
  *
  * Workflow:
- *   1. Triage at /admin/unknowns or /admin/moat-anomalies — DB updated.
+ *   1. Triage at /admin/unknowns or the score workbench — DB updated.
  *   2. `pnpm tsx scripts/dump_taxonomy.ts` — TS files regenerated from DB.
  *   3. Inspect the diff with `git diff lib/normalization/taxonomy/`.
  *   4. Commit.
@@ -141,7 +141,7 @@ const CAPS_HEADER = `import type { Capability } from "./types";
  *
  * Source of truth flow:
  *   1. The TS file is the seed (initial set + manual edits by hand).
- *   2. /admin/moat-anomalies writes new patterns + new capabilities to the DB.
+ *   2. Score workbench writes new patterns + new capabilities to the DB.
  *   3. \`pnpm tsx scripts/dump_taxonomy.ts\` rewrites this file from DB rows.
  *   4. \`pnpm tsx scripts/sync_taxonomy.ts\` pushes TS back to DB (idempotent).
  *

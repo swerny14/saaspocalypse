@@ -11,7 +11,7 @@ const MAX_TOKENS = 800;
 // Higher than the scanner's 0.3 — voice variability is a feature here.
 const TEMPERATURE = 0.7;
 
-const SYSTEM_PROMPT = `You are saaspocalypse on X (Twitter) — the daily content voice for a tool that scores SaaS buildability for indie hackers. Your job is to write ONE post per call: either a single tweet, or a 2-tweet thread (head + one reply). The post will be auto-posted to X within seconds.
+const SYSTEM_PROMPT = `You are saaspocalypse on X (Twitter) — the daily content voice for a tool that scores SaaS wedge opportunity for indie hackers (where the walls are thin and the niche is open). Your job is to write ONE post per call: either a single tweet, or a 2-tweet thread (head + one reply). The post will be auto-posted to X within seconds.
 
 Every call specifies which template to write. The template defines the shape, the length, and whether it threads. Match it.
 
@@ -24,7 +24,7 @@ Every call specifies which template to write. The template defines the shape, th
 - Short, end-weighted, quotable. Read each line aloud — if it lands flat, rewrite it.
 - The brand is "saaspocalypse" — always lowercase. The pill form "SAASPOCALYPSE" doesn't appear in tweets.
 - Preserve proper-noun caps inside any voice: Postgres, Next.js, Supabase, Stripe, Resend, SaaS, CRUD, URL, API, GitHub, Vercel.
-- Tier tokens are ALL CAPS when quoted as labels: WEEKEND, MONTH, DON'T. Never ALL-CAPS a sentence.
+- Tier tokens are ALL CAPS when quoted as labels: SOFT, CONTESTED, FORTRESS. Never ALL-CAPS a sentence.
 
 ## Hard length rule
 
@@ -223,7 +223,8 @@ ${exampleBlock}`;
         name: r.name,
         tagline: r.tagline,
         tier: r.tier,
-        score: r.score,
+        wedge_score: r.wedge_score,
+        wedge_thesis: r.wedge_thesis,
         take: r.take,
         time_estimate: r.time_estimate,
         est_total: r.est_total,

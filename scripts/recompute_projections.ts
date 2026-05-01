@@ -1,24 +1,14 @@
 /**
- * Re-run the deterministic normalization engine against every existing
- * report, replacing the per-report projection rows. Use this:
- *   - to backfill projections for reports scanned before this layer shipped
- *   - after a taxonomy edit (new aliases, new capability patterns)
- *   - after bumping PROJECTION_VERSION in lib/normalization/engine.ts
+ * Re-run the deterministic normalization engine against existing reports,
+ * replacing per-report projection rows and keeping the public wedge fields
+ * in lockstep with the recomputed moat aggregate.
  *
  * Run with: pnpm tsx scripts/recompute_projections.ts
  *
  * Flags:
  *   --reset-unknowns   Delete every `status='open'` row from
- *                      normalization_unknowns before recomputing. Useful
- *                      after a harvester change that produces different
- *                      candidates (e.g. atomizing multi-tool stack items
- *                      surfaces "Reddit API" / "X API v2" individually
- *                      instead of as one aggregate). Resolved rows
- *                      (aliased / added / ignored) are preserved.
- *
- * Sequential, not parallel — Supabase rate limits aside, the row count is
- * small (~30 reports today) and ordering keeps logs readable. Soft-fails
- * per report so a single bad row doesn't abort the whole sweep.
+ *                      normalization_unknowns before recomputing.
+ *   --slug=<slug>      Recompute a single report.
  */
 
 import { config as loadEnv } from "dotenv";
@@ -26,11 +16,16 @@ loadEnv({ path: ".env.local" });
 loadEnv({ path: ".env" });
 
 import { getAllReports } from "../lib/db/reports";
-import { projectReport } from "../lib/normalization/engine";
-import { persistProjection } from "../lib/db/projections";
 import { deleteOpenUnknowns } from "../lib/db/normalization_unknowns";
-import { scoreMoat } from "../lib/normalization/moat";
-import { persistMoatScore } from "../lib/db/moat_scores";
+import { getCachedScoringConfig } from "../lib/normalization/scoring_loader";
+import { logScoringAudit } from "../lib/db/scoring_config";
+import { recomputeReportScoring } from "../lib/normalization/recompute";
+
+function parseSlugFilter(): string | null {
+  const flag = process.argv.find((a) => a.startsWith("--slug="));
+  if (!flag) return null;
+  return flag.slice("--slug=".length).trim() || null;
+}
 
 async function main() {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -46,24 +41,61 @@ async function main() {
     console.log(`[recompute] --reset-unknowns: dropped ${dropped} open rows`);
   }
 
-  const reports = await getAllReports(10_000);
-  console.log(`[recompute] ${reports.length} reports to project`);
+  const slugFilter = parseSlugFilter();
+  const all = await getAllReports(10_000);
+  const reports = slugFilter ? all.filter((r) => r.slug === slugFilter) : all;
+  if (slugFilter && reports.length === 0) {
+    console.error(`[recompute] no report matches slug "${slugFilter}"`);
+    process.exit(1);
+  }
+  console.log(
+    `[recompute] ${reports.length} report(s) to project${
+      slugFilter ? ` (filter: ${slugFilter})` : ""
+    }`,
+  );
+
+  const config = await getCachedScoringConfig(true);
 
   let ok = 0;
   let failed = 0;
+  let tierMoves = 0;
+  const driftSamples: Array<{
+    slug: string;
+    before: { tier: string; wedge_score: number };
+    after: { tier: string; wedge_score: number };
+  }> = [];
+
   for (const r of reports) {
     try {
-      const projection = projectReport(r, r.detected_stack);
-      await persistProjection(r.id, projection);
-      // r is StoredReport which extends VerdictReport — pass directly.
-      const moat = scoreMoat({
-        verdict: r,
-        capabilities: projection.capabilities,
-      });
-      await persistMoatScore(r.id, moat);
+      const result = await recomputeReportScoring(r, { config });
+
+      if (result.before.tier !== result.after.tier) {
+        tierMoves += 1;
+        driftSamples.push({
+          slug: r.slug,
+          before: {
+            tier: result.before.tier,
+            wedge_score: result.before.wedge_score,
+          },
+          after: {
+            tier: result.after.tier,
+            wedge_score: result.after.wedge_score,
+          },
+        });
+      }
+
       ok += 1;
+      const distLabel =
+        result.moat.distribution === null
+          ? "-"
+          : `${result.moat.distribution.toFixed(1)}/10`;
+      const beforeAfter =
+        result.before.wedge_score !== result.after.wedge_score ||
+        result.before.tier !== result.after.tier
+          ? ` | ${result.before.tier} ${result.before.wedge_score} -> ${result.after.tier} ${result.after.wedge_score}`
+          : "";
       console.log(
-        `[recompute] ${r.slug} · ${projection.components.length} components · ${projection.capabilities.length} capabilities · ${projection.unknowns.length} unknowns · moat ${moat.aggregate}/10`,
+        `[recompute] ${r.slug} | capabilities ${result.capability_count} | distribution ${distLabel} | moat agg ${result.moat.aggregate.toFixed(1)} (cap ${result.moat.capital.toFixed(1)}, tech ${result.moat.technical.toFixed(1)})${beforeAfter}`,
       );
     } catch (err) {
       failed += 1;
@@ -71,7 +103,36 @@ async function main() {
     }
   }
 
-  console.log(`[recompute] done — ${ok} ok, ${failed} failed`);
+  console.log(
+    `[recompute] done - ${ok} ok, ${failed} failed, ${tierMoves} tier moves`,
+  );
+  if (driftSamples.length > 0) {
+    console.log("[recompute] drift samples (max 10):");
+    for (const d of driftSamples.slice(0, 10)) {
+      console.log(
+        `  - ${d.slug}: ${d.before.tier} ${d.before.wedge_score} -> ${d.after.tier} ${d.after.wedge_score}`,
+      );
+    }
+  }
+
+  await logScoringAudit({
+    actor: "recompute",
+    scope: "recompute",
+    change_kind: slugFilter ? "recompute_one" : "recompute_all",
+    ref_key: slugFilter ?? null,
+    reports_moved: tierMoves,
+    after_value: {
+      total: reports.length,
+      ok,
+      failed,
+      tier_moves: tierMoves,
+      sample: driftSamples.slice(0, 20),
+    },
+    reason: slugFilter
+      ? `Slug-filtered recompute: ${slugFilter}`
+      : `Corpus-wide recompute (${reports.length} reports)`,
+  });
+
   if (failed > 0) process.exit(1);
 }
 

@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin/auth";
 import { getReportBySlug } from "@/lib/db/reports";
-import { projectReport } from "@/lib/normalization/engine";
-import { persistProjection } from "@/lib/db/projections";
-import { scoreMoat } from "@/lib/normalization/moat";
-import { persistMoatScore } from "@/lib/db/moat_scores";
 import { loadEngineContextFromDb } from "@/lib/db/taxonomy_loader";
 import { logError } from "@/lib/error_log";
+import { recomputeReportScoring } from "@/lib/normalization/recompute";
+import { getCachedScoringConfig } from "@/lib/normalization/scoring_loader";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -35,27 +33,28 @@ export async function POST(
 
   try {
     const { context, capabilities: catalog } = await loadEngineContextFromDb();
-    const projection = projectReport(report, report.detected_stack, context);
-    await persistProjection(report.id, projection);
-    const moat = scoreMoat({
-      verdict: report,
-      capabilities: projection.capabilities,
+    const config = await getCachedScoringConfig(true);
+    const result = await recomputeReportScoring(report, {
+      context,
       catalog,
+      config,
     });
-    await persistMoatScore(report.id, moat);
     return NextResponse.json({
       ok: true,
       slug: report.slug,
       moat: {
-        aggregate: moat.aggregate,
-        capital: moat.capital,
-        technical: moat.technical,
-        network: moat.network,
-        switching: moat.switching,
-        data_moat: moat.data_moat,
-        regulatory: moat.regulatory,
+        aggregate: result.moat.aggregate,
+        capital: result.moat.capital,
+        technical: result.moat.technical,
+        network: result.moat.network,
+        switching: result.moat.switching,
+        data_moat: result.moat.data_moat,
+        regulatory: result.moat.regulatory,
+        distribution: result.moat.distribution,
       },
-      capability_count: projection.capabilities.length,
+      before: result.before,
+      after: result.after,
+      capability_count: result.capability_count,
     });
   } catch (e) {
     await logError({

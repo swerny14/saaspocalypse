@@ -63,7 +63,7 @@ export default async function SimilarityGapsPage() {
           name: a.name,
           tagline: a.tagline,
           tier: a.tier,
-          score: a.score,
+          score: a.wedge_score,
           capability_slugs: candA ? Array.from(candA.capabilities).sort() : [],
         },
         b: {
@@ -72,7 +72,7 @@ export default async function SimilarityGapsPage() {
           name: b.name,
           tagline: b.tagline,
           tier: b.tier,
-          score: b.score,
+          score: b.wedge_score,
           capability_slugs: candB ? Array.from(candB.capabilities).sort() : [],
         },
       };

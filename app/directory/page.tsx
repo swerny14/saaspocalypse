@@ -76,7 +76,7 @@ function applyFilters(
   const q = filters.q.trim().toLowerCase();
   return reports.filter((r) => {
     if (filters.tier && r.tier !== filters.tier) return false;
-    if (r.score < filters.min || r.score > filters.max) return false;
+    if (r.wedge_score < filters.min || r.wedge_score > filters.max) return false;
     if (q) {
       const haystack = `${r.name} ${r.tagline} ${r.domain}`.toLowerCase();
       if (!haystack.includes(q)) return false;
@@ -94,9 +94,9 @@ function applySort(reports: StoredReport[], sort: Sort): StoredReport[] {
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
       );
     case "score-desc":
-      return arr.sort((a, b) => b.score - a.score);
+      return arr.sort((a, b) => b.wedge_score - a.wedge_score);
     case "score-asc":
-      return arr.sort((a, b) => a.score - b.score);
+      return arr.sort((a, b) => a.wedge_score - b.wedge_score);
     case "quickest":
       return arr.sort(
         (a, b) =>
@@ -142,9 +142,9 @@ export async function generateMetadata({
       ? ` — ${tier} tier`
       : "";
 
-  const title = `Build any SaaS yourself — buildability rankings${tierSuffix} · saaspocalypse`;
+  const title = `SaaS moat rankings - find products with weak moats${tierSuffix} | saaspocalypse`;
   const description =
-    "Every SaaS we've scanned, sortable by buildability. Find one before you accidentally spend $144/year on a CRUD app.";
+    "Every SaaS we've scanned, sortable by wedge score, moat depth, tier, popularity, and estimated build time.";
 
   return {
     title,
@@ -174,9 +174,9 @@ export default async function DirectoryPage({
   const page = Math.max(1, Number(sp.page) || 1);
 
   const tierCounts: Record<DirectoryTier, number> = {
-    WEEKEND: 0,
-    MONTH: 0,
-    "DON'T": 0,
+    SOFT: 0,
+    CONTESTED: 0,
+    FORTRESS: 0,
   };
   for (const r of all) {
     if (r.tier in tierCounts) tierCounts[r.tier as DirectoryTier] += 1;
@@ -219,8 +219,8 @@ export default async function DirectoryPage({
             now sortable.
           </h1>
           <p className="font-display text-base leading-[1.5] opacity-75 max-w-[640px] mt-5 mb-0">
-            Every scan we&apos;ve run, filed by buildability. Find one before
-            you accidentally spend $144/year on a CRUD app.
+            Every scan we&apos;ve run, filed by wedge score and moat depth. Find
+            products a small builder can realistically compete with.
           </p>
         </div>
 

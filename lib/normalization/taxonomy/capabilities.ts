@@ -5,7 +5,7 @@ import type { Capability } from "./types";
  *
  * Source of truth flow:
  *   1. The TS file is the seed (initial set + manual edits by hand).
- *   2. /admin/moat-anomalies writes new patterns + new capabilities to the DB.
+ *   2. Score workbench writes new patterns + new capabilities to the DB.
  *   3. `pnpm tsx scripts/dump_taxonomy.ts` rewrites this file from DB rows.
  *   4. `pnpm tsx scripts/sync_taxonomy.ts` pushes TS back to DB (idempotent).
  *

@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/admin/auth";
 import { getAllReports } from "@/lib/db/reports";
-import { projectReport } from "@/lib/normalization/engine";
-import { persistProjection } from "@/lib/db/projections";
-import { scoreMoat } from "@/lib/normalization/moat";
-import { persistMoatScore } from "@/lib/db/moat_scores";
 import { loadEngineContextFromDb } from "@/lib/db/taxonomy_loader";
 import { logError } from "@/lib/error_log";
+import { recomputeReportScoring } from "@/lib/normalization/recompute";
+import { getCachedScoringConfig } from "@/lib/normalization/scoring_loader";
+import { logScoringAudit } from "@/lib/db/scoring_config";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -28,21 +27,21 @@ export async function POST() {
   }
 
   const { context, capabilities: catalog } = await loadEngineContextFromDb();
+  const config = await getCachedScoringConfig(true);
   const reports = await getAllReports(10_000);
   let processed = 0;
   let failed = 0;
+  let tierMoves = 0;
   const failures: string[] = [];
 
   for (const r of reports) {
     try {
-      const projection = projectReport(r, r.detected_stack, context);
-      await persistProjection(r.id, projection);
-      const moat = scoreMoat({
-        verdict: r,
-        capabilities: projection.capabilities,
+      const result = await recomputeReportScoring(r, {
+        context,
         catalog,
+        config,
       });
-      await persistMoatScore(r.id, moat);
+      if (r.tier !== result.after.tier) tierMoves += 1;
       processed += 1;
     } catch (e) {
       failed += 1;
@@ -57,5 +56,14 @@ export async function POST() {
     }
   }
 
-  return NextResponse.json({ ok: true, processed, failed, failures });
+  await logScoringAudit({
+    actor: "admin",
+    scope: "recompute",
+    change_kind: "recompute_all",
+    reports_moved: tierMoves,
+    after_value: { total: reports.length, processed, failed, failures },
+    reason: "Admin score workbench recompute-all",
+  });
+
+  return NextResponse.json({ ok: true, processed, failed, failures, tierMoves });
 }

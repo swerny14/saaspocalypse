@@ -62,7 +62,7 @@ export function SimilarCard({ sourceSlug, report, shared_capabilities, score_del
         <div className="mt-auto border-t-[1.5px] border-dashed border-ink pt-2.5 font-mono text-[11px] tracking-[0.02em] flex flex-col gap-1">
           <div className="flex items-baseline justify-between gap-2">
             <span className="font-bold">
-              <span className="text-base">{report.score}</span>
+              <span className="text-base">{report.wedge_score}</span>
               <span className="opacity-60 text-[10px]"> /100</span>
               <span
                 className={`ml-1.5 ${

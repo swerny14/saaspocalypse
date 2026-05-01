@@ -14,6 +14,7 @@ const AXIS_LABELS: Record<Exclude<MoatAxisDiff["axis"], "aggregate">, string> = 
   switching: "switching",
   data_moat: "data",
   regulatory: "regulatory",
+  distribution: "distribution",
 };
 
 /** Severity colors. Applied uniformly to both sides per axis — no "leader gets

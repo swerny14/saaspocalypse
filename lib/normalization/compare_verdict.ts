@@ -6,8 +6,8 @@ import type { CompareDiff } from "./compare";
  * over the existing pair + diff — no LLM, no DB. Drives the title-block chip,
  * the sub-line, and the bottom verdict band.
  *
- * Convention: "winner" = the side that's *easier to build first* (higher
- * score wins; same-score-and-tier within `TIE_THRESHOLD` is a tie).
+ * Convention: "winner" = the side that's *easier to attack* (higher wedge
+ * score = thinner walls; same-score-and-tier within `TIE_THRESHOLD` is a tie).
  */
 
 export type CompareWinner = "a" | "b" | "tie";
@@ -16,7 +16,7 @@ export type CompareVerdict = {
   winner: CompareWinner;
   /** Slug of the winner side (null on tie). */
   winner_slug: string | null;
-  /** Short uppercase chip in the title block, e.g. "BUILD CALENDLY-ISH FIRST". */
+  /** Short uppercase chip in the title block, e.g. "ATTACK CALENDLY-ISH FIRST". */
   chip: string;
   /** One-sentence prose under the chip — concrete reasons, lowercase. */
   summary: string;
@@ -51,14 +51,14 @@ export function computeCompareVerdict(
   const loserName = displayName(loserSide.report.name);
 
   const reasons = buildReasons(winnerSide, loserSide, diff, winner);
-  const summary = reasons.length > 0 ? `${reasons.join(", ")}.` : "the easier first build.";
+  const summary = reasons.length > 0 ? `${reasons.join(", ")}.` : "the thinner walls.";
   const punch = punchLine(winnerSide.report.tier, winnerName);
   const line = bandLine(winnerSide, loserSide, diff, winnerName, loserName, punch);
 
   return {
     winner,
     winner_slug: winnerSide.report.slug,
-    chip: `BUILD ${winnerName.toUpperCase()} FIRST`,
+    chip: `ATTACK ${winnerName.toUpperCase()} FIRST`,
     summary,
     line,
     punch,
@@ -91,9 +91,9 @@ function tieVerdict(pair: ComparePair, diff: CompareDiff): CompareVerdict {
     winner: "tie",
     winner_slug: null,
     chip: "TOO CLOSE TO CALL",
-    summary: `same tier, near-identical buildability — pick on taste.`,
-    line: `${aName} and ${bName} ${moatPhrase}, sit in the same tier, and clone in the same window. either is a defensible weekend bet — the choice is taste, not difficulty.`,
-    punch: "either is a defensible weekend bet",
+    summary: `same tier, near-identical wedge score — pick on taste.`,
+    line: `${aName} and ${bName} ${moatPhrase}, sit in the same tier, and present the same wall. either is a defensible angle of attack — the choice is taste, not difficulty.`,
+    punch: "either is a defensible angle of attack",
     cta_label: "read both reports →",
     cta_href: `/r/${a.report.slug}`,
   };
@@ -153,20 +153,20 @@ function buildReasons(
 }
 
 function punchLine(tier: string, name: string): string {
-  if (tier === "WEEKEND") return `build the ${name} clone this weekend.`;
-  if (tier === "MONTH") return `give the ${name} clone a month.`;
-  return `neither is a layup — ${name} is the lighter bet.`;
+  if (tier === "SOFT") return `wedge into ${name} this weekend.`;
+  if (tier === "CONTESTED") return `give the ${name} attack a month.`;
+  return `neither is a layup — ${name} is the thinner wall.`;
 }
 
 function bandLine(
   _winner: ComparePair["a"],
-  loser: ComparePair["a"],
+  _loser: ComparePair["a"],
   _diff: CompareDiff,
   _winnerName: string,
   loserName: string,
   punch: string,
 ): string {
-  return `same comparison surface, two different fights. ${punch} circle back to ${loserName} only if you genuinely need what it does that the other doesn't.`;
+  return `same comparison surface, two different walls. ${punch} circle back to ${loserName} only if you genuinely need what it does that the other doesn't.`;
 }
 
 function aggMoat(diff: CompareDiff): number | null {

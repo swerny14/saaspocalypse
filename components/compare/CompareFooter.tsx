@@ -6,9 +6,9 @@ type Props = {
 };
 
 const TIER_BG: Record<string, string> = {
-  WEEKEND: "var(--color-accent)",
-  MONTH: "var(--color-sticky)",
-  "DON'T": "var(--color-coral)",
+  SOFT: "var(--color-accent)",
+  CONTESTED: "var(--color-sticky)",
+  FORTRESS: "var(--color-coral)",
 };
 
 /**
@@ -61,7 +61,7 @@ function ReportLink({
           className="font-mono text-[10.5px] font-bold tracking-[0.16em] uppercase px-2 py-[3px] border-2 border-ink shadow-[2px_2px_0_0_var(--color-ink)] whitespace-nowrap"
           style={{ background: tierBg }}
         >
-          {r.tier === "DON'T" ? "don't" : r.tier.toLowerCase()} · {r.score}
+          {r.tier.toLowerCase()} · {r.wedge_score}
         </span>
       </div>
       <div className="font-display font-bold text-[24px] sm:text-[28px] tracking-[-0.02em] leading-[1.1] [overflow-wrap:anywhere] group-hover:text-coral transition-colors">

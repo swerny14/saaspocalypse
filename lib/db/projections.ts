@@ -2,6 +2,7 @@ import { getSupabaseAdmin, getSupabaseAnon } from "./supabase";
 import { wrapDbError } from "./errors";
 import type { ReportProjection } from "@/lib/normalization/engine";
 import type { SimilarityCandidate } from "@/lib/normalization/similarity";
+import type { DistributionSignals } from "@/lib/scanner/distribution";
 
 /**
  * Persist a normalization projection. Admin-only — the projection writer is
@@ -213,4 +214,98 @@ export async function getAllSimilarityCandidates(): Promise<
     }
   }
   return out;
+}
+
+/**
+ * Persist distribution signals onto the existing `report_attributes` row.
+ * Called from `runScan` after `persistProjection` (which created the row)
+ * and from the backfill script. Updates only the distribution-axis
+ * columns; the projection's own attribute columns (segment_slug,
+ * business_model_slug, monthly_floor_usd, ...) are left intact.
+ *
+ * Pre-condition: the report_attributes row already exists. The pipeline
+ * guarantees this by running persistProjection first; the backfill script
+ * does too. If the row doesn't exist, the update is a no-op (Supabase
+ * returns no error for zero-row updates).
+ *
+ * Old/dead columns (last_blog_post_at, community_channels, domain_
+ * registered_at) are explicitly nulled on each write so a recompute
+ * after the v8 signal-set change doesn't leave stale data confusingly
+ * mixed with fresh data.
+ */
+export async function persistDistributionSignals(
+  reportId: string,
+  signals: DistributionSignals,
+): Promise<void> {
+  const admin = getSupabaseAdmin();
+  const { error } = await admin
+    .from("report_attributes")
+    .update({
+      pricing_gate: signals.pricing_gate,
+      serp_own_domain_count: signals.serp_own_domain_count,
+      organic_count: signals.organic_count,
+      knowledge_graph_present: signals.knowledge_graph_present,
+      has_wikipedia: signals.has_wikipedia,
+      authoritative_third_party_count: signals.authoritative_third_party_count,
+      top_organic_owned: signals.top_organic_owned,
+      has_sitelinks: signals.has_sitelinks,
+      paa_present: signals.paa_present,
+      related_searches_present: signals.related_searches_present,
+      total_results: signals.total_results,
+      has_news: signals.has_news,
+      // Dead columns from prior calibrations — null out so stale data
+      // from earlier backfills doesn't confuse the diagnose script.
+      last_blog_post_at: null,
+      community_channels: [],
+      domain_registered_at: null,
+    })
+    .eq("report_id", reportId);
+  if (error) throw wrapDbError(error, "report_attributes distribution update");
+}
+
+/**
+ * Load previously-persisted distribution signals for a report. Returns
+ * null when no signals have ever been collected (pre-Phase-1 row, or
+ * backfill never run for this slug). Used by `scripts/recompute_projections.ts`
+ * so calibration iterations on `scoreDistribution` can be tested without
+ * re-fetching every homepage.
+ *
+ * `pricing_gate` being null is the sentinel: it's deterministically derived
+ * from `monthly_floor_usd` and gets written every time `combineDistribution
+ * Signals` runs, so a null pricing_gate means signals were never collected.
+ */
+export async function loadDistributionSignals(
+  reportId: string,
+): Promise<DistributionSignals | null> {
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin
+    .from("report_attributes")
+    .select(
+      "pricing_gate, serp_own_domain_count, organic_count, knowledge_graph_present, has_wikipedia, authoritative_third_party_count, top_organic_owned, has_sitelinks, paa_present, related_searches_present, total_results, has_news",
+    )
+    .eq("report_id", reportId)
+    .maybeSingle();
+  if (error) throw wrapDbError(error, "report_attributes load distribution");
+  if (!data) return null;
+  if (data.pricing_gate !== "demo" && data.pricing_gate !== "public") return null;
+  // total_results is a bigint in the DB; PostgREST returns it as a string
+  // when it might overflow JS Number. Parse defensively.
+  const totalResults =
+    typeof data.total_results === "string"
+      ? Number.parseInt(data.total_results, 10)
+      : (data.total_results as number | null);
+  return {
+    pricing_gate: data.pricing_gate,
+    serp_own_domain_count: data.serp_own_domain_count ?? null,
+    organic_count: data.organic_count ?? null,
+    knowledge_graph_present: data.knowledge_graph_present ?? null,
+    has_wikipedia: data.has_wikipedia ?? null,
+    authoritative_third_party_count: data.authoritative_third_party_count ?? null,
+    top_organic_owned: data.top_organic_owned ?? null,
+    has_sitelinks: data.has_sitelinks ?? null,
+    paa_present: data.paa_present ?? null,
+    related_searches_present: data.related_searches_present ?? null,
+    total_results: totalResults !== undefined && Number.isFinite(totalResults) ? totalResults : null,
+    has_news: data.has_news ?? null,
+  };
 }

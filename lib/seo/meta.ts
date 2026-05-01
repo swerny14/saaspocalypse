@@ -3,20 +3,22 @@ import type { StoredReport } from "@/lib/db/reports";
 const SITE_URL = "https://www.saaspocalypse.dev";
 const BRAND = "saaspocalypse";
 
-/** Front-loads the long-tail query phrase users actually search for. */
+/**
+ * Front-loads the search intent a builder is likely to have:
+ * "can I build/compete with X?" The report can still use wedge language
+ * once the user understands the frame.
+ */
 export function reportTitle(report: StoredReport): string {
-  return `Can I build ${report.name}? — ${report.tier} · ${report.time_estimate} · ${BRAND}`;
+  return `Can you compete with ${report.name}? ${report.tier} - wedge score ${report.wedge_score} | ${BRAND}`;
 }
 
-/** Longer form OG title for Twitter/Slack/LinkedIn previews. */
 export function reportOgTitle(report: StoredReport): string {
-  return `Can I build ${report.name} myself? Buildability ${report.score}/100, ${report.tier} tier — ${BRAND}`;
+  return `${report.name} moat scan: wedge score ${report.wedge_score}/100, ${report.tier} tier - ${BRAND}`;
 }
 
 /**
- * Description blends keyword phrases with the take. Aims for ≤155 chars
- * (Google truncates around there). Falls back gracefully when full body
- * would overflow.
+ * Description blends keyword phrases with the take. Aims for <=155 chars
+ * when possible so search snippets and social previews stay readable.
  */
 export function reportDescription(report: StoredReport): string {
   const stack = report.stack.slice(0, 3).join(", ");
@@ -24,51 +26,41 @@ export function reportDescription(report: StoredReport): string {
   const firstSentence = (report.take.match(/^[^.!?]+[.!?]?/)?.[0] ?? report.take).trim();
 
   const parts = [
-    `Buildability score ${report.score}/100.`,
-    `Estimated build time: ${report.time_estimate}.`,
+    `Moat scan for ${report.name}.`,
+    `Wedge score ${report.wedge_score}/100.`,
+    `Build time: ${report.time_estimate}.`,
     `Stack: ${stack}.`,
     firstSentence,
   ];
   const full = parts.join(" ");
   if (full.length <= 155) return full;
 
-  const noTake = `Buildability score ${report.score}/100. Estimated build time: ${report.time_estimate}. Stack: ${stack}.`;
+  const noTake = `Moat scan for ${report.name}. Wedge score ${report.wedge_score}/100. Build time: ${report.time_estimate}. Stack: ${stack}.`;
   if (noTake.length <= 155) return noTake;
 
-  return `Buildability score ${report.score}/100. Estimated build time: ${report.time_estimate}. Stack: ${stack2}.`;
+  return `Moat scan for ${report.name}. Wedge score ${report.wedge_score}/100. Build time: ${report.time_estimate}. Stack: ${stack2}.`;
 }
 
 export function reportCanonical(slug: string): string {
   return `${SITE_URL}/r/${slug}`;
 }
 
-/** Canonical compare URL — alphabetical slug ordering enforced by caller. */
 export function compareCanonical(slugA: string, slugB: string): string {
   return `${SITE_URL}/compare/${slugA}-vs-${slugB}`;
 }
 
-/**
- * Title targets *comparison* intent (`X vs Y: which is easier to build`),
- * not the per-report "Can I build X" intent. Keeps the long-tail comparison
- * query phrase up front for SERP CTR.
- */
 export function comparePageTitle(a: StoredReport, b: StoredReport): string {
-  return `${a.name} vs ${b.name}: which is easier to build? — ${BRAND}`;
+  return `${a.name} vs ${b.name}: which SaaS is easier to compete with? - ${BRAND}`;
 }
 
-/** Longer share-card form. Adds tier + score signal so previews aren't bare. */
 export function comparePageOgTitle(a: StoredReport, b: StoredReport): string {
-  return `${a.name} vs ${b.name}: head-to-head buildability — ${a.score}/100 vs ${b.score}/100 · ${BRAND}`;
+  return `${a.name} vs ${b.name}: SaaS moat comparison - ${a.wedge_score}/100 vs ${b.wedge_score}/100 | ${BRAND}`;
 }
 
-/**
- * ≤155 chars when possible. Stack lists keep brand names readable; falls back
- * to a stack-less form when the full version overflows.
- */
 export function comparePageDescription(a: StoredReport, b: StoredReport): string {
-  const full = `${a.name} vs ${b.name}. Buildability ${a.score} vs ${b.score}. ${a.time_estimate} vs ${b.time_estimate}. Stack, capabilities, cost — side by side.`;
+  const full = `${a.name} vs ${b.name}. Compare wedge scores, moat depth, stack, capabilities, cost, and estimated build time side by side.`;
   if (full.length <= 155) return full;
-  return `${a.name} vs ${b.name}. Buildability ${a.score} vs ${b.score}. ${a.time_estimate} vs ${b.time_estimate}.`;
+  return `${a.name} vs ${b.name}. Wedge score ${a.wedge_score} vs ${b.wedge_score}. ${a.time_estimate} vs ${b.time_estimate}.`;
 }
 
 export { SITE_URL, BRAND };

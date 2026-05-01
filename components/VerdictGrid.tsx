@@ -58,7 +58,7 @@ function VerdictCard({ r }: { r: StoredReport }) {
           className="font-display text-[56px] font-bold leading-none tracking-[-0.03em]"
           style={{ color: tierColor }}
         >
-          {r.score}
+          {r.wedge_score}
         </div>
         <div className="font-mono text-[13px] text-muted">/100</div>
         <div className="ml-auto font-mono text-xs text-right">

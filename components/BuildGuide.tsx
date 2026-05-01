@@ -12,7 +12,7 @@ export function BuildGuide({ report, guide }: Props) {
       {/* HEADER */}
       <div className="px-11 pt-9 pb-6 border-b-[2.5px] border-ink">
         <div className="font-mono text-xs font-bold tracking-[0.15em] uppercase text-muted mb-2">
-          your build guide for
+          your wedge guide for
         </div>
         <h1 className="font-display font-bold text-[40px] leading-none tracking-[-0.03em] m-0">
           {report.name}

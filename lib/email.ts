@@ -30,8 +30,8 @@ export async function sendGuideMagicLink(args: {
     return;
   }
 
-  const subject = `Your ${args.reportName} build guide is ready`;
-  const text = `Your saaspocalypse build guide for ${args.reportName} is ready.
+  const subject = `Your ${args.reportName} wedge guide is ready`;
+  const text = `Your saaspocalypse wedge guide for ${args.reportName} is ready.
 
 Open it here:
 ${args.magicLink}
@@ -46,10 +46,10 @@ This link is yours forever. Save the email.
   <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f4f1e8; color:#0a0a0a; padding: 32px;">
     <div style="max-width: 560px; margin: 0 auto; background:#ffffff; border: 2.5px solid #0a0a0a; box-shadow: 5px 5px 0 0 #0a0a0a; padding: 28px;">
       <div style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; background:#0a0a0a; color:#c6ff00; padding: 4px 10px; display: inline-block; font-weight: 700;">SAASPOCALYPSE</div>
-      <h1 style="font-size: 22px; margin: 18px 0 6px; letter-spacing: -0.02em;">Your build guide is ready.</h1>
+      <h1 style="font-size: 22px; margin: 18px 0 6px; letter-spacing: -0.02em;">Your wedge guide is ready.</h1>
       <p style="margin: 0 0 18px; line-height: 1.5;">Full step-by-step guide for <strong>${escapeHtml(args.reportName)}</strong>, with copy-paste LLM prompts for Claude / Cursor / Copilot.</p>
       <p style="margin: 0 0 18px;">
-        <a href="${args.magicLink}" style="display:inline-block; background:#c6ff00; color:#0a0a0a; text-decoration:none; font-weight:700; padding: 14px 22px; border: 2.5px solid #0a0a0a; box-shadow: 4px 4px 0 0 #0a0a0a;">→ open your build guide</a>
+        <a href="${args.magicLink}" style="display:inline-block; background:#c6ff00; color:#0a0a0a; text-decoration:none; font-weight:700; padding: 14px 22px; border: 2.5px solid #0a0a0a; box-shadow: 4px 4px 0 0 #0a0a0a;">→ open your wedge guide</a>
       </p>
       <p style="margin: 0; font-size: 12px; opacity: 0.7; line-height: 1.5;">This link is yours forever. Bookmark it, or keep this email.</p>
     </div>

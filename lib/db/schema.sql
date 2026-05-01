@@ -10,9 +10,21 @@ create table if not exists reports (
   name            text not null,
   tagline         text not null,
 
-  tier            text not null check (tier in ('WEEKEND','MONTH','DON''T')),
-  score           int  not null check (score between 0 and 100),
-  confidence      int,
+  -- Wedge frame (Phase 2.5): tier is server-derived from wedge_score buckets,
+  -- wedge_score is server-derived from the moat aggregate (10 - agg) * 10.
+  -- The LLM no longer emits either field. weakest_moat_axis is the lowest-
+  -- scoring moat axis at scan time — drives the weakest-axis callout in the
+  -- UI and keys the wedge guide LLM prompt. Null for legacy rows / scans
+  -- where moat scoring soft-failed.
+  tier            text not null check (tier in ('SOFT','CONTESTED','FORTRESS')),
+  wedge_score     int  not null check (wedge_score between 0 and 100),
+  weakest_moat_axis text check (
+    weakest_moat_axis is null
+    or weakest_moat_axis in (
+      'capital','technical','network','switching','data_moat','regulatory','distribution'
+    )
+  ),
+  wedge_thesis    text not null,
 
   take            text not null,
   take_sub        text not null,
@@ -39,7 +51,7 @@ create table if not exists reports (
 );
 
 create index if not exists reports_created_at_idx on reports (created_at desc);
-create index if not exists reports_tier_score_idx on reports (tier, score desc);
+create index if not exists reports_tier_wedge_score_idx on reports (tier, wedge_score desc);
 create index if not exists reports_view_count_idx on reports (view_count desc);
 
 create or replace function increment_report_view_count(p_slug text)
@@ -577,3 +589,304 @@ delete from capabilities where slug in (
   'warm-intro-workflow',
   'verdict-cache-corpus'
 );
+
+-- 2026-04-30: distribution signals (Phase 1 of wedge-frame pivot).
+-- Adds a 7th moat axis covering distribution depth. Raw signals live on
+-- `report_attributes` so they're queryable / diagnosable; the derived 0–10
+-- axis lives on `report_moat_scores.distribution` (nullable — null means
+-- the SERP call failed and we couldn't compute the axis honestly).
+--
+-- See lib/scanner/distribution.ts for the collector and lib/normalization/
+-- moat.ts::scoreDistribution for the scoring function. Bumps RUBRIC_VERSION
+-- as the calibration evolves; recompute_projections rebuilds existing rows.
+alter table report_attributes
+  add column if not exists pricing_gate text check (pricing_gate in ('demo','public')),
+  add column if not exists last_blog_post_at timestamptz,
+  add column if not exists community_channels jsonb not null default '[]'::jsonb,
+  add column if not exists domain_registered_at date,
+  add column if not exists serp_own_domain_count int;
+
+alter table report_moat_scores
+  add column if not exists distribution numeric(3,1)
+    check (distribution is null or distribution between 0 and 10);
+
+-- 2026-04-30 (calibration v8): replaced the original distribution sub-signals
+-- (blog cadence, community-in-footer, domain age via RDAP) with sub-signals
+-- derived from the Serper SERP payload we were already paying for. The
+-- earlier sub-signals were corrupted: blog cadence anti-correlated with brand
+-- strength, community-in-footer measured design choices not distribution,
+-- domain age was corrupted by vintage-domain purchases (Stripe 1995, etc.).
+--
+-- Old columns (last_blog_post_at, community_channels, domain_registered_at)
+-- are KEPT on the table for diagnostic value but are no longer populated by
+-- new scans; old data will gradually become stale. pricing_gate is also
+-- still collected and persisted but no longer scored — see scoreDistribution.
+alter table report_attributes
+  add column if not exists knowledge_graph_present boolean,
+  add column if not exists has_wikipedia boolean,
+  add column if not exists top_organic_owned boolean,
+  add column if not exists has_sitelinks boolean,
+  add column if not exists total_results bigint,
+  add column if not exists has_news boolean;
+
+-- 2026-04-30 (calibration v9): KG-only weighting in v8 collapsed for the
+-- ~50% of established brands where Google replaces the traditional
+-- knowledgeGraph panel with AI Overview / inline tiles (ChatGPT, Linear,
+-- Airtable, Tally, Cal.com all missed). v9 keeps KG but de-emphasizes it,
+-- adds three new sub-signals from the same Serper payload:
+--   - authoritative_third_party_count: # of distinct authoritative domains
+--     (Wikipedia, LinkedIn, Crunchbase, TechCrunch, Bloomberg, G2, etc.)
+--     in top 10 organic. Subsumes has_wikipedia and broadens it.
+--   - paa_present: Google's peopleAlsoAsk panel fires when there's
+--     organic curiosity about an entity.
+--   - related_searches_present: depth of related-query interest.
+-- Also tightens has_news to topStories ONLY (was firing for 44/47 reports
+-- via a too-lax "organic result has a date" fallback).
+alter table report_attributes
+  add column if not exists authoritative_third_party_count int,
+  add column if not exists paa_present boolean,
+  add column if not exists related_searches_present boolean;
+
+-- 2026-04-30 (calibration v10): debug of actual Serper responses revealed
+-- v9's PAA / related_searches / news / total_results signals were broken
+-- in different ways. PAA fires for any keyword overlap (saaspocalypse-dev
+-- gets 4 PAA items because the keyword matches industry-trend articles).
+-- relatedSearches always returns 8 for every query. topStories never
+-- returned for any brand search. searchInformation absent entirely.
+--
+-- v10 drops all four from scoring and replaces with two newly-discovered
+-- signals from the same payload:
+--   - organic_count: established brands consistently get 7 organic results
+--     while weak queries get 10 — Google compresses for entity-confident
+--     queries. The scored signal is `organic_count < 10` (compressed).
+--   - has_sitelinks (already collected in v9, now weight 4): reliably
+--     fires for every established brand, including those without KG.
+-- v10 also EXPANDS the authoritative-domain list (apps.apple.com,
+-- play.google.com, youtube.com, x.com, reddit.com, github.com) AND
+-- gates the count on top_organic_owned to suppress false positives.
+-- The deprecated columns (paa_present, related_searches_present, has_news,
+-- total_results) are still populated by the collector for diagnostics
+-- but are no longer scored.
+alter table report_attributes
+  add column if not exists organic_count int;
+
+-- 2026-04-30 (wedge-frame Phase 2): tier rename + buildability→wedge frame.
+-- WEEKEND/MONTH/DON'T → SOFT/CONTESTED/FORTRESS. The score buckets are
+-- unchanged (≥70 SOFT, 30–69 CONTESTED, <30 FORTRESS); only the labels move.
+-- Order matters: drop the old check constraint, rewrite data, add the new
+-- constraint. Idempotent — safe to re-run because the data-rewrite is a
+-- no-op once values are already in the new vocabulary.
+do $$
+begin
+  alter table reports drop constraint if exists reports_tier_check;
+exception when undefined_object then
+  -- pg_dump-restored databases use a different constraint name. Try both.
+  null;
+end $$;
+
+update reports set tier = case
+  when tier = 'WEEKEND'  then 'SOFT'
+  when tier = 'MONTH'    then 'CONTESTED'
+  when tier = 'DON''T'   then 'FORTRESS'
+  else tier
+end
+where tier in ('WEEKEND','MONTH','DON''T');
+
+-- Re-add the check constraint with the new vocabulary. ALTER TABLE ... ADD
+-- CONSTRAINT IF NOT EXISTS isn't a thing in postgres < 18, so check via
+-- pg_constraint and only add if missing.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'reports'::regclass and conname = 'reports_tier_check'
+  ) then
+    alter table reports add constraint reports_tier_check
+      check (tier in ('SOFT','CONTESTED','FORTRESS'));
+  end if;
+end $$;
+
+-- 2026-05-01 (wedge-frame Phase 2.5): replace buildability score with
+-- wedge_score (server-derived from moat aggregate), add wedge_thesis (LLM-
+-- emitted lede sentence) and weakest_moat_axis (server-derived from moat
+-- breakdown). The LLM no longer emits `score`, `tier`, `difficulty`, or
+-- `confidence` — `tier` is now derived from `wedge_score` buckets, and the
+-- whole headline conclusion is moat-driven.
+--
+-- This migration is destructive for the legacy `score` and `confidence`
+-- columns. Phase 2.5 ships as a re-scan of the entire corpus (rationale:
+-- the LLM voice/contract changed end-to-end), so we accept that. The drop
+-- happens AFTER the new columns are in place so a partial deploy can't
+-- leave the table in an unusable state.
+alter table reports
+  add column if not exists wedge_score       int,
+  add column if not exists wedge_thesis      text,
+  add column if not exists weakest_moat_axis text;
+
+-- Backfill default values so we can flip the columns to NOT NULL on legacy
+-- rows that survive the rescan (none should — the rescan script truncates
+-- cascade — but defensive). Wedge_score defaults to 0 and weakest_moat_axis
+-- to NULL on rows with no moat row to derive from.
+update reports set wedge_score = 0 where wedge_score is null;
+update reports
+  set wedge_thesis = 'wedge thesis pending re-scan'
+  where wedge_thesis is null;
+
+alter table reports
+  alter column wedge_score   set not null,
+  alter column wedge_thesis  set not null;
+
+-- weakest_moat_axis check constraint.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'reports'::regclass
+      and conname  = 'reports_weakest_moat_axis_check'
+  ) then
+    alter table reports add constraint reports_weakest_moat_axis_check
+      check (
+        weakest_moat_axis is null
+        or weakest_moat_axis in (
+          'capital','technical','network','switching','data_moat','regulatory','distribution'
+        )
+      );
+  end if;
+end $$;
+
+-- wedge_score check constraint.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'reports'::regclass
+      and conname  = 'reports_wedge_score_check'
+  ) then
+    alter table reports add constraint reports_wedge_score_check
+      check (wedge_score between 0 and 100);
+  end if;
+end $$;
+
+-- Drop the old buildability columns + indexes. Safe to re-run.
+drop index if exists reports_tier_score_idx;
+alter table reports drop column if exists score;
+alter table reports drop column if exists confidence;
+
+create index if not exists reports_tier_wedge_score_idx
+  on reports (tier, wedge_score desc);
+
+-- 2026-05-01: helper RPC the rescan script uses to wipe the corpus before
+-- re-scanning. Truncating reports cascades through every projection /
+-- moat-score / similarity-gap / build-guide / purchase row that FK's to
+-- it. Restricted to the service-role; anon clients cannot call it.
+create or replace function truncate_reports_cascade()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  truncate table reports cascade;
+$$;
+revoke all on function truncate_reports_cascade() from public, anon, authenticated;
+
+-- 2026-05-02 (Phase 2.6 — calibration framework):
+-- Move every tunable parameter from `lib/normalization/moat.ts` into the DB
+-- so calibration becomes a data edit instead of a code deploy. Three tables:
+--
+--   1. `scoring_patterns` — regex / domain rows (capex prose patterns,
+--      fortress-thesis patterns, capex-exclude patterns, distribution
+--      authoritative-domain entries). Each row has axis + kind + pattern
+--      + weight + status + evidence.
+--
+--   2. `scoring_weights` — keyed numeric knobs for everything that's
+--      currently a magic constant in moat.ts: per-axis aggregate weights,
+--      distribution sub-signal weights, capital path thresholds, technical
+--      difficulty multipliers. Key naming: `<axis>.<knob>`.
+--
+--   3. `scoring_audit` — append-only log of every calibration change. One
+--      row per pattern add / disable / weight update / recompute / sweep.
+--      Drives the change history surface in /admin/score-audit.
+--
+-- Production scoring uses an in-process snapshot loaded at module init
+-- (defaults baked into TS). The admin recompute paths await a fresh DB
+-- load so calibration edits affect the next recompute without redeploy.
+-- Mirrors the existing capability-table posture.
+
+create table if not exists scoring_patterns (
+  id           uuid primary key default gen_random_uuid(),
+  axis         text not null check (axis in (
+    'capital','technical','network','switching','data_moat','regulatory','distribution'
+  )),
+  kind         text not null check (kind in (
+    'capex',                                -- regex matched against verdict prose for capital
+    'fortress_thesis',                      -- regex matched against wedge_thesis for capital path-2 anchor
+    'capex_exclude',                        -- regex that suppresses a capex match (e.g. SOC 2)
+    'distribution_authoritative_domain'     -- domain string (suffix-matched) for distribution authoritative count
+  )),
+  pattern      text not null,               -- regex source (kinds capex/fortress_thesis/capex_exclude) OR domain string (distribution_authoritative_domain)
+  weight       numeric(4,2) not null default 1.0,
+  status       text not null default 'active' check (status in ('active','disabled')),
+  evidence     text,                        -- one-line justification (hand-typed or LLM-generated)
+  added_by     text,                        -- 'seed' | 'admin' | 'llm:moat_audit' | etc
+  added_at     timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create index if not exists scoring_patterns_axis_kind_idx
+  on scoring_patterns (axis, kind, status);
+
+-- Uniqueness: same pattern can't appear twice under the same axis+kind.
+create unique index if not exists scoring_patterns_axis_kind_pattern_uq
+  on scoring_patterns (axis, kind, pattern);
+
+drop trigger if exists scoring_patterns_set_updated_at on scoring_patterns;
+create trigger scoring_patterns_set_updated_at
+  before update on scoring_patterns
+  for each row execute function set_updated_at();
+
+alter table scoring_patterns enable row level security;
+-- No public read policy: scoring config is admin-only.
+
+-- Numeric knobs. Key format: `<axis>.<knob_name>`. Examples:
+--   aggregate.capital                         (per-axis weight in moat aggregate)
+--   distribution.sub_weight.has_sitelinks     (per-sub-signal weight)
+--   capital.heavy_capex_hits_min              (path-3 threshold)
+--   capital.descriptive_anchor                (path-1/2 anchor)
+--   capital.heavy_capex_anchor                (path-3 anchor)
+--   capital.surface_cap                       (per-surface capex match cap)
+--   technical.nightmare_weight                (per-difficulty multiplier)
+create table if not exists scoring_weights (
+  key          text primary key,
+  value        numeric(8,3) not null,
+  description  text,                          -- human-readable explanation
+  updated_at   timestamptz not null default now()
+);
+
+drop trigger if exists scoring_weights_set_updated_at on scoring_weights;
+create trigger scoring_weights_set_updated_at
+  before update on scoring_weights
+  for each row execute function set_updated_at();
+
+alter table scoring_weights enable row level security;
+
+-- Audit log. Append-only — never UPDATE or DELETE rows. Keep schema flat
+-- so it's easy to query in the admin UI and in ad-hoc SQL.
+create table if not exists scoring_audit (
+  id                uuid primary key default gen_random_uuid(),
+  ts                timestamptz not null default now(),
+  actor             text,                     -- 'admin' | 'seed' | 'llm:moat_audit' | etc
+  scope             text not null,            -- 'pattern' | 'weight' | 'recompute' | 'sweep'
+  change_kind       text not null,            -- 'add' | 'update' | 'disable' | 'recompute_one' | 'recompute_all' | 'sweep_run'
+  axis              text,
+  ref_id            uuid,                     -- pattern_id OR report_id depending on scope
+  ref_key           text,                     -- weight key OR slug
+  before_value      jsonb,
+  after_value       jsonb,
+  reason            text,
+  reports_moved     int                       -- # reports that crossed tier boundaries as a result
+);
+
+create index if not exists scoring_audit_ts_idx on scoring_audit (ts desc);
+create index if not exists scoring_audit_scope_idx on scoring_audit (scope, ts desc);
+
+alter table scoring_audit enable row level security;

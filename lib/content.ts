@@ -1,7 +1,7 @@
 export const HEADLINES: { top: string; sub: string }[] = [
   {
-    top: "Can I build this myself?",
-    sub: "Paste any SaaS URL. We'll tell you if it's a weekend or a life sentence.",
+    top: "Scan any SaaS. Find the weak spot.",
+    sub: "Paste a URL. We score the moat, expose the stack, and show whether a small builder has a real opening.",
   },
   {
     top: "Your subscription is a skill issue.",
@@ -74,7 +74,7 @@ export const HOW_STEPS = [
   {
     n: "03",
     t: "Get the goods",
-    b: "A buildability score, an itemized stack receipt, a time estimate, and a linked tutorial list. Then you ignore it and subscribe anyway.",
+    b: "A wedge score, an itemized stack receipt, a time estimate, and a linked tutorial list. Then you ignore it and subscribe anyway.",
   },
 ];
 
@@ -89,7 +89,7 @@ export const FAQS = [
   },
   {
     q: "Is it free?",
-    a: "The verdict is free, forever. If you want the full step-by-step build guide for a specific report, that's $2 — paid once, not monthly. No subscriptions, no seats, no tiers. That's every price we have.",
+    a: "The verdict is free, forever. If you want the full step-by-step wedge guide for a specific report, that's $2 — paid once, not monthly. No subscriptions, no seats, no tiers. That's every price we have.",
   },
   {
     q: "What if I'm the SaaS and you roasted me?",
@@ -101,7 +101,7 @@ export const FAQS = [
   },
   {
     q: "Can I use this to decide what to build?",
-    a: "Yes, but inversely. If we say 'WEEKEND', the market is saturated. If we say 'DON'T', that's your billion-dollar idea. You're welcome.",
+    a: "Yes — and read it sideways. SOFT means the engineering bar is low, so distribution is the real moat. FORTRESS means the head-on clone is suicide, but a wedge into a niche might be your billion-dollar idea. You're welcome.",
   },
 ];
 

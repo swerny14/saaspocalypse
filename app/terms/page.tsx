@@ -11,7 +11,7 @@ import {
 export const metadata: Metadata = {
   title: "Terms & Conditions — saaspocalypse",
   description:
-    "The rules for using saaspocalypse — the free scanner and the paid build guides.",
+    "The rules for using saaspocalypse — the free scanner and the paid wedge guides.",
   robots: { index: true, follow: true },
 };
 

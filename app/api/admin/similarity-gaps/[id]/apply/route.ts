@@ -7,13 +7,11 @@ import {
   insertCapability,
 } from "@/lib/db/capabilities";
 import { getReportsByIds } from "@/lib/db/reports";
-import { projectReport } from "@/lib/normalization/engine";
-import { persistProjection } from "@/lib/db/projections";
-import { scoreMoat } from "@/lib/normalization/moat";
-import { persistMoatScore } from "@/lib/db/moat_scores";
 import { loadEngineContextFromDb } from "@/lib/db/taxonomy_loader";
 import { logError } from "@/lib/error_log";
 import type { CapabilityCategory, MoatTag } from "@/lib/normalization/taxonomy/types";
+import { recomputeReportScoring } from "@/lib/normalization/recompute";
+import { getCachedScoringConfig } from "@/lib/normalization/scoring_loader";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -125,15 +123,13 @@ export async function POST(
     // the curator sees the convergence on the next page load.
     const reports = await getReportsByIds([gap.report_a_id, gap.report_b_id]);
     const { context, capabilities: catalog } = await loadEngineContextFromDb();
+    const config = await getCachedScoringConfig(true);
     for (const report of reports) {
-      const projection = projectReport(report, report.detected_stack, context);
-      await persistProjection(report.id, projection);
-      const moat = scoreMoat({
-        verdict: report,
-        capabilities: projection.capabilities,
+      await recomputeReportScoring(report, {
+        context,
         catalog,
+        config,
       });
-      await persistMoatScore(report.id, moat);
     }
 
     await markApplied(id);

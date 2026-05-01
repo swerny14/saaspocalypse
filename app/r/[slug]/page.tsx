@@ -59,8 +59,12 @@ export default async function ReportPage({ params }: { params: Params }) {
   return (
     <main className="bg-bg min-h-screen py-10">
       <div className="container">
-        <VerdictReport report={report} />
-        <SimilarProducts sourceId={report.id} sourceSlug={report.slug} />
+        <VerdictReport
+          report={report}
+          comparisons={
+            <SimilarProducts sourceId={report.id} sourceSlug={report.slug} />
+          }
+        />
         <TrackView slug={report.slug} />
         <script
           type="application/ld+json"

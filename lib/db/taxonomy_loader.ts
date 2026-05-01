@@ -20,9 +20,7 @@ import { FINGERPRINT_NAME_OVERRIDES } from "@/lib/normalization/taxonomy/stack_c
  * Read the four taxonomy tables from Supabase and assemble an EngineContext
  * that scoring functions can use instead of the TS-bundled defaults. The
  * point: admin-side taxonomy edits (new patterns, new capabilities) take
- * effect on the next recompute without a redeploy. Production scans
- * continue to use the TS-bundled DEFAULT_ENGINE_CONTEXT, so deploys remain
- * reproducible from git.
+ * effect on the next recompute and fresh scan without a redeploy.
  *
  * `FINGERPRINT_NAME_OVERRIDES` is intentionally TS-only (it's a tiny static
  * map, not a row store) and is bundled into every loaded context.

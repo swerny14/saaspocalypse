@@ -23,7 +23,7 @@ const SEEDS: Array<{ url: string; report: VerdictReport }> = [
     report: {
       name: "notion-ish.com",
       tagline: "block-based docs + database",
-      tier: "WEEKEND",
+      tier: "SOFT",
       score: 78,
       confidence: 92,
       take: "It's a rich-text editor with a recursive database attached. The magic is the drag-handle and the schema. The rest is a CRUD app in a trenchcoat.",
@@ -95,7 +95,7 @@ const SEEDS: Array<{ url: string; report: VerdictReport }> = [
     report: {
       name: "calendly-ish.com",
       tagline: "scheduling link generator",
-      tier: "WEEKEND",
+      tier: "SOFT",
       score: 86,
       confidence: 95,
       take: "You're charging $12/mo for an if-statement and a calendar invite. Respect. But also, an if-statement.",
@@ -160,7 +160,7 @@ const SEEDS: Array<{ url: string; report: VerdictReport }> = [
     report: {
       name: "linear-ish.app",
       tagline: "issue tracker for software teams",
-      tier: "MONTH",
+      tier: "CONTESTED",
       score: 52,
       confidence: 74,
       take: "The bug tracker is a weekend. The feel is a month. You're not rebuilding Linear — you're rebuilding the 60fps keyboard-driven UI that makes Linear feel like Linear. That's the whole product.",
@@ -243,7 +243,7 @@ const SEEDS: Array<{ url: string; report: VerdictReport }> = [
     report: {
       name: "stripe-ish.com",
       tagline: "payments infrastructure",
-      tier: "DON'T",
+      tier: "FORTRESS",
       score: 6,
       confidence: 99,
       take: "Absolutely not. This is the one thing on the internet that is genuinely worth paying for. Put your laptop down. Go outside.",
@@ -342,7 +342,7 @@ async function main() {
     try {
       const row = await upsertReport(domain, parsed.data);
       console.log(
-        `[seed] upserted ${row.slug} (${row.tier}, ${row.score}/100) · id=${row.id}`,
+        `[seed] upserted ${row.slug} (${row.tier}, wedge ${row.wedge_score}/100) · id=${row.id}`,
       );
     } catch (err) {
       console.error(`[seed] failed to upsert ${domain}:`, err);

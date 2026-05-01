@@ -60,9 +60,9 @@ export async function createGuideCheckoutSession(args: CreateCheckoutArgs) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: `${args.reportName} — build guide`,
+              name: `${args.reportName} — wedge guide`,
               description:
-                "Step-by-step build guide with ready-to-paste LLM prompts. One-time purchase.",
+                "Step-by-step wedge guide with ready-to-paste LLM prompts. One-time purchase.",
             },
             unit_amount: guidePriceCents(),
           },

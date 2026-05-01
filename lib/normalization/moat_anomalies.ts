@@ -2,24 +2,24 @@ import type { StoredReport } from "@/lib/db/reports";
 import type { StoredMoatScore } from "@/lib/db/moat_scores";
 
 /**
- * Detect reports whose moat score doesn't fit their buildability tier in
- * obvious ways. Pure heuristics; no LLM. The rules are intentionally
- * conservative — false positives here are cheap (admin reviews + dismisses),
- * but a noisy queue defeats the purpose of having a queue at all.
+ * Detect reports whose moat score doesn't fit their wedge tier in obvious
+ * ways. Pure heuristics; no LLM. The rules are intentionally conservative —
+ * false positives here are cheap (admin reviews + dismisses), but a noisy
+ * queue defeats the purpose of having a queue at all.
  *
  * The heuristics encode the same gut-check we used to spot Stripe at 6.8:
- *   - DON'T tier with low aggregate ⇒ probably missing capabilities
- *   - WEEKEND tier with high aggregate ⇒ probably over-firing capabilities
+ *   - FORTRESS tier with low aggregate ⇒ probably missing capabilities
+ *   - SOFT tier with high aggregate ⇒ probably over-firing capabilities
  *   - Specialist moats are real (a 10/10/0/0/0/10 is honest), but a single
  *     zero-axis next to two ≥ 7 neighbors is usually a coverage gap, not
  *     a structural absence.
  */
 
 export type AnomalyReason =
-  | "low_dont_tier"
-  | "high_weekend_tier"
+  | "low_fortress_tier"
+  | "high_soft_tier"
   | "isolated_zero_axis"
-  | "dont_tier_no_strong_axis";
+  | "fortress_tier_no_strong_axis";
 
 export type AnomalyAxis =
   | "capital"
@@ -64,23 +64,24 @@ export function detectAnomalies(reports: StoredReport[]): FlaggedReport[] {
     const moat = r.moat;
     const found: Anomaly[] = [];
 
-    // Rule 1: DON'T tier with weak aggregate. The LLM said "this is
+    // Rule 1: FORTRESS tier with weak aggregate. The LLM said "this is
     // structurally hard to build," so the moat should also be high.
-    if (r.tier === "DON'T" && moat.aggregate < 5) {
+    if (r.tier === "FORTRESS" && moat.aggregate < 5) {
       found.push({
-        reason: "low_dont_tier",
-        explanation: `DON'T-tier report (score ${r.score}) but moat aggregate is only ${moat.aggregate.toFixed(1)} — usually means moat-bearing capabilities aren't matching the verdict text.`,
+        reason: "low_fortress_tier",
+        explanation: `FORTRESS-tier report (wedge score ${r.wedge_score}) but moat aggregate is only ${moat.aggregate.toFixed(1)} — usually means moat-bearing capabilities aren't matching the verdict text.`,
         axes: [],
       });
     }
 
-    // Rule 2: WEEKEND tier with surprisingly high aggregate. Generally the
-    // tier and the moat correlate; a high moat on a "you could build this
-    // in a weekend" report suggests over-firing.
-    if (r.tier === "WEEKEND" && moat.aggregate > 5) {
+    // Rule 2: SOFT tier with surprisingly high aggregate. The wedge score
+    // and the moat are now mathematically linked (wedge = (10 - agg) * 10),
+    // so this rule only fires when the score-bucket math is off — which
+    // shouldn't happen post-Phase-2.5. Kept for legacy / hand-edited rows.
+    if (r.tier === "SOFT" && moat.aggregate > 5) {
       found.push({
-        reason: "high_weekend_tier",
-        explanation: `WEEKEND-tier report (score ${r.score}) but moat aggregate is ${moat.aggregate.toFixed(1)} — capabilities may be matching too eagerly.`,
+        reason: "high_soft_tier",
+        explanation: `SOFT-tier report (wedge score ${r.wedge_score}) but moat aggregate is ${moat.aggregate.toFixed(1)} — wedge_score / tier / moat aggregate disagree.`,
         axes: [],
       });
     }
@@ -98,12 +99,12 @@ export function detectAnomalies(reports: StoredReport[]): FlaggedReport[] {
       });
     }
 
-    // Rule 4: DON'T tier with no axis hitting high. The structural moat
+    // Rule 4: FORTRESS tier with no axis hitting high. The structural moat
     // exists somewhere — we just haven't found it.
-    if (r.tier === "DON'T" && strongCount === 0) {
+    if (r.tier === "FORTRESS" && strongCount === 0) {
       found.push({
-        reason: "dont_tier_no_strong_axis",
-        explanation: `DON'T-tier report with zero axes ≥ 7 — the report says structurally hard, but no moat axis is registering it.`,
+        reason: "fortress_tier_no_strong_axis",
+        explanation: `FORTRESS-tier report with zero axes ≥ 7 — the report says structurally hard, but no moat axis is registering it.`,
         axes: [],
       });
     }
@@ -114,13 +115,13 @@ export function detectAnomalies(reports: StoredReport[]): FlaggedReport[] {
   }
 
   // Most-misaligned-first: bigger gap between tier expectation and aggregate
-  // surfaces first. DON'T-tier mismatches are the most actionable.
+  // surfaces first. FORTRESS-tier mismatches are the most actionable.
   out.sort((a, b) => {
     const score = (f: FlaggedReport): number => {
       const tier = f.report.tier;
       const agg = f.moat.aggregate;
-      if (tier === "DON'T") return 10 - agg;
-      if (tier === "WEEKEND") return agg;
+      if (tier === "FORTRESS") return 10 - agg;
+      if (tier === "SOFT") return agg;
       return 0;
     };
     return score(b) - score(a);

@@ -19,8 +19,9 @@ export type SimilarReport = {
   report: StoredReport;
   shared_capabilities: string[];
   same_segment: boolean;
-  /** candidate.score minus source.score. Positive = candidate is easier to
-   *  build than source. Surface as "+20" / "-8" on the card. */
+  /** candidate.wedge_score minus source.wedge_score. Positive = candidate
+   *  has thinner walls (more wedgeable) than the source. Surface as "+20"
+   *  / "-8" on the card. */
   score_delta: number;
   /** Capabilities the candidate has that the source doesn't, ordered by
    *  importance (descriptors first, then alphabetical). The card surfaces
@@ -118,7 +119,7 @@ export async function getSimilarReports(
         report,
         shared_capabilities: result.shared_capabilities,
         same_segment: result.same_segment,
-        score_delta: report.score - sourceReport.score,
+        score_delta: report.wedge_score - sourceReport.wedge_score,
         wedge_capability_slugs: computeWedge(source.capabilities, candidate.capabilities),
       });
     }

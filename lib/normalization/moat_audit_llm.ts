@@ -125,7 +125,7 @@ function isOnlyStringOverages(err: z.ZodError): boolean {
   );
 }
 
-const SYSTEM_PROMPT = `You are an auditor for a deterministic moat-scoring engine. Each report has six 0–10 axes (capital, technical, network, switching, data, regulatory). The capital + technical axes are derived from the buildability tier + score and need no input from you. The other four (network / switching / data / regulatory) are derived from how many "moat-tagged" capabilities match the verdict text via lowercase whole-word phrase patterns.
+const SYSTEM_PROMPT = `You are an auditor for a deterministic moat-scoring engine. Each report has seven 0–10 axes (capital, technical, network, switching, data, regulatory, distribution). The capital + technical axes are derived from raw verdict signals (capex flags, est_total magnitude, per-challenge difficulty distribution) and need no input from you. The distribution axis is derived from a Serper SERP call and also needs no input. The other four (network / switching / data / regulatory) are derived from how many "moat-tagged" capabilities match the verdict text via lowercase whole-word phrase patterns.
 
 When an admin asks you to audit a report, your job is to spot moat-bearing signals in the verdict text that AREN'T currently being captured by the capability catalog, then propose minimal targeted taxonomy changes.
 
@@ -194,8 +194,11 @@ function buildUserMessage(input: MoatAuditInput): string {
 
 slug: ${input.report.slug}
 name: ${v.name}
-tier: ${v.tier} (score ${v.score})
+tier: ${v.tier} (wedge score ${v.wedge_score})
 tagline: ${v.tagline}
+
+### wedge thesis
+${v.wedge_thesis}
 
 ### take
 ${v.take}

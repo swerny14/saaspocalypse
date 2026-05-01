@@ -22,7 +22,7 @@ export function landingJsonLd(): JsonLd {
         url: SITE_URL,
         name: BRAND,
         description:
-          "Paste any SaaS URL. We'll tell you if it's a weekend or a life sentence. Buildability score, stack receipt, time-to-clone, and a snarky one-liner.",
+          "Paste any SaaS URL. Get a moat score, stack receipt, time-to-clone, and a blunt read on whether a small builder can compete.",
         potentialAction: {
           "@type": "SearchAction",
           target: {
@@ -110,8 +110,8 @@ export function comparePageJsonLd(a: StoredReport, b: StoredReport): JsonLd {
     "@type": "WebPage",
     "@id": `${url}#compare`,
     url,
-    name: `${a.name} vs ${b.name}: which is easier to build?`,
-    description: `${a.name} vs ${b.name}. Buildability ${a.score} vs ${b.score}.`,
+    name: `${a.name} vs ${b.name}: which SaaS is easier to compete with?`,
+    description: `${a.name} vs ${b.name}. Compare wedge scores, moat depth, stack, cost, and build time.`,
     mainEntity: {
       "@type": "ItemList",
       itemListOrder: "https://schema.org/ItemListOrderAscending",
@@ -152,7 +152,7 @@ export function reportJsonLd(report: StoredReport): JsonLd {
     },
     reviewRating: {
       "@type": "Rating",
-      ratingValue: report.score,
+      ratingValue: report.wedge_score,
       bestRating: 100,
       worstRating: 0,
     },

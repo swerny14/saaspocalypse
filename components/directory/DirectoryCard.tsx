@@ -47,7 +47,7 @@ export function DirectoryCard({ report, scanIndex }: Props) {
 
         <div className="flex items-center justify-between mb-3 gap-2">
           <TierBadge tier={tier} />
-          <ScoreBar score={report.score} width={120} />
+          <ScoreBar score={report.wedge_score} width={120} />
         </div>
 
         <div className="mt-auto flex justify-between items-center border-t-[1.5px] border-dashed border-ink pt-2.5 font-mono text-[11px] font-bold tracking-[0.05em]">

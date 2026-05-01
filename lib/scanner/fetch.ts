@@ -13,7 +13,14 @@ export class FetchError extends Error {
 
 const MAX_RESPONSE_BYTES = 200 * 1024; // 200KB raw HTML cap
 const MAX_TEXT_CHARS = 20_000; // ~5K tokens once handed to Claude
-const MAX_RAW_HEAD_CHARS = 50_000; // un-stripped slice retained for fingerprinting
+// 200K matches MAX_RESPONSE_BYTES so the un-stripped slice covers the whole
+// fetched response. The earlier 50K cap silently truncated before the
+// footer of any SPA-heavy homepage (Stripe, Linear, Notion all ~150–250KB
+// of <head> + inline scripts before the body), making community-channel
+// detection in lib/scanner/distribution.ts systematically miss social links
+// in the footer. Renaming would churn callsites; the variable name is
+// retained but the cap is now "raw response" rather than "head only".
+const MAX_RAW_HEAD_CHARS = 200_000;
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 3;
 const UA =

@@ -166,7 +166,7 @@ function ErrorPanel({ message }: { message: string }) {
   return (
     <div className="bru bg-paper p-8 max-w-[560px] mx-auto">
       <div className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase text-danger mb-2">
-        build guide generation failed
+        wedge guide generation failed
       </div>
       <p className="text-[15px] leading-[1.6] m-0 mb-4 opacity-85">{message}</p>
       <p className="text-xs opacity-60 m-0">

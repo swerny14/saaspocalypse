@@ -2,7 +2,7 @@ import type { LegalSection } from "./types";
 
 export const TERMS_TITLE = "Terms & Conditions";
 
-export const TERMS_VERSION = "2026-04-25";
+export const TERMS_VERSION = "2026-04-30";
 
 export const TERMS_EFFECTIVE_DATE = TERMS_VERSION;
 
@@ -28,7 +28,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "saaspocalypse offers two things. First, a free \"scanner\" that accepts a publicly accessible URL you submit, fetches the homepage, and uses a large language model to produce an opinionated buildability report — a tier verdict, an estimated time-to-clone, an inferred technology stack, identified challenges, and a snarky one-liner. Second, an optional paid \"build guide\" — a written, AI-generated walkthrough of how a builder might attempt to construct a comparable product, including suggested prompts and pitfalls.",
+        text: "saaspocalypse offers two things. First, a free \"scanner\" that accepts a publicly accessible URL you submit, fetches the homepage, and uses a large language model to produce an opinionated wedge report — a tier verdict (SOFT / CONTESTED / FORTRESS), an estimated time-to-clone, an inferred technology stack, identified challenges, and a candid one-liner. Second, an optional paid \"wedge guide\" — a written, AI-generated walkthrough of how a builder might attempt to wedge into a comparable market, including suggested prompts and pitfalls.",
       },
       {
         kind: "p",

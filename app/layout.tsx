@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Nav } from "@/components/Nav";
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -18,15 +18,17 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const siteTitle = "saaspocalypse - SaaS moat scanner for indie hackers";
+const siteDescription =
+  "Paste any SaaS URL. Get a moat score, stack receipt, time-to-clone, and a blunt read on whether a small builder can compete.";
+
 export const metadata: Metadata = {
-  title: "saaspocalypse — can I build this myself?",
-  description:
-    "Paste any SaaS URL. We'll tell you if it's a weekend or a life sentence. Buildability score, stack receipt, time-to-clone, and a snarky one-liner.",
+  title: siteTitle,
+  description: siteDescription,
   metadataBase: new URL("https://www.saaspocalypse.dev"),
   openGraph: {
-    title: "saaspocalypse — can I build this myself?",
-    description:
-      "Paste any SaaS URL. We'll tell you if it's a weekend or a life sentence.",
+    title: siteTitle,
+    description: siteDescription,
     type: "website",
     siteName: "saaspocalypse",
     images: [
@@ -34,15 +36,14 @@ export const metadata: Metadata = {
         url: "/images/saaspocalypse-og.png",
         width: 1200,
         height: 630,
-        alt: "saaspocalypse — can I build this myself?",
+        alt: siteTitle,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "saaspocalypse — can I build this myself?",
-    description:
-      "Paste any SaaS URL. We'll tell you if it's a weekend or a life sentence.",
+    title: siteTitle,
+    description: siteDescription,
     images: ["/images/saaspocalypse-og.png"],
   },
 };
@@ -53,12 +54,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+    >
       <body>
         <Nav />
         {children}
       </body>
-      <Analytics/>
+      <Analytics />
     </html>
   );
 }

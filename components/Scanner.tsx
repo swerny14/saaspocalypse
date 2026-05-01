@@ -10,6 +10,7 @@ import {
   type ScanStepId,
 } from "@/lib/scanner/events";
 import { VerdictReport } from "./VerdictReport";
+import { SimilarProductsClient } from "./SimilarProductsClient";
 
 type Phase = "idle" | "scanning" | "done" | "error";
 
@@ -118,7 +119,7 @@ export function Scanner() {
 
   return (
     <div>
-      <div className="max-w-[780px]">
+      <div className="mx-auto max-w-[780px]">
         <div className="bru bg-paper flex flex-col sm:flex-row sm:items-stretch relative">
           <div className="flex items-stretch flex-1 min-w-0 border-b-[2.5px] sm:border-b-0 border-ink">
             <div className="px-4 sm:pl-5 sm:pr-[18px] py-3.5 sm:py-[18px] border-r-[2.5px] border-ink font-mono text-sm sm:text-base text-muted flex items-center">
@@ -172,8 +173,11 @@ export function Scanner() {
       </div>
 
       {phase === "done" && report && (
-        <div className="mt-[18px] space-y-3">
-          <VerdictReport report={report} />
+        <div className="mt-[18px] space-y-3 text-left">
+          <VerdictReport
+            report={report}
+            comparisons={<SimilarProductsClient sourceSlug={report.slug} />}
+          />
           <div className="font-mono text-xs opacity-70">
             ▸ shareable link:{" "}
             <Link href={`/r/${report.slug}`} className="underline text-ink">

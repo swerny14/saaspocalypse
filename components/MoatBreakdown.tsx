@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { StoredMoatScore } from "@/lib/db/moat_scores";
+import type { MoatAxis } from "@/lib/scanner/schema";
 
 type Props = {
   moat: StoredMoatScore;
@@ -7,79 +8,158 @@ type Props = {
    *  methodology link so its back-button can return here instead of
    *  always dumping the user on the homepage. */
   slug: string;
+  /** Server-computed lowest-scoring axis. Drives the headline weakest-axis
+   *  callout. Pass null to suppress (legacy reports / moat soft-fail). */
+  weakestAxis?: MoatAxis | null;
 };
 
+type AxisKey = MoatAxis;
+
 const AXES: Array<{
-  key: keyof Pick<
-    StoredMoatScore,
-    "capital" | "technical" | "network" | "switching" | "data_moat" | "regulatory"
-  >;
+  key: AxisKey;
   label: string;
   blurb: string;
+  /** Single-sentence weakest-axis lede — used at the top of the grid when
+   *  this axis is the weakest on the moat. Phrased "their X is wide open"
+   *  so it lands as a wedge thesis the user can act on. */
+  thinLede: string;
+  /** Single-sentence strongest-axis warning — used as the realism check
+   *  at the top of the grid when this axis is the highest on the moat. */
+  thickLede: string;
 }> = [
-  { key: "capital", label: "capital", blurb: "what it costs to keep the lights on" },
-  { key: "technical", label: "technical", blurb: "depth of the underlying engineering" },
-  { key: "network", label: "network", blurb: "users compound users" },
-  { key: "switching", label: "switching", blurb: "stickiness of customer data + workflow" },
-  { key: "data_moat", label: "data", blurb: "proprietary data accumulates over time" },
-  { key: "regulatory", label: "regulatory", blurb: "real licenses + compliance, not SOC 2 theater" },
+  {
+    key: "capital",
+    label: "capital",
+    blurb: "investment the incumbent had to make",
+    thinLede: "their capital wall is paper-thin — runs on commodity cloud + free tiers.",
+    thickLede: "their capital wall is real — ongoing capex puts a floor under any clone.",
+  },
+  {
+    key: "technical",
+    label: "technical",
+    blurb: "depth of the underlying engineering",
+    thinLede: "the technical wall is thin — the hard part is one library.",
+    thickLede: "the technical wall is real — research-grade engineering, not a weekend.",
+  },
+  {
+    key: "network",
+    label: "network",
+    blurb: "users compound users",
+    thinLede: "no network effect to overcome — users don't compound users.",
+    thickLede: "the network effect is real — every new user makes the incumbent stickier.",
+  },
+  {
+    key: "switching",
+    label: "switching",
+    blurb: "stickiness of customer data + workflow",
+    thinLede: "switching cost is paper-thin — users could leave with one CSV.",
+    thickLede: "switching cost is real — workflow lock-in keeps customers from leaving.",
+  },
+  {
+    key: "data_moat",
+    label: "data",
+    blurb: "proprietary data accumulates over time",
+    thinLede: "no proprietary corpus — they're running on off-the-shelf data.",
+    thickLede: "the data moat is real — proprietary corpus accumulating over time.",
+  },
+  {
+    key: "regulatory",
+    label: "regulatory",
+    blurb: "real licenses, not SOC 2 theater",
+    thinLede: "no regulatory wall — SOC 2 doesn't count.",
+    thickLede: "the regulatory wall is real — actual licenses, audit posture, custodial duty.",
+  },
+  {
+    key: "distribution",
+    label: "distribution",
+    blurb: "brand SERP grip, knowledge graph, news flow",
+    thinLede: "their distribution is wide open — invisible on their own brand SERP.",
+    thickLede: "their distribution is fortress-grade — they own their brand SERP end-to-end.",
+  },
 ];
+
+const AXIS_BY_KEY = new Map(AXES.map((a) => [a.key, a]));
 
 type Severity = {
   label: string;
-  /** Tailwind class for the bar fill. Coral is the brand-reserved accent
-   *  for "fortress"; ink for meaningful; muted/faded for shallow/none. */
+  /** Tailwind class for the bar fill. In the wedge frame: coral = thick
+   *  walls (danger for the builder); ink = real walls; muted/faded = thin
+   *  or open. */
   barClass: string;
-  /** Trailing snark beside the aggregate bar; severity-derived. */
+  /** Trailing label beside the aggregate bar; severity-derived. */
   trailing: string;
 };
 
 function severity(score: number): Severity {
   if (score >= 7) {
-    return { label: "fortress", barClass: "bg-coral", trailing: "actual fortress" };
+    return { label: "fortress", barClass: "bg-coral", trailing: "thick walls" };
   }
   if (score >= 4) {
-    return { label: "meaningful", barClass: "bg-ink", trailing: "real moat" };
+    return { label: "meaningful", barClass: "bg-ink", trailing: "real walls" };
   }
   if (score >= 1) {
-    return { label: "shallow", barClass: "bg-muted", trailing: "shallow ditch" };
+    return { label: "shallow", barClass: "bg-muted", trailing: "thin walls" };
   }
-  return { label: "none", barClass: "bg-ink/20", trailing: "no moat to speak of" };
+  return { label: "open", barClass: "bg-ink/20", trailing: "wide open" };
+}
+
+/** Pick the strongest axis (highest score, tie-break by fixed axis order). */
+function pickStrongestAxis(moat: StoredMoatScore): AxisKey | null {
+  let best: AxisKey | null = null;
+  let bestVal = -1;
+  for (const a of AXES) {
+    const v = moat[a.key];
+    if (typeof v !== "number") continue;
+    if (v > bestVal) {
+      best = a.key;
+      bestVal = v;
+    }
+  }
+  return best;
 }
 
 /**
- * Six-axis moat breakdown. Typographic hero — the aggregate is a
- * brand-scale numeral, the six axes sit in a 2×3 grid below.
+ * Seven-axis moat breakdown. Promoted to the top of `/r/[slug]` in Phase
+ * 2.5 — this IS the wedge analysis, so it leads.
  *
- * Slots inside a VerdictReport card between the cost section and the
- * alternatives section, so the section chrome (padding, bottom border,
- * inline header row) matches its siblings exactly. The 2×3 grid uses a
- * single outer border with shared internal dividers — this lets the
- * axes read as one comparable scoreboard rather than six floating cards.
+ * Two ledes anchor the grid:
+ *   - "the door": the weakest axis, framed as the door for an indie hacker
+ *   - "watch out": the strongest axis, the realism check
  *
- * Bar fills track the severity ladder: coral for fortress (≥7), ink
- * for meaningful (≥4), muted for shallow (≥1), faded for none. Zero-
- * score axis cells get the cream bg so they recede.
+ * The aggregate number is gone from the head; the displayed wedge_score in
+ * the report hero is the inverse of it (`(10 - aggregate) * 10`), so showing
+ * both was just the same number twice.
  *
- * Static SSR — score is server-computed, no interactivity.
+ * Bar fills track severity: coral for fortress (≥7), ink for meaningful
+ * (≥4), muted for shallow (≥1), faded for none. Static SSR — no
+ * interactivity.
  */
-export function MoatBreakdown({ moat, slug }: Props) {
-  const aggregate = moat.aggregate;
-  const aggSev = severity(aggregate);
-  const aggPct = Math.max(0, Math.min(100, aggregate * 10));
+export function MoatBreakdown({ moat, slug, weakestAxis }: Props) {
   const methodologyHref = `/methodology?from=${encodeURIComponent(`/r/${slug}`)}`;
+  const weakest = weakestAxis ?? null;
+  const strongest = pickStrongestAxis(moat);
+  const weakestEntry = weakest ? AXIS_BY_KEY.get(weakest) : null;
+  const strongestEntry = strongest ? AXIS_BY_KEY.get(strongest) : null;
+  const strongestVal = strongest ? (moat[strongest] as number | null) : null;
+  // Suppress strongest callout when it equals weakest (uniform axis case)
+  // or when both score the same low band — there's no "watch out" worth
+  // saying when nothing is fortress-grade.
+  const showStrongest =
+    strongestEntry &&
+    weakest !== strongest &&
+    typeof strongestVal === "number" &&
+    strongestVal >= 4;
 
   return (
     <section className="px-5 sm:px-11 py-6 sm:py-8 border-b-[2.5px] border-ink">
-      {/* Heading row — matches the inline pattern used by every other
-          section in VerdictReport (no walled-off header strip). */}
-      <div className="flex justify-between items-baseline mb-6 gap-3 flex-wrap">
+      {/* Heading row */}
+      <div className="flex justify-between items-baseline mb-5 gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
           <span className="bg-ink text-accent px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.15em] select-none leading-none">
-            moat
+            wedge map
           </span>
           <h3 className="font-display text-[22px] sm:text-[26px] font-bold m-0 tracking-[-0.02em]">
-            how deep is the moat.
+            where the walls are.
           </h3>
         </div>
         <Link
@@ -90,102 +170,103 @@ export function MoatBreakdown({ moat, slug }: Props) {
         </Link>
       </div>
 
-      {/* Hero score row — typographic anchor. Flows directly under the
-          heading like any other section's lead content. */}
-      <div className="grid items-end gap-4 sm:gap-7 [grid-template-columns:1fr] sm:[grid-template-columns:auto_1fr] mb-6">
-        <div className="flex items-baseline gap-1 leading-[0.78]">
-          <span
-            className="font-display font-bold tracking-[-0.06em] text-ink"
-            style={{ fontSize: "clamp(96px, 18vw, 180px)" }}
-          >
-            {aggregate.toFixed(1)}
-          </span>
-          <span
-            className="font-display font-medium tracking-[-0.04em] text-ink/40 leading-none"
-            style={{ fontSize: "clamp(32px, 6vw, 56px)" }}
-          >
-            /10
-          </span>
-        </div>
-
-        <div className="sm:pb-3.5 min-w-0">
-          <div className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-muted">
-            aggregate score · {aggSev.label}
-          </div>
-          <p className="mt-3 font-display text-[18px] sm:text-[22px] font-medium leading-[1.25] tracking-[-0.01em] text-ink text-balance max-w-[560px]">
-            weighted average of the six axes below. higher = harder for an indie
-            hacker to displace.
-          </p>
-          <div className="mt-4 flex items-center gap-2.5">
-            <div className="flex-1 h-3.5 bg-paper-alt border-2 border-ink relative overflow-hidden">
-              <div
-                className={`absolute inset-y-0 left-0 ${aggSev.barClass}`}
-                style={{ width: `${aggPct}%` }}
-                role="img"
-                aria-label={`Aggregate moat: ${aggregate.toFixed(1)} out of 10`}
-              />
+      {/* Lede callouts: the door + the realism check. */}
+      {(weakestEntry || (showStrongest && strongestEntry)) && (
+        <div className="mb-6 grid gap-2.5">
+          {weakestEntry && (
+            <div className="flex gap-2.5 items-baseline">
+              <span className="font-mono text-[10.5px] font-bold uppercase tracking-[0.18em] text-success whitespace-nowrap pt-[3px]">
+                the door
+              </span>
+              <p className="font-display text-[17px] sm:text-[19px] font-medium leading-[1.3] tracking-[-0.005em] text-ink m-0 [text-wrap:balance]">
+                {weakestEntry.thinLede}
+              </p>
             </div>
-            <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted whitespace-nowrap">
-              {aggSev.trailing}
-            </span>
-          </div>
+          )}
+          {showStrongest && strongestEntry && (
+            <div className="flex gap-2.5 items-baseline">
+              <span className="font-mono text-[10.5px] font-bold uppercase tracking-[0.18em] text-coral whitespace-nowrap pt-[3px]">
+                watch out
+              </span>
+              <p className="font-display text-[17px] sm:text-[19px] font-medium leading-[1.3] tracking-[-0.005em] text-ink m-0 [text-wrap:balance]">
+                {strongestEntry.thickLede}
+              </p>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* Axes grid — 2×3 below sm, stacks to 1 col on small screens.
-          Wrapped in a single bordered container so the cells share
-          internal dividers without bleeding to the section edge. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 border-[2.5px] border-ink">
-        {AXES.map((axis, i) => {
-          const value = moat[axis.key];
-          const sev = severity(value);
-          const isZero = value === 0;
-          const pct = Math.max(0, Math.min(100, (value / 10) * 100));
-          const isRight = i % 2 === 1;
-          const isLastRow = i >= AXES.length - 2;
-          return (
-            <div
-              key={axis.key}
-              className={[
-                "px-5 py-4 min-w-0",
-                isZero ? "bg-bg" : "bg-paper",
-                "border-ink",
-                "border-b-[2.5px]",
-                i === AXES.length - 1 ? "max-sm:border-b-0" : "",
-                isLastRow ? "sm:border-b-0" : "",
-                isRight ? "" : "sm:border-r-[2.5px]",
-              ].join(" ")}
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <div className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-ink">
-                  {axis.label}
-                </div>
-                <div className="flex items-baseline gap-1 leading-none">
-                  <span
-                    className={`font-display text-[26px] sm:text-[28px] font-bold tracking-[-0.03em] ${isZero ? "text-ink/40" : "text-ink"}`}
-                  >
-                    {value.toFixed(1)}
-                  </span>
-                  <span className="font-display text-[14px] text-ink/40">/10</span>
-                </div>
-              </div>
-              <div
-                className="mt-2.5 h-2 border-[1.5px] border-ink bg-paper-alt relative overflow-hidden"
-                role="img"
-                aria-label={`${axis.label}: ${value.toFixed(1)} out of 10`}
-              >
+      {/* Axes grid — 2×3 below sm, stacks to 1 col on small screens. */}
+      {(() => {
+        const visibleAxes = AXES.filter((a) => {
+          const v = moat[a.key];
+          return typeof v === "number";
+        });
+        const isOdd = visibleAxes.length % 2 === 1;
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 border-[2.5px] border-ink">
+            {visibleAxes.map((axis, i) => {
+              const value = moat[axis.key] as number;
+              const sev = severity(value);
+              const isZero = value === 0;
+              const pct = Math.max(0, Math.min(100, (value / 10) * 100));
+              const isRight = i % 2 === 1;
+              const isLast = i === visibleAxes.length - 1;
+              const isLastSpan = isOdd && isLast;
+              const isLastRow = isLastSpan
+                ? isLast
+                : !isOdd && i >= visibleAxes.length - 2;
+              const isWeakest = axis.key === weakest;
+              return (
                 <div
-                  className={`absolute inset-y-0 left-0 ${sev.barClass}`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              <div className="mt-2.5 font-mono text-[12px] text-muted">
-                {axis.blurb}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                  key={axis.key}
+                  className={[
+                    "px-5 py-4 min-w-0",
+                    isZero ? "bg-bg" : "bg-paper",
+                    "border-ink",
+                    "border-b-[2.5px]",
+                    isLast ? "max-sm:border-b-0" : "",
+                    isLastRow ? "sm:border-b-0" : "",
+                    isLastSpan ? "sm:col-span-2" : isRight ? "" : "sm:border-r-[2.5px]",
+                  ].join(" ")}
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <div className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-ink flex items-center gap-2">
+                      {axis.label}
+                      {isWeakest && (
+                        <span className="bg-success/20 text-success px-1.5 py-0 font-mono text-[9px] font-bold tracking-[0.1em] uppercase border border-success">
+                          door
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline gap-1 leading-none">
+                      <span
+                        className={`font-display text-[26px] sm:text-[28px] font-bold tracking-[-0.03em] ${isZero ? "text-ink/40" : "text-ink"}`}
+                      >
+                        {value.toFixed(1)}
+                      </span>
+                      <span className="font-display text-[14px] text-ink/40">/10</span>
+                    </div>
+                  </div>
+                  <div
+                    className="mt-2.5 h-2 border-[1.5px] border-ink bg-paper-alt relative overflow-hidden"
+                    role="img"
+                    aria-label={`${axis.label}: ${value.toFixed(1)} out of 10 (${sev.trailing})`}
+                  >
+                    <div
+                      className={`absolute inset-y-0 left-0 ${sev.barClass}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <div className="mt-2.5 font-mono text-[12px] text-muted">
+                    {axis.blurb}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </section>
   );
 }

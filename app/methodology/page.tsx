@@ -4,9 +4,9 @@ import { Footer } from "@/components/Footer";
 import { RUBRIC_VERSION } from "@/lib/normalization/moat";
 
 export const metadata: Metadata = {
-  title: "Methodology — saaspocalypse",
+  title: "SaaS moat scoring methodology - saaspocalypse",
   description:
-    "How saaspocalypse scores moat depth: six axes, deterministic math, no LLM. The rubric we use to decide whether an incumbent SaaS product would actually roll over for a clone.",
+    "How saaspocalypse scores SaaS moat depth and wedge opportunity: seven deterministic axes, SERP distribution signals, capability tags, and no LLM-authored score.",
   robots: { index: true, follow: true },
 };
 
@@ -54,42 +54,42 @@ export default async function MethodologyPage({
         </div>
 
         <h1 className="font-display text-[40px] sm:text-[56px] font-bold tracking-[-0.03em] leading-[0.95]">
-          how we score moat depth.
+          how we score SaaS moats.
         </h1>
         <p className="font-mono text-sm opacity-70 mt-2">
-          rubric version v{RUBRIC_VERSION} · last updated 2026-05-02
+          rubric version v{RUBRIC_VERSION} · last updated 2026-04-30
         </p>
 
         <div className="prose-content mt-10 space-y-6 text-[17px] leading-relaxed">
           <p>
-            Tier (WEEKEND / MONTH / DON&apos;T) tells you how long it&apos;d take
-            to <em>build</em> the thing. It doesn&apos;t tell you whether the
-            incumbent has anything keeping users from switching to your clone.
-            That&apos;s a separate question, and it&apos;s the one moat depth
-            answers.
+            Tier (SOFT / CONTESTED / FORTRESS) tells you how attackable the
+            incumbent is. SOFT means the engineering bar is low and the wedge
+            is in distribution or niche. CONTESTED means the head-on clone is
+            real work but doable. FORTRESS means the walls are thick — you
+            can&apos;t bulldoze them, so you find a crack.
           </p>
           <p>
-            We score every report against six axes, each 0–10. The math is
-            deterministic — derived from the per-report normalization
-            projection (canonical components, capabilities, attributes) and the
-            curated taxonomy (commoditization levels, moat tags). No LLM is in
-            the scoring loop, on purpose. The aggregate is a weighted average
-            of the six.
+            The score under each tier is a weighted aggregate of seven moat
+            axes, each 0–10. Higher = thicker walls. Lower = wedgeable. The
+            math is deterministic — derived from the per-report normalization
+            projection (canonical components, capabilities, attributes) plus a
+            single Serper SERP call for distribution signals. No LLM is in the
+            scoring loop, on purpose.
           </p>
 
           <h2 className="font-display text-3xl font-bold tracking-[-0.02em] mt-12 mb-4">
-            the six axes.
+            the seven axes.
           </h2>
 
           <Axis
             name="Capital"
-            blurb="What the incumbent had to invest to build the thing. Audits, licensing, banking relationships, training infrastructure — capex you can't shortcut your way around."
-            how="Derived from the buildability tier (DON'T = 7, MONTH = 4, WEEKEND = 1), plus a boost for capex-flagged est_cost lines (audit, licensing, regulatory, banking, GPUs, training infra, attorneys, interchange — capped at +3), plus a +2 boost when est_total is a non-numeric descriptive string (the LLM gave up trying to put a number on it). SOC 2 is excluded because it's table-stakes, not a real moat."
+            blurb="What the incumbent had to invest to build the thing. Audits, licensing, banking relationships, training infrastructure — capex you can't shortcut around."
+            how="Derived from capex-flagged cost lines, take prose, wedge thesis, challenge notes, descriptive est_total strings, and numeric monthly cost magnitude. SOC 2 is excluded because it is table-stakes, not a real moat."
           />
           <Axis
             name="Technical"
             blurb="Depth of the incumbent's underlying engineering. The R&D you can't recreate by gluing OSS libraries together."
-            how="Inverse of the buildability score (lower score = harder problem) at 0.7 weight, plus a boost from `nightmare`/`hard` challenge counts (capped at +4). The buildability score IS our judgment of how hard the incumbent's R&D is, so we use it directly here."
+            how="Derived from the difficulty distribution of the report challenges. Nightmare, hard, and medium challenges add weighted points; easy challenges do not. The LLM does not emit a technical score."
           />
           <p className="font-mono text-[13px] opacity-70 -mt-2">
             <strong className="opacity-100">Note: </strong>
@@ -101,7 +101,7 @@ export default async function MethodologyPage({
           <Axis
             name="Network"
             blurb="Users compound users — the product gets more valuable as more people use it."
-            how="Counts how many of the report's matched capabilities carry network-effect tags (multi_sided, ugc, marketplace, viral_loop). 1 capability → 4; 2 → 8; 3+ → 10."
+            how="Counts capabilities tagged for network effects (multi_sided, ugc, marketplace, viral_loop). 1 capability → 4; 2 → 8; 3+ → 10."
           />
           <Axis
             name="Switching"
@@ -110,53 +110,57 @@ export default async function MethodologyPage({
           />
           <Axis
             name="Data"
-            blurb="Proprietary data that accumulates with use, and would be expensive or impossible for a clone to recreate."
+            blurb="Proprietary data that accumulates with use, and would be expensive or impossible for a wedge entrant to recreate."
             how="Counts capabilities tagged for data moats (proprietary_dataset, training_data, behavioral). Same 4-per-capability curve."
           />
           <Axis
             name="Regulatory"
             blurb="Real licenses, audits, regulatory exposure that legally bars indie hackers from operating."
-            how="Counts capabilities tagged for regulatory moats (hipaa, finra, gdpr_critical, licensed). Same 4-per-capability curve. Note: SOC 2 deliberately does NOT count — every B2B SaaS would otherwise score artificially high."
+            how="Counts capabilities tagged for regulatory moats (hipaa, finra, gdpr_critical, licensed). Same 4-per-capability curve. SOC 2 deliberately does NOT count — every B2B SaaS would otherwise score artificially high."
+          />
+          <Axis
+            name="Distribution"
+            blurb="How firmly the incumbent owns the SERP and the brand-recognition surface for their own name. The hardest moat for a wedge entrant to chip away at."
+            how="Weighted aggregate of six sub-signals from a single Serper SERP call: sitelinks under the top organic result (× 4), compressed organic (Google returns < 10 results, indicating entity-confidence — × 3), authoritative third-party domains in top 10 (Wikipedia / LinkedIn / Crunchbase / TechCrunch / Bloomberg / G2 / etc. — gated on top organic owned, × 3), Knowledge Graph presence (× 2), top organic owned (× 2), own-domain count in top 10 (× 1). Returns null when the SERP call fails entirely."
           />
 
           <h2 className="font-display text-3xl font-bold tracking-[-0.02em] mt-12 mb-4">
             the aggregate.
           </h2>
           <p>
-            <strong>Weighted root-mean-square across all six axes.</strong>{" "}
+            <strong>Weighted root-mean-square across the seven axes.</strong>{" "}
             Equal weights — each axis is roughly as important as the others
-            when you&apos;re deciding whether to bother attacking an
-            incumbent. RMS rather than arithmetic mean because real moats
-            are often specialist: Stripe&apos;s defensibility lives in
-            capital + technical + regulatory, with the other three axes
-            legitimately near zero. Averaging that to 5/10 misrepresents
-            how hard it actually is to displace. RMS rewards concentration
-            without changing anything for products whose strength is spread
-            evenly across the six.
+            when you&apos;re deciding whether a small team can compete. RMS rather than
+            arithmetic mean because real moats are often specialist:
+            Stripe&apos;s defensibility lives in capital + technical +
+            regulatory + distribution, with the other three axes legitimately
+            near zero. Averaging that to 5/10 misrepresents how hard it
+            actually is to displace. RMS rewards concentration without
+            changing anything for products whose strength is spread evenly.
           </p>
           <p>
-            We&apos;ll re-tune the weights themselves once we have enough
-            scored reports to see real clustering. When we do, the rubric
-            version bumps and every report&apos;s score is recomputed from
-            scratch.
+            Distribution-axis can return null when the SERP call fails — in
+            that case the aggregate skips it from both numerator and
+            denominator and computes honestly over the six axes we could
+            score. We&apos;ll re-tune the cross-axis weights themselves once
+            we have enough scored reports to see real clustering.
           </p>
 
           <h2 className="font-display text-3xl font-bold tracking-[-0.02em] mt-12 mb-4">
             what we don&apos;t score.
           </h2>
           <p>
-            <strong>Distribution and brand are not modeled.</strong> They
-            matter — sometimes more than any of the six axes — but you cannot
-            derive distribution moat from a homepage scan. Putting a number on
-            it would weaken the credibility of the rest, so we left it out.
-            When you&apos;re looking at a low-aggregate score on a product with
-            obvious distribution dominance, that&apos;s the gap to fill in
-            yourself.
+            <strong>Brand is not directly modeled.</strong> The closest proxy
+            is in the distribution axis (Knowledge Graph + authoritative
+            third-party coverage), which captures the slice of brand strength
+            that&apos;s legible to Google&apos;s index. The rest — emotional
+            resonance, founder following, design taste — is harder to put a
+            number on without paid data, so we don&apos;t pretend.
           </p>
           <p>
-            <strong>Capability of the team behind the product is also not
-            modeled.</strong> Same reason. A genuinely brilliant engineering
-            org can hold a moat that the structural axes don&apos;t see.
+            <strong>Capability of the team behind the product is not
+            modeled.</strong> A genuinely brilliant engineering org can hold a
+            moat the structural axes don&apos;t see.
           </p>
 
           <h2 className="font-display text-3xl font-bold tracking-[-0.02em] mt-12 mb-4">
@@ -165,20 +169,22 @@ export default async function MethodologyPage({
           <p>
             The point of the score is to be <em>defensible</em>. Every number
             on a report card can be traced back to a specific component, a
-            specific capability tag, or a specific cost line in the projection.
-            If the score is wrong, the input data is wrong, and the input data
-            is fixable. An LLM-authored score has none of those properties.
+            specific capability tag, a specific cost line, or a specific
+            Serper-payload field. If the score is wrong, the input is wrong,
+            and the input is fixable. An LLM-authored score has none of those
+            properties.
           </p>
           <p>
             The taxonomy itself — which capabilities exist, which moat tags
             they carry, what each component&apos;s commoditization level is —
             is hand-curated and reviewed in code. The admin tools at{" "}
-            <code>/admin/unknowns</code> use Claude to <em>suggest</em>{" "}
-            additions, but a human decides.
+            <code>/admin/unknowns</code> and the score workbench{" "}
+            use Claude to <em>suggest</em> additions, but a human decides.
           </p>
 
           <p className="mt-12 font-mono text-xs opacity-60">
             Source-of-truth: <code>lib/normalization/moat.ts</code> ·{" "}
+            <code>lib/scanner/distribution.ts</code> ·{" "}
             <code>lib/normalization/taxonomy/</code>
           </p>
         </div>
@@ -215,3 +221,4 @@ function Axis({
     </div>
   );
 }
+

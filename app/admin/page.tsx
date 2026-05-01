@@ -13,24 +13,24 @@ type Surface = {
 
 const SURFACES: Surface[] = [
   {
+    href: "/admin/score-audit",
+    title: "score workbench",
+    blurb:
+      "Find suspect wedge scores, inspect exactly what fired, add patterns, tune weights, recompute, and mark reports verified.",
+    posture: "calibration",
+  },
+  {
     href: "/admin/unknowns",
     title: "unknowns",
     blurb:
-      "Triage stack-component terms the harvester saw but couldn't map to a canonical slug. Alias to existing components, promote to new components, or ignore.",
+      "Triage stack-component terms the harvester saw but could not map to a canonical slug. Alias to existing components, promote to new components, or ignore.",
     posture: "harvester",
-  },
-  {
-    href: "/admin/moat-anomalies",
-    title: "moat anomalies",
-    blurb:
-      "Review reports whose moat score doesn't match their buildability tier. Add patterns to existing capabilities, propose new ones, or recompute. AI audit available per row or in bulk.",
-    posture: "scoring",
   },
   {
     href: "/admin/similarity-gaps",
     title: "similarity gaps",
     blurb:
-      "Find pairs of reports that should cluster as similar but don't — usually because the taxonomy is missing a descriptor capability. LLM proposes patterns or new descriptors; one-click apply.",
+      "Find pairs of reports that should cluster as similar but do not, usually because the taxonomy is missing a descriptor capability.",
     posture: "similarity",
   },
 ];
@@ -61,7 +61,7 @@ export default async function AdminIndex() {
                 {s.title}
               </span>
               <span className="font-mono text-[10px] tracking-[0.15em] uppercase opacity-55">
-                {s.posture} →
+                {s.posture} -&gt;
               </span>
             </div>
             <p className="font-display text-[13px] opacity-70 leading-[1.45] [text-wrap:pretty]">
