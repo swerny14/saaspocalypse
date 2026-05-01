@@ -1,19 +1,19 @@
 export const HEADLINES: { top: string; sub: string }[] = [
   {
     top: "Scan any SaaS. Find the weak spot.",
-    sub: "Paste a URL. We score the moat, expose the stack, and show whether a small builder has a real opening.",
+    sub: "Paste a URL. We score the moat, name the weakest opening, and tell you whether a small builder has a real angle of attack.",
   },
   {
-    top: "Your subscription is a skill issue.",
-    sub: "We scan the SaaS. You build the SaaS. Economy healed.",
+    top: "Your incumbent has weak spots.",
+    sub: "We find the attack angle before you spend six weeks heroically cloning the lobby.",
   },
   {
-    top: "Unsubscribe, but like, forever.",
-    sub: "Drop a URL. Get a verdict, a stack, and a shame-free tutorial list.",
+    top: "Don't clone the castle. Find the side door.",
+    sub: "Drop a URL. Get a wedge score, a moat map, and a stack receipt with emotional damage.",
   },
   {
-    top: "It's just a CRUD app in a trenchcoat.",
-    sub: "Let us prove it. Paste a URL and we'll undress the stack.",
+    top: "Some moats are just CSS with a PR team.",
+    sub: "Let us check. Paste a URL and we'll separate the scary walls from the decorative fog machine.",
   },
 ];
 
@@ -22,40 +22,41 @@ export const TESTIMONIALS = [
     who: "dave, 34",
     role: "recovering solopreneur",
     quote:
-      "Saaspocalypse told me my 'Uber for dogs' was a Google Form. It was. I saved $40k.",
+      "Saaspocalypse told me the market leader's moat was mostly onboarding friction and vibes. Horrible news for my excuses.",
     stars: 5,
   },
   {
     who: "@hackergrrrl",
     role: "perpetual side-project haver",
     quote:
-      "Cancelled 11 subscriptions in one afternoon. My wife thinks I have a new girlfriend and her name is SQLite.",
+      "I came for stack gossip and left with a niche wedge. My notes app now has a war room, which feels healthy.",
     stars: 5,
   },
   {
     who: "brian",
     role: "indie hacker (unemployed)",
-    quote: "Built three of them this weekend. Launched zero. Normal stuff.",
+    quote: "Found three wedge angles before lunch. Launched zero attacks. Growth mindset.",
     stars: 4,
   },
   {
     who: "the ghost of YC '19",
     role: "haunts a WeWork",
     quote:
-      "I raised $8M for what this site just told a college freshman he could build in 11 hours. No notes.",
+      "I raised $8M for a moat this site described as 'distribution and a hoodie.' No notes.",
     stars: 5,
   },
   {
     who: "linda",
     role: "CFO, small business",
     quote:
-      "I don't know what 'Supabase' is but the robot says it costs zero dollars so I'm firing our SaaS budget.",
+      "I don't know what a wedge score is but the robot said our vendor's moat is thin, so procurement is being dramatic now.",
     stars: 5,
   },
   {
-    who: "a raccoon",
-    role: "found this in a dumpster",
-    quote: "chittering intensifies",
+    who: "marcus",
+    role: "B2B founder, pre-revenue in three tabs",
+    quote:
+      "It did not tell me to build Calendly. It told me where Calendly is annoying. Much ruder, much more useful.",
     stars: 5,
   },
 ];
@@ -63,57 +64,57 @@ export const TESTIMONIALS = [
 export const HOW_STEPS = [
   {
     n: "01",
-    t: "Paste the URL",
-    b: "Of the SaaS you're about to subscribe to in a moment of weakness. Or the one you just did.",
+    t: "Paste a URL",
+    b: "The SaaS in your market, your invoice inbox, or your 'surely I can do a better version of this' spiral.",
   },
   {
     n: "02",
-    t: "We do the thing",
-    b: "Our robot scans the site, sniffs the JS, and renders judgment with the calm confidence of someone who's never been hugged.",
+    t: "We map the moat",
+    b: "The scanner sniffs the stack, scores seven moat axes, and looks for the part of the fortress held together by onboarding copy.",
   },
   {
     n: "03",
-    t: "Get the goods",
-    b: "A wedge score, an itemized stack receipt, a time estimate, and a linked tutorial list. Then you ignore it and subscribe anyway.",
+    t: "Pick your wedge",
+    b: "You get a wedge score, weakest moat axis, stack receipt, build complexity, and a paid wedge guide if you want the battle plan instead of just the heckling.",
   },
 ];
 
 export const FAQS = [
   {
     q: "Is this real?",
-    a: "Define 'real'. It runs. It returns JSON. Whether that JSON is 'true' is a philosophical question we are not qualified to answer.",
+    a: "Real enough to fetch a homepage, score a moat, and hurt your feelings with structured JSON. Not real enough to replace judgment, market research, or talking to customers like a normal adult.",
   },
   {
-    q: "Do you actually build the thing for me?",
-    a: "No, but we like your optimism. We tell you you CAN build it. You, famously, will not. But you could. And that's beautiful.",
+    q: "Does this tell me what to build?",
+    a: "It tells you where the incumbent looks weakest. That is not the same as product-market fit, but it is better than staring at a pricing page and whispering 'AI wrapper?' into the void.",
   },
   {
     q: "Is it free?",
-    a: "The verdict is free, forever. If you want the full step-by-step wedge guide for a specific report, that's $2 — paid once, not monthly. No subscriptions, no seats, no tiers. That's every price we have.",
+    a: "The verdict is free, forever. If you want the full step-by-step wedge guide for a specific report, that's $2 - paid once, not monthly. No subscriptions, no seats, no tiers. That's every price we have.",
   },
   {
     q: "What if I'm the SaaS and you roasted me?",
-    a: "Congrats on the exposure. Also, don't worry — the indie hacker who read your verdict is currently 4 hours into yak-shaving their Tailwind config. You're safe.",
+    a: "Congrats on the exposure. Also, don't worry - the indie hacker who read your verdict is currently 4 hours into yak-shaving their Tailwind config. You're safe.",
   },
   {
     q: "Your verdict was wrong.",
-    a: "Sometimes the robot thinks Webflow is a Postgres schema. We're working on it. By 'working on it' we mean we tweeted about it.",
+    a: "Sometimes the robot mistakes a landing page flex for a moat and sometimes it misses the boring enterprise procurement wall hiding in plain sight. We're tuning it. By 'tuning it' we mean arguing with spreadsheets.",
   },
   {
     q: "Can I use this to decide what to build?",
-    a: "Yes — and read it sideways. SOFT means the engineering bar is low, so distribution is the real moat. FORTRESS means the head-on clone is suicide, but a wedge into a niche might be your billion-dollar idea. You're welcome.",
+    a: "Yes - and read it sideways. SOFT means the moat is thin, not that customers will magically appear wearing little buyer hats. FORTRESS means the head-on clone is bad cardio; a narrow wedge may still be the whole game.",
   },
 ];
 
 export const MARQUEE_ITEMS = [
-  "it's just a CRUD app",
-  "your subscription funds a ping-pong table",
-  "Postgres is free forever",
-  "the backend is a google sheet",
-  "Next.js on a potato",
-  "Supabase has a generous free tier",
-  "you have a laptop. build.",
-  "venture capital is cope",
+  "find the opening",
+  "moats hate receipts",
+  "distribution is the final boss",
+  "the stack is not the moat",
+  "thin moat, loud pricing page",
+  "your wedge has entered the chat",
+  "some castles are mostly onboarding",
+  "venture capital is not a moat",
 ];
 
 export type PricingBullet = {
@@ -127,12 +128,13 @@ export const PRICING_BULLETS: PricingBullet[] = [
     text: "unlimited URLs (please don't actually)",
     footnote: {
       href: "/terms#the-free-scan-service",
-      label: "subject to fair-use rate limits — see terms",
+      label: "subject to fair-use rate limits - see terms",
     },
   },
   { text: "itemized stack receipts" },
-  { text: "challenges ranked easy to nightmare, sorted accordingly" },
-  { text: "a sassy verdict (non-negotiable)" },
+  { text: "seven-axis moat scoring, because one number needs accomplices" },
+  { text: "the weakest opening called out in public, which is rude but efficient" },
+  { text: "build complexity without pretending every market is a harmless toy" },
   { text: "zero dark patterns, zero seat-based anything, zero recurring guilt" },
-  { text: 'optional email nag 6 months later: "did u build it tho"' },
+  { text: 'optional emotional support line: "please do not attack Stripe head-on"' },
 ];

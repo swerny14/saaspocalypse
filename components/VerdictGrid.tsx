@@ -10,9 +10,9 @@ export async function VerdictGrid() {
     <section id="examples" className="py-20">
       <div className="container">
         <SectionHead
-          eyebrow="Recent verdicts"
-          title="We've been busy judging."
-          sub="Fresh out of the scanner, still warm to the touch."
+          eyebrow="Recent wedge maps"
+          title="We've been busy poking holes."
+          sub="Fresh out of the scanner, still warm to the touch and legally only opinions."
         />
 
         {reports.length === 0 ? (

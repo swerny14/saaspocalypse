@@ -10,7 +10,7 @@ export function Hero() {
       <div className="mx-auto grid max-w-[1100px] justify-items-center gap-7 text-center">
         <div className="select-none inline-flex items-center gap-2.5 rounded-full border-[1.5px] border-ink bg-white px-3.5 py-[7px] font-display text-xs font-semibold tracking-[0.05em] text-ink">
           <span className="h-[7px] w-[7px] rounded-full border-[1.5px] border-ink bg-accent" />
-          SaaS moat scanner
+          SaaS wedge scanner
         </div>
 
         <div className="grid justify-items-center">
@@ -35,10 +35,10 @@ export function Hero() {
         </div>
 
         <div className="select-none font-mono text-xs opacity-[0.65] flex flex-col sm:flex-row sm:flex-wrap justify-center gap-1 sm:gap-5">
-          <span>✦ no signup</span>
-          <span>✦ no credit card</span>
-          <span>✦ we don&apos;t have a database (yet)</span>
-          <span>✦ press ↵ to judge</span>
+          <span>* no signup</span>
+          <span>* no credit card</span>
+          <span>* public reports</span>
+          <span>* press Enter to find the wedge</span>
         </div>
 
         <p className="pt-2.5 border-t border-ink/10 max-w-[560px] font-mono italic text-[11px] leading-[1.55] opacity-55">

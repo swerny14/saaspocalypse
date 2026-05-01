@@ -9,8 +9,8 @@ export function Testimonials() {
       <div className="container">
         <SectionHead
           eyebrow="loud fans"
-          title="People who exist are saying things."
-          sub="These are real quotes from real users if you squint and also accept that 'real' is a social construct."
+          title="People who exist found angles."
+          sub="These are real quotes from real users if you squint and also accept that 'real' is mostly a go-to-market problem."
         />
         <div className="grid gap-[22px] mt-10 grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
           {TESTIMONIALS.map((t, i) => (

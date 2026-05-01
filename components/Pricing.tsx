@@ -13,7 +13,7 @@ export function Pricing() {
             $0<span className="text-[0.5em] opacity-60">.00</span>
           </h2>
           <div className="font-mono text-lg mb-8">
-            forever · per URL · per lifetime · per regret
+            forever / per scan / per suspicious pricing page
           </div>
           <div className="bru bg-bg p-8 text-left">
             <ul className="list-none p-0 m-0 grid gap-2.5 font-mono text-base">
@@ -23,7 +23,7 @@ export function Pricing() {
                     aria-hidden
                     className="bg-ink text-accent w-5 h-5 grid place-items-center text-[13px] font-bold shrink-0 mt-0.5"
                   >
-                    ✓
+                    +
                   </span>
                   <span>
                     {l.text}
@@ -43,7 +43,8 @@ export function Pricing() {
             </ul>
           </div>
           <div className="mt-6 font-mono text-[13px] opacity-75">
-            verdict&apos;s free forever. optional wedge guide is $2, paid once. no subscriptions, ever — that&apos;s the whole bit.
+            verdict&apos;s free forever. optional wedge guide is $2, paid once. no
+            subscriptions, ever - that&apos;s the whole bit.
           </div>
         </div>
       </div>

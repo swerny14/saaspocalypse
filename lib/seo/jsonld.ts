@@ -22,7 +22,7 @@ export function landingJsonLd(): JsonLd {
         url: SITE_URL,
         name: BRAND,
         description:
-          "Paste any SaaS URL. Get a moat score, stack receipt, time-to-clone, and a blunt read on whether a small builder can compete.",
+          "Paste any SaaS URL. Get a wedge score, moat map, stack receipt, and a blunt read on where a small builder can attack.",
         potentialAction: {
           "@type": "SearchAction",
           target: {
