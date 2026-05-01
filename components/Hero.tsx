@@ -8,8 +8,8 @@ export function Hero() {
   const priceCents = guidePriceCents();
 
   return (
-    <section className="overflow-hidden px-6 sm:px-12 pt-16 sm:pt-20 pb-[60px]">
-      <div className="mx-auto grid max-w-[1100px] justify-items-center gap-7 text-center">
+    <section className="overflow-hidden px-6 sm:px-12 pt-12 sm:pt-20 pb-12 sm:pb-[60px]">
+      <div className="mx-auto grid max-w-[1100px] justify-items-center gap-5 sm:gap-7 text-center">
         <div className="eh-pill select-none inline-flex items-center gap-3 rounded-full border-2 border-ink bg-white px-4 py-2 font-display text-[13px] font-semibold tracking-[0.06em] text-ink shadow-[2px_2px_0_0_var(--color-ink)]">
           <span className="h-2 w-2 rounded-full border-[1.5px] border-ink bg-accent" />
           SaaS wedge scanner
@@ -49,11 +49,11 @@ export function Hero() {
           <Scanner priceCents={priceCents} />
         </div>
 
-        <div className="select-none font-mono text-xs opacity-[0.65] flex flex-col sm:flex-row sm:flex-wrap justify-center gap-1 sm:gap-5">
+        <div className="select-none font-mono text-xs opacity-[0.65] flex flex-wrap justify-center gap-x-4 gap-y-1 sm:gap-5">
           <span>* no signup</span>
           <span>* no credit card</span>
           <span>* public reports</span>
-          <span>* press Enter to find the wedge</span>
+          <span className="hidden sm:inline">* press Enter to find the wedge</span>
         </div>
 
         <p className="pt-2.5 border-t border-ink/10 max-w-[560px] font-mono italic text-[11px] leading-[1.55] opacity-55">
