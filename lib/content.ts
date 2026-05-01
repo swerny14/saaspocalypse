@@ -75,7 +75,7 @@ export const HOW_STEPS = [
   {
     n: "03",
     t: "Pick your wedge",
-    b: "You get a wedge score, weakest moat axis, stack receipt, build complexity, and a paid wedge guide if you want the battle plan instead of just the heckling.",
+    b: "Wedge score, weakest moat axis, stack receipt - free. Optional paid plan if you want the battle plan instead of just the heckling.",
   },
 ];
 

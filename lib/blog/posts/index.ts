@@ -2,14 +2,12 @@ import type { BlogCategory, Post } from "../schema";
 import { post as notionClone14Hours } from "./notion-clone-14-hours";
 import { post as noOriginalSaasIdeas } from "./no-original-saas-ideas";
 import { post as buildVsBuySolo } from "./build-vs-buy-solo";
-import { post as scannedMyOwnSite } from "./scanned-my-own-site";
 import { post as slowTaxOfStacks } from "./slow-tax-of-stacks";
 
 const RAW_POSTS: Post[] = [
   notionClone14Hours,
   noOriginalSaasIdeas,
   buildVsBuySolo,
-  scannedMyOwnSite,
   slowTaxOfStacks,
 ];
 

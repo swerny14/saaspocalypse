@@ -6,7 +6,7 @@ export function HowItWorks() {
     <section id="how" className="bg-ink text-bg py-20">
       <div className="container">
         <SectionHead
-          eyebrow="The process (lol)"
+          eyebrow="the whole bit"
           title="Three steps. One wedge."
           sub="We do the scanning. You do the hard part where the idea becomes a product and your sleep schedule files a complaint."
           dark

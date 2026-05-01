@@ -113,7 +113,7 @@ export const post: Post = {
     },
     {
       type: "p",
-      text: "The scanner produces a verdict (buildable, sort of, don't bother), but the underlying question it's trying to answer for you is the one this essay is about. Not is this cheap to build, but: would building it teach you something the tool would hide.",
+      text: "The scanner produces a verdict (a wedge score, a thinnest-moat axis, a stack receipt), but the underlying question it's trying to answer for you is the one this essay is about. Not is this cheap to build, but: would building it teach you something the tool would hide.",
     },
     {
       type: "p",

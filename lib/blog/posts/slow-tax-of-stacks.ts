@@ -105,7 +105,7 @@ export const post: Post = {
     },
     {
       type: "p",
-      text: "The reason I built a tool that estimates whether you could build a given SaaS yourself is, partly, this. The default frame in indie hacker discourse is that buying tools is the default and building them is the deviation, and the burden of proof is on the deviation. I think the burden of proof should sit on the side it actually sits on, which is whichever of the two options you'll regret less in three years.",
+      text: "The reason I built a tool that scores the wedge on a given SaaS is, partly, this. The default frame in indie hacker discourse is that buying tools is the default and building them is the deviation, and the burden of proof is on the deviation. I think the burden of proof should sit on the side it actually sits on, which is whichever of the two options you'll regret less in three years.",
     },
     {
       type: "p",

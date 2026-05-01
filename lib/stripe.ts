@@ -20,12 +20,12 @@ export function isStripeConfigured(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY);
 }
 
-/** Returns price in cents, defaulting to $7. */
+/** Returns price in cents, defaulting to $2. */
 export function guidePriceCents(): number {
   const raw = process.env.GUIDE_PRICE_CENTS;
-  if (!raw) return 700;
+  if (!raw) return 200;
   const parsed = Number.parseInt(raw, 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 700;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 200;
 }
 
 /**

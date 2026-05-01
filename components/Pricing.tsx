@@ -7,7 +7,7 @@ export function Pricing() {
       <div className="container">
         <div className="max-w-[720px] mx-auto text-center">
           <div className="font-mono text-[13px] font-bold tracking-[0.15em] uppercase">
-            Pricing
+            pricing
           </div>
           <h2 className="font-display font-bold mt-4 mb-2 text-[clamp(48px,7vw,96px)] tracking-[-0.03em] leading-none">
             $0<span className="text-[0.5em] opacity-60">.00</span>

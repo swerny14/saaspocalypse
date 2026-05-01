@@ -126,7 +126,7 @@ export const post: Post = {
     },
     {
       type: "p",
-      text: "The scanner is not a permission slip. It will, sometimes, tell you a thing is genuinely a bad use of your weekend, usually because the moat is regulatory, or the product is a side effect of an integrations team you don't have. That's useful information. But the answer to \"could you build this?\" is, for most of the SaaS surface area, yes. The interesting question is what you'd do with the form once you were inside it.",
+      text: "The scanner is not a permission slip. It returns a wedge score and names the weakest moat axis, the part of the wall the incumbent built thinnest. Sometimes the answer is that the wedge is narrow enough that the only honest move is a niche flank, not a head-on entry. That's useful information too. But for most of the SaaS surface area, there's a wedge worth attacking. The interesting question is what you'd do with the form once you were inside it.",
     },
     {
       type: "p",

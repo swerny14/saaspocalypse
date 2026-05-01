@@ -105,7 +105,7 @@ export const post: Post = {
     },
     {
       type: "p",
-      text: "The right way to clone a product, if you are going to clone one, is to use it for two months first and notice which parts you stopped thinking about. Those are the parts you are about to find out are not free.",
+      text: "The right way to find the wedge on a product is to use it for two months first and notice which parts you stopped thinking about. Those are the parts the marketing page can't tell you about. Sometimes that's the moat. Sometimes that's the door.",
     },
     {
       type: "p",

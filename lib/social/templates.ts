@@ -136,6 +136,7 @@ export const ORIGINAL_TEMPLATES: OriginalTemplate[] = [
       `most "AI startups" are a regex with a marketing budget.`,
       `the bar for a v1 saas is "does the editing loop feel right" — not "is your auth perfect".`,
       `every $9/mo subscription is a $7/mo problem and a $2/mo ego.`,
+      `the moat is rarely the product. it's usually the boring thing the founder almost forgot to mention.`,
     ],
   },
   {
@@ -171,7 +172,7 @@ export const ORIGINAL_TEMPLATES: OriginalTemplate[] = [
       "Soft directory plug. Lead with a real-feeling stat about the directory (median tier, total scanned, thinnest walls, etc.) — the LLM is given the actual count and can riff. End with the URL. Format: `<observation>. → <URL>`. URL is `https://www.saaspocalypse.dev/directory`.",
     examples: [
       `we've now scanned 47 saas products. 31 are SOFT tier. the median founder is, statistically, you. → https://www.saaspocalypse.dev/directory`,
-      `the saaspocalypse leaderboard's thinnest-walls tier averages $4/mo run-rate to compete with. cheaper than the founder's coffee. → https://www.saaspocalypse.dev/directory`,
+      `the saaspocalypse directory's thinnest-walls tier averages $4/mo run-rate to compete with. cheaper than the founder's coffee. → https://www.saaspocalypse.dev/directory`,
     ],
   },
 ];

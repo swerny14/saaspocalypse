@@ -56,9 +56,16 @@ The product pivoted from a **buildability scanner** ("can I clone X?") to a **we
 2. Truncate `build_guides` so existing buyers get a wedge plan on their next visit instead of a stale clone guide. Magic-link tokens stay valid (they live on `build_guide_purchases`); the lazy regen path in `lib/build_guide/pipeline.ts` regenerates on first hit. SQL: `truncate table build_guides;` — `build_guide_purchases` references `report_id`, not `build_guide_id`, so purchase rows survive.
 3. Force-revalidate ISR on `/r/<slug>/guide` if any URLs are warm in the CDN. The page itself is server-rendered and gated, so cache impact is small, but Vercel will re-render against the empty `build_guides` table on next hit either way.
 
+**What shipped in Phase 4 (atomic):**
+- Wedge-inversion treatment on the report page is already live via the Phase 2.5 work — the promoted MoatBreakdown ("the door" + "watch out" ledes), the tier-aware CTA copy ("you're not climbing the wall — you're finding the door"), the whole wedge-first section ordering. No additional module needed; the report IS the wedge inversion.
+- Landing copy audit: GPT-driven wedge-frame rewrite of HEADLINES, TESTIMONIALS, HOW_STEPS, FAQS, MARQUEE_ITEMS, PRICING_BULLETS in `lib/content.ts`; Hero subhead/CTA voice updated; HowItWorks eyebrow + step-3 body tightened; Pricing h2 lowercased to match the section's voice.
+- Blog audit: `scanned-my-own-site` (fully pre-pivot, used WEEKEND/MONTH/DON'T tier vocab end-to-end) retired and deleted. `no-original-saas-ideas` (the featured manifesto), `build-vs-buy-solo`, `slow-tax-of-stacks`, and `notion-clone-14-hours` got surgical one-paragraph reframes — voice preserved, scanner descriptions updated to wedge-score / weakest-moat-axis language. Body counts unchanged.
+- X content alignment: `original.directory_riff` example fixed (`leaderboard` → `directory`, since leaderboards are deferred); a wedge-themed aphorism added to `original.aphorism` examples; system prompt and report-template payloads were already wedge-aligned and required no changes.
+- Price unified at $2: `lib/stripe.ts::guidePriceCents()` default flipped from 700 → 200 so the marketing copy ($2 in Pricing + FAQ) and the purchase modal agree even if `GUIDE_PRICE_CENTS` env is unset. Set the env to 200 in Vercel for explicitness anyway.
+- Leaderboards explicitly skipped from Phase 4 — they're a real feature, not a copy pass, and corpus size doesn't yet warrant them.
+
 **Pivot phasing — remaining phases:**
-4. **Phase 4 — Discovery + content alignment.** Wedge-inversion module on report page, leaderboards (thinnest moats / most attackable / weakest distribution), X content templates rewrite, blog content audit.
-5. **Phase 5 — Brand decision (deferred).** Revisit ~2 weeks after Phase 4. Either keep saaspocalypse with new positioning or rename.
+5. **Phase 5 — Brand decision (deferred).** Revisit ~2 weeks after Phase 4 settles. Either keep saaspocalypse with new positioning or rename.
 
 **During-pivot freeze list:**
 - ❌ No new flagship features (Phase 4's wedge module IS the new feature)
@@ -199,7 +206,7 @@ UPSTASH_REDIS_REST_TOKEN=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=               # from `stripe listen` or dashboard
 STRIPE_GUIDE_PRICE_ID=               # optional; if unset, uses inline price_data w/ GUIDE_PRICE_CENTS
-GUIDE_PRICE_CENTS=700                # display + fallback. 0 + NODE_ENV!=prod → dev bypass.
+GUIDE_PRICE_CENTS=200                # display + fallback (default $2). 0 + NODE_ENV!=prod → dev bypass.
 
 # Resend (magic-link delivery + newsletter audience)
 RESEND_API_KEY=
@@ -514,7 +521,7 @@ Strategic features that compound on the normalization + moat-scoring layer. **#1
 
 1. ~~**Head-to-head compare — `/compare/<slug-a>-vs-<slug-b>`**~~ — **shipped.** See "Compare pages" above for the canonical-301 routing, the `diffPair` math, the split-card OG, and the `getAllNeighborPairs` sitemap wiring.
 2. ~~**"Products like X" rail inside every report**~~ — **shipped.** See "Similarity engine" above for the IDF² + descriptor-boost calibration, the comparison-framed cards (score delta + wedge), the report-body `comparisons` slot, and the `/admin/similarity-gaps` curation flow.
-3. **"How to attack X" wedge inversion** — surface a report's weakest moat axes as competitive wedges ("low switching cost + no data moat → undercut on portability"). Slots next to the verdict on FORTRESS reports where head-on cloning dies but flank plays may still exist. Pure projection over `report_moat_scores`, no LLM.
+3. ~~**"How to attack X" wedge inversion**~~ — **shipped** as part of the Phase 2.5 / Phase 4 wedge restructuring. The promoted MoatBreakdown ("the door" + "watch out" ledes), the wedge thesis lede in the score hero, the tier-aware CTA copy, and the wedge-first section ordering on the report ARE the wedge inversion. Pure projection over `report_moat_scores`, no LLM.
 4. **Leaderboards — `/leaderboards/{fortress-50,weakest-moats,most-capital-intensive,...}`** — auto-updating sharable artifacts; natural fodder for the X content engine ("new entrant on the fortress 50 this week is…"). Single SQL query per board, ISR'd.
 5. **Per-segment benchmarks — `/segments/<slug>`** — moat-axis distributions, median monthly floor, common stack components, member reports, "products in this segment." Turns the segment taxonomy into landing pages and gives the methodology page somewhere to deep-link.
 6. **Capability-gap finder** — combinations no scanned product has in a given segment. Idea generator. Weak below ~500 reports — shelve until corpus matures, then revisit.
