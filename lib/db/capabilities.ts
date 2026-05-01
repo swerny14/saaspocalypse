@@ -77,6 +77,33 @@ export async function addPatternToCapability(
   return { added: true };
 }
 
+export async function removePatternFromCapability(
+  slug: string,
+  pattern: string,
+): Promise<{ removed: boolean }> {
+  const norm = pattern.trim().toLowerCase();
+  if (!norm) throw new Error("pattern cannot be empty");
+  const cap = await getCapability(slug);
+  if (!cap) throw new Error(`capability "${slug}" does not exist`);
+  if (!cap.match_patterns.includes(norm)) {
+    return { removed: false };
+  }
+  const next = cap.match_patterns.filter((p) => p !== norm);
+  const admin = getSupabaseAdmin();
+  const { error } = await admin
+    .from("capabilities")
+    .update({ match_patterns: next })
+    .eq("slug", slug);
+  if (error) throw wrapDbError(error, "capabilities removePattern update");
+  return { removed: true };
+}
+
+export async function deleteCapability(slug: string): Promise<void> {
+  const admin = getSupabaseAdmin();
+  const { error } = await admin.from("capabilities").delete().eq("slug", slug);
+  if (error) throw wrapDbError(error, "capabilities delete");
+}
+
 export async function insertCapability(input: {
   slug: string;
   display_name: string;

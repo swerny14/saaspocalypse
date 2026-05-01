@@ -731,6 +731,9 @@ export function AuditResults({
           s.kind === "add_pattern"
             ? capabilities.find((c) => c.slug === s.capability_slug)
             : null;
+        const tags = s.kind === "add_pattern" ? (cap?.moat_tags ?? []) : s.moat_tags;
+        const affectedAxes = axesFromMoatTags(tags);
+        const blocked = hasNegatedEvidence(s);
         return (
           <div
             key={i}
@@ -750,6 +753,7 @@ export function AuditResults({
                     </span>
                   ) : null}
                 </div>
+                <AxisImpact axes={affectedAxes} />
                 <div className="font-mono text-[12px] mt-1">
                   pattern: <span className="bg-bg px-1 py-0.5 border border-ink/40">{s.pattern}</span>
                 </div>
@@ -766,6 +770,7 @@ export function AuditResults({
                     ({s.category} · {s.moat_tags.join(", ") || "no moat tags"})
                   </span>
                 </div>
+                <AxisImpact axes={affectedAxes} />
                 <div className="font-mono text-[11px] mt-1">
                   display: <span className="opacity-80">{s.display_name}</span>
                 </div>
@@ -785,14 +790,20 @@ export function AuditResults({
             <div className="text-[11px] opacity-70 italic mt-1.5">
               evidence: &ldquo;{s.evidence}&rdquo;
             </div>
+            {blocked ? (
+              <div className="mt-1.5 border border-danger/50 bg-danger/10 px-2 py-1 font-mono text-[11px] text-danger">
+                blocked: this evidence reads like absence/weakness, so applying
+                it would likely raise the wrong axis.
+              </div>
+            ) : null}
             <div className="mt-2">
               <button
                 type="button"
-                disabled={isApplied || busyIndex === i}
+                disabled={blocked || isApplied || busyIndex === i}
                 onClick={() => applySuggestion(i, s)}
                 className={`bru-sm px-2 py-0.5 font-display text-[10px] ${isApplied ? "bg-success" : "bg-accent"} text-ink disabled:opacity-60`}
               >
-                {isApplied ? "Applied ✓" : busyIndex === i ? "Applying…" : "Apply"}
+                {blocked ? "Blocked" : isApplied ? "Applied" : busyIndex === i ? "Applying..." : "Apply"}
               </button>
               {errorIndex?.i === i ? (
                 <span className="ml-2 text-[11px] text-danger">{errorIndex.msg}</span>
@@ -804,6 +815,70 @@ export function AuditResults({
       <div className="text-[11px] text-muted">
         After applying, recompute this report to verify the score movement.
       </div>
+    </div>
+  );
+}
+
+function axesFromMoatTags(tags: string[]): string[] {
+  const axes = new Set<string>();
+  for (const tag of tags) {
+    if (
+      tag === "multi_sided" ||
+      tag === "ugc" ||
+      tag === "marketplace" ||
+      tag === "viral_loop"
+    ) {
+      axes.add("network");
+    }
+    if (
+      tag === "data_storage" ||
+      tag === "workflow_lock_in" ||
+      tag === "integration_hub"
+    ) {
+      axes.add("switching");
+    }
+    if (
+      tag === "proprietary_dataset" ||
+      tag === "training_data" ||
+      tag === "behavioral"
+    ) {
+      axes.add("data moat");
+    }
+    if (
+      tag === "hipaa" ||
+      tag === "finra" ||
+      tag === "gdpr_critical" ||
+      tag === "licensed"
+    ) {
+      axes.add("regulatory");
+    }
+  }
+  return Array.from(axes);
+}
+
+function hasNegatedEvidence(s: Suggestion): boolean {
+  const text =
+    s.kind === "add_pattern"
+      ? `${s.pattern} ${s.evidence}`
+      : `${s.match_patterns.join(" ")} ${s.evidence}`;
+  return /\b(no\s+|not\s+|without\s+|lacks?\s+|lacking\s+|lack of\s+|near[- ]zero|zero\s+(network|switching|data|moat|moats)|low\s+(network|switching|data|moat|moats)|users export\b|export .* leave\b)/i.test(
+    text,
+  );
+}
+
+function AxisImpact({ axes }: { axes: string[] }) {
+  return (
+    <div className="font-mono text-[11px] mt-1 flex flex-wrap gap-1 items-center">
+      <span className="opacity-60">affects axis:</span>
+      {axes.length === 0 ? (
+        <span className="opacity-50">none</span>
+      ) : (
+        axes.map((axis) => (
+          <span key={axis} className="bg-accent/40 border border-ink/30 px-1">
+            {axis}
+          </span>
+        ))
+      )}
     </div>
   );
 }

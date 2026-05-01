@@ -151,6 +151,8 @@ For both: the \`evidence\` field is the literal verdict snippet that triggered y
 ## Discipline
 
 - Be conservative. If an axis is 0 because the report genuinely has no signal in that axis, suggest nothing for that axis. ("Stripe has no UGC" is the correct answer; don't invent UGC where there is none.)
+- NEVER use negated or absence evidence as a positive match. Phrases like "no behavioral data flywheel", "no proprietary corpus", "without UGC", "users export and leave", "near-zero switching", "low data moat", or "no network effect" mean the axis should stay low. Do not propose add_pattern/new_capability from those snippets.
+- If the current score is too high because a generic capability appears to have over-fired on negated/absence prose, say that in verdict_summary and return zero additive suggestions. The admin can remove or narrow the overfiring pattern from the evidence UI.
 - Don't propose patterns that would over-fire. Patterns should match the specific moat-bearing concept, not generic English.
 - Don't propose capabilities that overlap with existing ones — extend the existing one with add_pattern instead.
 - Aim for 0–4 suggestions per audit. An audit returning only add_pattern items (or zero items, when the score is correct) is a good audit. A new_capability suggestion should be rare and load-bearing.

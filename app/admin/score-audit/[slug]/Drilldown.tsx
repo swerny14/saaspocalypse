@@ -60,19 +60,19 @@ type Breakdown = {
     easy_count: number;
   };
   network: {
-    capability_hits: Array<{ slug: string; tags: string[] }>;
+    capability_hits: CapabilityHit[];
     raw_count: number;
   };
   switching: {
-    capability_hits: Array<{ slug: string; tags: string[] }>;
+    capability_hits: CapabilityHit[];
     raw_count: number;
   };
   data_moat: {
-    capability_hits: Array<{ slug: string; tags: string[] }>;
+    capability_hits: CapabilityHit[];
     raw_count: number;
   };
   regulatory: {
-    capability_hits: Array<{ slug: string; tags: string[] }>;
+    capability_hits: CapabilityHit[];
     raw_count: number;
   };
   distribution: {
@@ -104,6 +104,14 @@ type WeightRow = {
   description: string | null;
 };
 
+type CapabilityHit = {
+  slug: string;
+  tags: string[];
+  evidence_field?: string;
+  evidence_pattern?: string;
+  evidence_text?: string;
+};
+
 type Props = {
   report: ReportSummary;
   moat: MoatScore;
@@ -133,7 +141,7 @@ export function ScoreAuditDrilldown({
 }: Props) {
   const [openAxis, setOpenAxis] = useState<string | null>("capital");
   const [busy, setBusy] = useState<
-    null | "recompute" | "audit" | "moatAudit" | "review"
+    null | "recompute" | "audit" | "moatAudit" | "review" | "distribution"
   >(null);
   const [auditMsg, setAuditMsg] = useState<string | null>(null);
   const [reviewStatus, setReviewStatus] = useState(report.review_status);
@@ -260,6 +268,26 @@ export function ScoreAuditDrilldown({
     }
   };
 
+  const refreshDistribution = async () => {
+    setBusy("distribution");
+    setAuditMsg(null);
+    try {
+      const res = await fetch(`/api/admin/reports/${report.slug}/distribution`, {
+        method: "POST",
+      });
+      const json = (await res.json()) as { ok?: boolean; message?: string };
+      if (!res.ok || !json.ok) {
+        setAuditMsg(json.message ?? `distribution refresh failed (${res.status})`);
+      } else {
+        startTransition(() => router.refresh());
+      }
+    } catch (e) {
+      setAuditMsg(e instanceof Error ? e.message : "distribution refresh failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <>
       {/* Header */}
@@ -323,6 +351,14 @@ export function ScoreAuditDrilldown({
             : report.audit_summary !== null
               ? "re-run capability audit"
               : "AI capability audit"}
+        </button>
+        <button
+          onClick={refreshDistribution}
+          disabled={busy !== null}
+          className="font-mono text-[11px] tracking-[0.1em] uppercase font-bold bg-paper px-3 py-2 border-2 border-ink text-ink cursor-pointer disabled:opacity-50"
+          title="Re-runs the Serper brand SERP call, persists fresh distribution signals, and recomputes this report."
+        >
+          {busy === "distribution" ? "refreshing..." : "refresh distribution"}
         </button>
         {reviewStatus === "pending" ? (
           <button
@@ -394,6 +430,7 @@ export function ScoreAuditDrilldown({
           capability.
         </p>
         <FixForms capabilities={capabilities} />
+        <CapabilityRemoval capabilities={capabilities} />
       </div>
 
       {/* Patterns table */}
@@ -402,6 +439,107 @@ export function ScoreAuditDrilldown({
       {/* Weights table */}
       <WeightsAdmin weights={weights} />
     </>
+  );
+}
+
+function CapabilityRemoval({
+  capabilities,
+}: {
+  capabilities: CapabilityOption[];
+}) {
+  const [slug, setSlug] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const router = useRouter();
+
+  const selected = capabilities.find((c) => c.slug === slug);
+  const canDelete = slug && confirm === slug;
+
+  const deleteSelected = async () => {
+    if (!canDelete) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/capabilities/${encodeURIComponent(slug)}`, {
+        method: "DELETE",
+      });
+      const json = (await res.json()) as { ok?: boolean; message?: string };
+      if (!res.ok || !json.ok) {
+        setMsg(json.message ?? `delete failed (${res.status})`);
+      } else {
+        setMsg("capability deleted; recompute affected reports to verify movement");
+        setSlug("");
+        setConfirm("");
+        startTransition(() => router.refresh());
+      }
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "delete failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <details className="mt-3 border-t border-dashed border-ink/30 pt-3">
+      <summary className="font-mono text-[11px] uppercase tracking-[0.1em] font-bold cursor-pointer">
+        remove overfiring capability
+      </summary>
+      <div className="mt-3 grid gap-2 font-mono text-[12px]">
+        <p className="m-0 text-muted">
+          Prefer removing a single pattern from the axis evidence above. Delete
+          a capability only when the concept itself is wrong or duplicated.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-[1fr_220px_auto] sm:items-end">
+          <label className="grid gap-1">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-muted">
+              capability
+            </span>
+            <select
+              value={slug}
+              onChange={(e) => {
+                setSlug(e.target.value);
+                setConfirm("");
+              }}
+              className="border-2 border-ink bg-paper px-2 py-1"
+            >
+              <option value="">select capability...</option>
+              {capabilities.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.slug} - {c.display_name} ({c.pattern_count} patterns)
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-muted">
+              type slug to confirm
+            </span>
+            <input
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              disabled={!slug}
+              placeholder={slug || "select first"}
+              className="border-2 border-ink bg-paper px-2 py-1 disabled:opacity-50"
+            />
+          </label>
+          <button
+            onClick={deleteSelected}
+            disabled={busy || !canDelete}
+            className="font-mono text-[11px] uppercase tracking-[0.1em] font-bold bg-danger text-paper px-3 py-1.5 border-2 border-ink cursor-pointer disabled:opacity-50"
+          >
+            {busy ? "deleting..." : "delete"}
+          </button>
+        </div>
+        {selected ? (
+          <div className="text-[11px] opacity-75">
+            Tags: {selected.moat_tags.join(", ") || "none"}.
+          </div>
+        ) : null}
+        {msg ? <div className="text-[11px] opacity-80">{msg}</div> : null}
+      </div>
+    </details>
   );
 }
 
@@ -621,31 +759,33 @@ function TunableFooter({
   external?: { href: string; label: string };
 }) {
   return (
-    <div className="mt-3 pt-2 border-t border-dashed border-ink/30 font-mono text-[10.5px] grid gap-1 opacity-80">
+    <div className="mt-3 pt-2 border-t border-dashed border-ink/30 font-mono text-[10.5px] grid gap-2 opacity-80">
       <div className="opacity-65 text-[10px] tracking-[0.1em] uppercase">
         tunable
       </div>
       {patterns && patterns.length > 0 && (
-        <div>
-          <span className="opacity-60">patterns: </span>
-          {patterns.map((p, i) => (
-            <span key={p}>
-              {i > 0 && <span className="opacity-40">, </span>}
-              <code>{p}</code>
-            </span>
-          ))}
-          <span className="opacity-50"> — table below.</span>
+        <div className="grid gap-1">
+          <span className="opacity-60">patterns</span>
+          <span className="flex flex-wrap gap-1">
+            {patterns.map((p) => (
+              <code key={p} className="bg-paper px-1 py-0.5 border border-ink/20">
+                {p}
+              </code>
+            ))}
+            <span className="opacity-50 self-center">table below</span>
+          </span>
         </div>
       )}
-      <div>
-        <span className="opacity-60">weights: </span>
-        {weights.map((w, i) => (
-          <span key={w}>
-            {i > 0 && <span className="opacity-40">, </span>}
-            <code>{w}</code>
-          </span>
-        ))}
-        <span className="opacity-50"> — weights table below.</span>
+      <div className="grid gap-1">
+        <span className="opacity-60">weights</span>
+        <span className="flex flex-wrap gap-1">
+          {weights.map((w) => (
+            <code key={w} className="bg-paper px-1 py-0.5 border border-ink/20">
+              {w}
+            </code>
+          ))}
+          <span className="opacity-50 self-center">weights table below</span>
+        </span>
       </div>
       {external && (
         <div>
@@ -668,6 +808,39 @@ function CapabilityAxisDetail({
   axis: "network" | "switching" | "data_moat" | "regulatory";
   bd: Breakdown["network"];
 }) {
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const router = useRouter();
+
+  const removePattern = async (hit: CapabilityHit) => {
+    if (!hit.evidence_pattern) return;
+    const key = `${hit.slug}:${hit.evidence_pattern}`;
+    setBusyKey(key);
+    setMsg(null);
+    try {
+      const res = await fetch(
+        `/api/admin/capabilities/${encodeURIComponent(hit.slug)}/patterns`,
+        {
+          method: "DELETE",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ pattern: hit.evidence_pattern }),
+        },
+      );
+      const json = (await res.json()) as { ok?: boolean; message?: string };
+      if (!res.ok || !json.ok) {
+        setMsg(json.message ?? `remove failed (${res.status})`);
+      } else {
+        setMsg("pattern removed; recompute to verify movement");
+        startTransition(() => router.refresh());
+      }
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "remove failed");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
   return (
     <div className="font-mono text-[12px]">
       <div className="opacity-60 text-[10px] tracking-[0.1em] uppercase mb-1.5">
@@ -684,22 +857,62 @@ function CapabilityAxisDetail({
           to capture missing moat-bearing signals.
         </div>
       ) : (
-        <ul className="grid gap-1 m-0 p-0 list-none">
+        <ul className="grid gap-2 m-0 p-0 list-none">
           {bd.capability_hits.map((h, i) => (
-            <li key={i} className="flex flex-wrap gap-2 items-baseline">
-              <span className="font-bold">{h.slug}</span>
-              {h.tags.map((t) => (
-                <span
-                  key={t}
-                  className="bg-accent/40 px-1 border border-ink/30 text-[11px]"
-                >
-                  {t}
-                </span>
-              ))}
+            <li
+              key={i}
+              className="border border-ink/25 bg-paper px-2 py-2 grid gap-1"
+            >
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="font-bold">{h.slug}</span>
+                {h.tags.map((t) => (
+                  <span
+                    key={t}
+                    className="bg-accent/40 px-1 border border-ink/30 text-[11px]"
+                  >
+                    {t}
+                  </span>
+                ))}
+                {h.evidence_pattern ? (
+                  <button
+                    onClick={() => removePattern(h)}
+                    disabled={busyKey === `${h.slug}:${h.evidence_pattern}`}
+                    className="ml-auto font-mono text-[10px] tracking-[0.1em] uppercase font-bold bg-paper px-2 py-0.5 border border-ink cursor-pointer hover:bg-bg disabled:opacity-50"
+                    title="Remove this match pattern from the capability catalog. Then recompute the report to verify score movement."
+                  >
+                    {busyKey === `${h.slug}:${h.evidence_pattern}`
+                      ? "removing..."
+                      : "remove pattern"}
+                  </button>
+                ) : null}
+              </div>
+              <div className="grid gap-0.5 text-[11px] opacity-80">
+                <div>
+                  <span className="opacity-60">matched field:</span>{" "}
+                  <span className="font-bold">{h.evidence_field ?? "unknown"}</span>
+                </div>
+                {h.evidence_pattern ? (
+                  <div>
+                    <span className="opacity-60">pattern:</span>{" "}
+                    <code className="bg-bg px-1 border border-ink/20">
+                      {h.evidence_pattern}
+                    </code>
+                  </div>
+                ) : null}
+                {h.evidence_text ? (
+                  <div>
+                    <span className="opacity-60">matched text:</span>{" "}
+                    <span className="bg-accent/30 px-1 border border-ink/20">
+                      {h.evidence_text}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
             </li>
           ))}
         </ul>
       )}
+      {msg ? <div className="mt-2 text-[11px] opacity-80">{msg}</div> : null}
       <TunableFooter
         weights={[`aggregate.${axis}`, "capability.hit_multiplier"]}
         external={{

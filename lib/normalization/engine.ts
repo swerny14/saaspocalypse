@@ -30,6 +30,8 @@ export type ProjectedCapability = {
   capability_slug: string;
   confidence: number;
   evidence_field: string;
+  evidence_pattern?: string;
+  evidence_text?: string;
 };
 
 export type ProjectedAttributes = {
@@ -157,6 +159,66 @@ function containsPhrase(haystack: string, needle: string): boolean {
   return isBoundary(before) && isBoundary(after);
 }
 
+function findPhraseMatch(haystack: string, needle: string): string | null {
+  if (isNegativeCapabilityPattern(needle)) return null;
+  if (!containsPhrase(haystack, needle)) return null;
+  const idx = haystack.indexOf(needle);
+  if (idx === -1) return needle;
+  if (isNegatedCapabilityContext(haystack, idx, needle.length)) return null;
+  return haystack.slice(idx, idx + needle.length);
+}
+
+function isNegativeCapabilityPattern(needle: string): boolean {
+  return /^(\s*)?(no|not|without|lacks?|lacking|lack of)\s+/i.test(needle) ||
+    /\busers?\s+export\b.*\bleave\b/i.test(needle);
+}
+
+function isNegatedCapabilityContext(
+  haystack: string,
+  idx: number,
+  length: number,
+): boolean {
+  const before = haystack.slice(Math.max(0, idx - 90), idx);
+  const after = haystack.slice(idx + length, idx + length + 70);
+
+  // Direct negation: "no behavioral data", "without UGC",
+  // "lacks proprietary dataset". The final anchor keeps this local to the
+  // matched phrase so "no X, but strong behavioral data" still matches.
+  if (
+    /\b(no|not|without|lacks?|lacking|lack of)\s+(?:[a-z0-9'-]+\s+){0,5}$/i.test(
+      before,
+    )
+  ) {
+    return true;
+  }
+
+  // Weakness language near the matched concept: "near-zero switching cost -
+  // users export MP4s and leave" or "low/no data moat". These should not
+  // create positive moat evidence.
+  if (
+    /\b(near[- ]zero|zero|minimal|low|weak|no meaningful)\s+(?:[a-z0-9'-]+\s+){0,6}(network|switching|data|moat|moats|cost|costs|lock[- ]?in)\b/i.test(
+      before,
+    ) ||
+    /\b(network|switching|data|moat|moats|cost|costs|lock[- ]?in)\s+(?:[a-z0-9'-]+\s+){0,6}(near[- ]zero|zero|minimal|low|weak)\b/i.test(
+      before,
+    )
+  ) {
+    return true;
+  }
+
+  // Post-match denial: "behavioral data is absent", "marketplace does not
+  // exist". Less common, but cheap to catch.
+  if (
+    /^\s+(is|are|was|were)?\s*(absent|missing|nonexistent|not present|not a moat|near[- ]zero|zero)/i.test(
+      after,
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 function joinReportText(verdict: LLMVerdict): {
   full: string;
   byField: Record<string, string>;
@@ -245,9 +307,12 @@ function projectCapabilities(
   for (const { pattern, slug } of ctx.capabilityPatternIndex) {
     if (best[slug]) continue;
     let evidenceField: string | null = null;
+    let evidenceText: string | null = null;
     for (const [field, text] of Object.entries(byField)) {
-      if (containsPhrase(text, pattern)) {
+      const matched = findPhraseMatch(text, pattern);
+      if (matched) {
         evidenceField = evidenceField ? "multiple" : field;
+        evidenceText ??= matched;
       }
     }
     if (evidenceField) {
@@ -255,6 +320,8 @@ function projectCapabilities(
         capability_slug: slug,
         confidence: 1.0,
         evidence_field: evidenceField,
+        evidence_pattern: pattern,
+        evidence_text: evidenceText ?? pattern,
       };
     }
   }

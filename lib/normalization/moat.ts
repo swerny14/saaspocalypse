@@ -80,7 +80,13 @@ export type TechnicalBreakdown = {
 };
 
 export type CapabilityAxisBreakdown = {
-  capability_hits: Array<{ slug: string; tags: MoatTag[] }>;
+  capability_hits: Array<{
+    slug: string;
+    tags: MoatTag[];
+    evidence_field?: string;
+    evidence_pattern?: string;
+    evidence_text?: string;
+  }>;
   raw_count: number;
 };
 
@@ -354,13 +360,19 @@ function collectAxisHits(
   const tagsBySlug = new Map<string, MoatTag[]>();
   for (const c of catalog) tagsBySlug.set(c.slug, c.moat_tags);
   const wanted = new Set(AXIS_TAGS[axis]);
-  const hits: Array<{ slug: string; tags: MoatTag[] }> = [];
+  const hits: CapabilityAxisBreakdown["capability_hits"] = [];
   for (const cap of matchedCapabilities) {
     const tags = tagsBySlug.get(cap.capability_slug);
     if (!tags || tags.length === 0) continue;
     const matched = tags.filter((t) => wanted.has(t));
     if (matched.length > 0) {
-      hits.push({ slug: cap.capability_slug, tags: matched });
+      hits.push({
+        slug: cap.capability_slug,
+        tags: matched,
+        evidence_field: cap.evidence_field,
+        evidence_pattern: cap.evidence_pattern,
+        evidence_text: cap.evidence_text,
+      });
     }
   }
   return { capability_hits: hits, raw_count: hits.length };
@@ -594,23 +606,35 @@ const SCORABLE_AXES: MoatAxis[] = [
   "distribution",
 ];
 
+// When several axes are equally thin, pick the one most likely to be an
+// actionable wedge. "No network effect" is often true, but it is usually
+// absence-of-moat rather than a concrete attack plan; do not let it win every
+// multi-zero tie just because it appears early in the axis list.
+const WEDGE_TIEBREAK: MoatAxis[] = [
+  "distribution",
+  "switching",
+  "technical",
+  "capital",
+  "data_moat",
+  "regulatory",
+  "network",
+];
+
 /**
- * Lowest-scoring axis on the moat — the wedge's most attackable surface.
+ * Lowest-scoring axis on the moat - the wedge's most attackable surface.
  * Drives the headline callout on `/r/[slug]` and keys the wedge guide LLM
- * prompt. Tie-breaks deterministically by SCORABLE_AXES order.
+ * prompt. Ties use WEDGE_TIEBREAK so generic absence-of-network does not
+ * crowd out more actionable openings.
  */
 export function weakestAxis(score: MoatScore): MoatAxis | null {
-  let best: MoatAxis | null = null;
   let bestVal = Number.POSITIVE_INFINITY;
   for (const axis of SCORABLE_AXES) {
     const v = score[axis];
     if (typeof v !== "number") continue;
-    if (v < bestVal) {
-      best = axis;
-      bestVal = v;
-    }
+    if (v < bestVal) bestVal = v;
   }
-  return best;
+  if (bestVal === Number.POSITIVE_INFINITY) return null;
+  return WEDGE_TIEBREAK.find((axis) => score[axis] === bestVal) ?? null;
 }
 
 /* ─────────────────────────── helpers ─────────────────────────── */
