@@ -45,8 +45,18 @@ The product pivoted from a **buildability scanner** ("can I clone X?") to a **we
 3. Run `pnpm tsx scripts/rescan_all.ts`. Snapshots the existing domain list, truncates reports cascade (also wipes projections / moat scores / similarity gaps / build guides / purchases — confirmed in dev), then re-scans every domain sequentially against the new pipeline. Sequential to avoid racing the domain-lock infra and inflating Anthropic + Serper bills.
 4. Force-revalidate ISR on `/r/<slug>`, `/compare/<pair>`, `/directory` via Vercel deploy or representative URL hits.
 
+**What shipped in Phase 3 (atomic; existing guide rows must be cleared):**
+- Build-guide LLM rewrite. `lib/build_guide/llm.ts` `SYSTEM_PROMPT` is now a wedge-attack-plan prompt keyed on `weakest_moat_axis`, not a clone guide. Includes per-axis playbooks (capital / technical / network / switching / data_moat / regulatory / distribution) so the model picks the right wedge shape — code-first for most axes, GTM-first for distribution-axis wedges. Pitfalls section explicitly framed as "the moats NOT to attack" (the strongest axes), not generic dev caveats. Every plan opens by naming what the buyer IS and ISN'T building.
+- Tier-conditional FORTRESS framing collapsed into a brief scope-check note in the user message; the wedge frame is now universal across all tiers (FORTRESS just narrows the wedge further). Replaced with an axis-conditional pointer that calls out the weakest axis explicitly + tells the model to apply that axis's playbook.
+- Schema loosened: `stack_specifics.libraries` min 3 → 0. Pure-distribution wedges (X-cadence + content angle plays) genuinely don't need new libraries; the section now renders only when at least one of `libraries` / `references` is populated. Other caps unchanged.
+- UI tweaks: `the build.` → `the wedge.` section header in `components/BuildGuide.tsx`; footer label `guide v1` → `wedge plan v1`; "this guide is yours forever" → "this plan is yours forever". Header still reads "your wedge guide for {name}" (Phase 2 rename).
+
+**Phase 3 deploy steps (in order):**
+1. Deploy code. The schema change (libraries min 0) is backwards-compatible — existing rows still validate.
+2. Truncate `build_guides` so existing buyers get a wedge plan on their next visit instead of a stale clone guide. Magic-link tokens stay valid (they live on `build_guide_purchases`); the lazy regen path in `lib/build_guide/pipeline.ts` regenerates on first hit. SQL: `truncate table build_guides;` — `build_guide_purchases` references `report_id`, not `build_guide_id`, so purchase rows survive.
+3. Force-revalidate ISR on `/r/<slug>/guide` if any URLs are warm in the CDN. The page itself is server-rendered and gated, so cache impact is small, but Vercel will re-render against the empty `build_guides` table on next hit either way.
+
 **Pivot phasing — remaining phases:**
-3. **Phase 3 — Build guide reframe.** Full LLM prompt rewrite to write a wedge attack plan keyed on `weakest_moat_axis`, not a clone guide. Phase 2.5 already feeds the new fields into the prompt input; the system prompt itself still treats the guide as a clone guide. Existing guide rows should be invalidated so they regenerate as wedge plans on next purchase.
 4. **Phase 4 — Discovery + content alignment.** Wedge-inversion module on report page, leaderboards (thinnest moats / most attackable / weakest distribution), X content templates rewrite, blog content audit.
 5. **Phase 5 — Brand decision (deferred).** Revisit ~2 weeks after Phase 4. Either keep saaspocalypse with new positioning or rename.
 
@@ -167,6 +177,8 @@ Exception: `<Marquee />` is intentionally edge-to-edge — do not wrap it in `.c
 **Client vs server components:** `Scanner`, `PurchaseCTA`, and `FAQItem` are `"use client"`. Everything else (including `VerdictGrid`, which is `async` and queries Supabase) is a server component. Keep it that way unless state/effects are genuinely needed.
 
 **VerdictReport renders in BOTH contexts** — server-side on `/r/[slug]`, *and* client-side when Scanner (a client component) renders it inline after a fresh scan. That's why any logic added to it must be client-bundle safe: no server-only imports (DB clients, secrets, `node:`-prefixed modules). Server-only report enrichments belong in slots/wrappers (`comparisons={<SimilarProducts ... />}` on `/r/[slug]`, `comparisons={<SimilarProductsClient ... />}` in Scanner), not inside `VerdictReport` itself.
+
+**Server-only env reads must be lifted to props.** Same trap. `process.env.GUIDE_PRICE_CENTS` (and any other non-`NEXT_PUBLIC_` env) is undefined in the browser bundle and will silently fall back to the default — which is how we shipped a hardcoded $7 on the fresh-scan flow once. The price flows server → prop now: `guidePriceCents()` is called in `Hero` (server) and `app/r/[slug]/page.tsx` (server), then passed as `priceCents` through `Scanner` → `VerdictReport` → `PurchaseCTA`. Never call `guidePriceCents()` (or any env-reading helper) inside `VerdictReport`, `PurchaseCTA`, `Scanner`, or anything else they import.
 
 ## Environment variables
 

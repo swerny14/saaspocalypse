@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { HEADLINES } from "@/lib/content";
+import { guidePriceCents } from "@/lib/stripe";
 import { Scanner } from "./Scanner";
 
 export function Hero() {
   const headline = HEADLINES[0];
+  const priceCents = guidePriceCents();
 
   return (
     <section className="overflow-hidden px-6 sm:px-12 pt-16 sm:pt-20 pb-[60px]">
@@ -31,7 +33,7 @@ export function Hero() {
         </p>
 
         <div id="scanner" className="w-full max-w-[1000px] scroll-mt-24">
-          <Scanner />
+          <Scanner priceCents={priceCents} />
         </div>
 
         <div className="select-none font-mono text-xs opacity-[0.65] flex flex-col sm:flex-row sm:flex-wrap justify-center gap-1 sm:gap-5">

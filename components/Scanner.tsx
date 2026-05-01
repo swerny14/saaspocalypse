@@ -21,7 +21,7 @@ const PRESETS = [
   "stripe.com",
 ];
 
-export function Scanner() {
+export function Scanner({ priceCents }: { priceCents: number }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [url, setUrl] = useState("");
   const [currentStep, setCurrentStep] = useState<ScanStepId | null>(null);
@@ -176,6 +176,7 @@ export function Scanner() {
         <div className="mt-[18px] space-y-3 text-left">
           <VerdictReport
             report={report}
+            priceCents={priceCents}
             comparisons={<SimilarProductsClient sourceSlug={report.slug} />}
           />
           <div className="font-mono text-xs opacity-70">

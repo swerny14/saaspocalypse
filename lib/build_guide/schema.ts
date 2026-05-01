@@ -47,7 +47,7 @@ export const PitfallSchema = z.object({
 });
 
 export const StackSpecificsSchema = z.object({
-  libraries: z.array(LibrarySchema).min(3).max(6),
+  libraries: z.array(LibrarySchema).max(6),
   references: z.array(ReferenceSchema).max(4),
 });
 

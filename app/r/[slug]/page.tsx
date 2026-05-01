@@ -4,6 +4,7 @@ import { VerdictReport } from "@/components/VerdictReport";
 import { SimilarProducts } from "@/components/SimilarProducts";
 import { TrackView } from "@/components/TrackView";
 import { getReportBySlug } from "@/lib/db/reports";
+import { guidePriceCents } from "@/lib/stripe";
 import {
   reportTitle,
   reportOgTitle,
@@ -61,6 +62,7 @@ export default async function ReportPage({ params }: { params: Params }) {
       <div className="container">
         <VerdictReport
           report={report}
+          priceCents={guidePriceCents()}
           comparisons={
             <SimilarProducts sourceId={report.id} sourceSlug={report.slug} />
           }

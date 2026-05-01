@@ -3,11 +3,10 @@ import type { ReactNode } from "react";
 import type { DetectedStack } from "@/lib/scanner/fingerprint";
 import type { Difficulty, Tier } from "@/lib/scanner/schema";
 import { DIFFICULTIES } from "@/lib/scanner/schema";
-import { guidePriceCents } from "@/lib/stripe";
 import { PurchaseCTA } from "./PurchaseCTA";
 import { MoatBreakdown } from "./MoatBreakdown";
 
-type Props = { report: StoredReport; comparisons?: ReactNode };
+type Props = { report: StoredReport; priceCents: number; comparisons?: ReactNode };
 
 const TIER_BG_CLASS: Record<Tier, string> = {
   SOFT: "bg-tier-weekend-bg",
@@ -124,7 +123,7 @@ function detectedPills(d: DetectedStack | null): { label: string; value: string 
  *   11. CTA
  *   12. Footer
  */
-export function VerdictReport({ report: v, comparisons }: Props) {
+export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
   const tierBg = TIER_BG_CLASS[v.tier];
   const tierSubline = TIER_SUBLINE[v.tier];
   const scannedAtDisplay = formatScannedAt(v.scanned_at);
@@ -522,7 +521,7 @@ export function VerdictReport({ report: v, comparisons }: Props) {
         <PurchaseCTA
           slug={v.slug}
           wedgeScore={v.wedge_score}
-          priceCents={guidePriceCents()}
+          priceCents={priceCents}
         />
       </div>
 

@@ -154,7 +154,7 @@ function GeneratingPanel({
           />
         </div>
         <div className="mt-4 text-xs opacity-60 leading-[1.5]">
-          ▸ hang tight — the robot is typing your guide from scratch. a
+          hang tight — the robot is typing your guide from scratch. a
           minute or two, max. no pre-baked templates here.
         </div>
       </div>

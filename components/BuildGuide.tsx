@@ -51,7 +51,7 @@ export function BuildGuide({ report, guide }: Props) {
       <section className="px-11 py-8 border-b-[2.5px] border-ink">
         <div className="flex justify-between items-baseline mb-6 flex-wrap gap-3">
           <h2 className="font-display text-[22px] font-bold m-0 tracking-[-0.02em]">
-            the build.
+            the wedge.
           </h2>
           <div className="font-mono text-[11px] tracking-[0.1em] uppercase opacity-60">
             {guide.steps.length} steps
@@ -65,11 +65,14 @@ export function BuildGuide({ report, guide }: Props) {
       </section>
 
       {/* STACK SPECIFICS */}
+      {(guide.stack_specifics.libraries.length > 0 ||
+        guide.stack_specifics.references.length > 0) && (
       <section className="px-11 py-8 border-b-[2.5px] border-ink bg-bg">
         <h2 className="font-display text-[22px] font-bold m-0 mb-4 tracking-[-0.02em]">
           stack specifics.
         </h2>
         <div className="grid gap-4">
+          {guide.stack_specifics.libraries.length > 0 && (
           <div>
             <div className="font-mono text-[11px] font-bold tracking-[0.1em] uppercase opacity-60 mb-2">
               libraries
@@ -89,6 +92,7 @@ export function BuildGuide({ report, guide }: Props) {
               ))}
             </div>
           </div>
+          )}
           {guide.stack_specifics.references.length > 0 && (
             <div>
               <div className="font-mono text-[11px] font-bold tracking-[0.1em] uppercase opacity-60 mb-2">
@@ -109,6 +113,7 @@ export function BuildGuide({ report, guide }: Props) {
           )}
         </div>
       </section>
+      )}
 
       {/* PITFALLS */}
       <section className="px-11 py-8">
@@ -132,8 +137,8 @@ export function BuildGuide({ report, guide }: Props) {
 
       {/* FOOTER */}
       <div className="px-[22px] py-2.5 font-mono text-[10px] tracking-[0.1em] uppercase text-muted bg-bg border-t-[2.5px] border-ink flex justify-between gap-4 flex-wrap">
-        <span>▸ this guide is yours forever — bookmark the URL</span>
-        <span>guide v1 · saaspocalypse.dev</span>
+        <span>▸ this plan is yours forever — bookmark the URL</span>
+        <span>wedge plan v1 · saaspocalypse.dev</span>
       </div>
     </div>
   );
