@@ -44,7 +44,6 @@ export async function syncTaxonomyToDb(): Promise<{
     display_name: c.display_name,
     category: c.category,
     match_patterns: c.match_patterns,
-    moat_tags: c.moat_tags,
     is_descriptor: c.is_descriptor ?? false,
   }));
   {

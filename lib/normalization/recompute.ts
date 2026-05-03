@@ -6,20 +6,18 @@ import {
 } from "@/lib/db/projections";
 import { persistMoatScore } from "@/lib/db/moat_scores";
 import { projectReport, type EngineContext } from "./engine";
-import { scoreMoat, weakestAxis, type MoatScore } from "./moat";
+import { weakestAxis, type MoatScore } from "./moat";
+import { scoreMoatWithLLM } from "./moat_llm";
 import {
   tierFromWedgeScore,
   wedgeScoreFromAggregate,
   type Tier,
   type VerdictReport,
 } from "@/lib/scanner/schema";
-import type { ScoringConfig } from "./scoring_defaults";
-import type { Capability } from "./taxonomy";
 
 export type RecomputeReportScoringOptions = {
   context?: EngineContext;
-  catalog?: Capability[];
-  config?: ScoringConfig;
+  signal?: AbortSignal;
 };
 
 export type RecomputeReportScoringResult = {
@@ -58,14 +56,18 @@ export async function recomputeReportScoring(
   await persistProjection(report.id, projection);
 
   const distribution = await loadDistributionSignals(report.id);
-  const moat = scoreMoat({
+  const scored = await scoreMoatWithLLM({
     verdict: report,
-    capabilities: projection.capabilities,
     distribution,
-    catalog: options.catalog,
-    config: options.config,
+    detectedStack: report.detected_stack,
+    signal: options.signal,
   });
-  await persistMoatScore(report.id, moat);
+  if (scored.kind === "error") {
+    throw new Error(`LLM moat scoring failed: ${scored.message}`);
+  }
+
+  const moat = scored.score;
+  await persistMoatScore(report.id, moat, scored.judgment);
 
   const wedgeScore = wedgeScoreFromAggregate(moat.aggregate);
   const tier = tierFromWedgeScore(wedgeScore);

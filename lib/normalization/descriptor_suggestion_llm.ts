@@ -11,12 +11,8 @@ import type { CapabilityRow } from "@/lib/db/capabilities";
  *    isn't represented in the catalog at all, OR
  *  - return no_action when the apparent text overlap is coincidental.
  *
- * Same posture as the moat-anomalies AI audit: defensible because (1)
- * admin-only, (2) the deterministic engine is unchanged, (3) the human
- * applies each suggestion explicitly. New capabilities default to
- * `is_descriptor: true` because the whole reason this surface exists is
- * to fill descriptor gaps — non-descriptor caps belong in the moat-
- * anomalies flow.
+ * Admin-only and human-applied. New capabilities default to
+ * is_descriptor: true because this surface exists to fill descriptor gaps.
  */
 
 const MODEL = "claude-sonnet-4-6";

@@ -8,10 +8,10 @@ import {
 } from "@/lib/db/capabilities";
 import { getReportsByIds } from "@/lib/db/reports";
 import { loadEngineContextFromDb } from "@/lib/db/taxonomy_loader";
+import { persistProjection } from "@/lib/db/projections";
 import { logError } from "@/lib/error_log";
-import type { CapabilityCategory, MoatTag } from "@/lib/normalization/taxonomy/types";
-import { recomputeReportScoring } from "@/lib/normalization/recompute";
-import { getCachedScoringConfig } from "@/lib/normalization/scoring_loader";
+import { projectReport } from "@/lib/normalization/engine";
+import type { CapabilityCategory } from "@/lib/normalization/taxonomy/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -19,9 +19,8 @@ export const maxDuration = 30;
 /**
  * Apply a similarity-gap suggestion. The body specifies which kind of fix
  * the curator chose (mirroring the LLM's suggestion shape). After mutating
- * the taxonomy, the route recomputes BOTH reports in the pair so the new
- * pattern/capability fires immediately and the curator can verify the
- * pair now converges in `/r/<slug>`.
+ * the taxonomy, the route refreshes BOTH reports' descriptor projections so
+ * the curator can verify the pair now converges in `/r/<slug>`.
  *
  * Three actions:
  *   - add_pattern: append a pattern to an existing capability.
@@ -41,23 +40,6 @@ const CATEGORIES = [
   "identity",
 ] as const;
 
-const MOAT_TAGS = [
-  "multi_sided",
-  "ugc",
-  "marketplace",
-  "viral_loop",
-  "data_storage",
-  "workflow_lock_in",
-  "integration_hub",
-  "proprietary_dataset",
-  "training_data",
-  "behavioral",
-  "hipaa",
-  "finra",
-  "gdpr_critical",
-  "licensed",
-] as const;
-
 const ApplyBodySchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("add_pattern"),
@@ -72,7 +54,6 @@ const ApplyBodySchema = z.discriminatedUnion("kind", [
     display_name: z.string().min(1).max(80),
     category: z.enum(CATEGORIES),
     match_patterns: z.array(z.string().min(1).max(120)).min(2).max(15),
-    moat_tags: z.array(z.enum(MOAT_TAGS)).max(8).default([]),
     is_descriptor: z.boolean().default(true),
   }),
 ]);
@@ -114,22 +95,15 @@ export async function POST(
         display_name: body.display_name,
         category: body.category as CapabilityCategory,
         match_patterns: body.match_patterns,
-        moat_tags: body.moat_tags as MoatTag[],
         is_descriptor: body.is_descriptor,
       });
     }
 
-    // Recompute both sides of the pair against the now-updated taxonomy so
-    // the curator sees the convergence on the next page load.
     const reports = await getReportsByIds([gap.report_a_id, gap.report_b_id]);
-    const { context, capabilities: catalog } = await loadEngineContextFromDb();
-    const config = await getCachedScoringConfig(true);
+    const { context } = await loadEngineContextFromDb();
     for (const report of reports) {
-      await recomputeReportScoring(report, {
-        context,
-        catalog,
-        config,
-      });
+      const projection = projectReport(report, report.detected_stack, context);
+      await persistProjection(report.id, projection);
     }
 
     await markApplied(id);

@@ -140,12 +140,7 @@ type SerperResponse = {
 };
 
 /**
- * Default brand-ecosystem authoritative-domain list. Phase 2.6 moved this
- * into a DB-backed `scoring_patterns` table (kind = 'distribution_
- * authoritative_domain') so the list can be edited via the admin UI
- * without a redeploy. The defaults below are kept in sync with the seed
- * script (`scripts/seed_scoring_config.ts`) and serve as the fallback
- * when the loader hasn't run yet.
+ * Brand-ecosystem authoritative-domain list.
  *
  * Suffix-matched (subdomains count). Three blended categories:
  *   1. Authority directories

@@ -18,23 +18,6 @@ const CATEGORY = z.enum([
   "identity",
 ]);
 
-const MOAT_TAG = z.enum([
-  "multi_sided",
-  "ugc",
-  "marketplace",
-  "viral_loop",
-  "data_storage",
-  "workflow_lock_in",
-  "integration_hub",
-  "proprietary_dataset",
-  "training_data",
-  "behavioral",
-  "hipaa",
-  "finra",
-  "gdpr_critical",
-  "licensed",
-]);
-
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 const Body = z.object({
@@ -42,14 +25,11 @@ const Body = z.object({
   display_name: z.string().min(1).max(80),
   category: CATEGORY,
   match_patterns: z.array(z.string().min(1).max(120)).min(1).max(20),
-  moat_tags: z.array(MOAT_TAG).max(8),
+  is_descriptor: z.boolean().default(true),
 });
 
 /**
- * Insert a brand-new canonical capability. Used by the moat-anomalies
- * admin page when an axis is uncovered in the current taxonomy and a
- * pattern-add to an existing capability won't fit (e.g. enterprise SLA
- * lock-in didn't have any home before we added it).
+ * Insert a brand-new canonical capability from descriptor/unknowns curation.
  */
 export async function POST(req: NextRequest) {
   if (!(await isAdmin())) {

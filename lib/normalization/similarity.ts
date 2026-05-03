@@ -34,7 +34,6 @@ export const MIN_SIMILARITY_SCORE = 0.1;
  *  swing a single capability's weight to extremes. */
 const MIN_CORPUS_FOR_IDF = 10;
 
-const TAGGED_WEIGHT_FALLBACK = 1.5;
 const UNTAGGED_WEIGHT_FALLBACK = 1.0;
 const DESCRIPTOR_FALLBACK_WEIGHT = 2.0;
 
@@ -81,10 +80,9 @@ export function buildCorpusWeights(
   const descriptors = descriptorSet(ctx);
   const N = candidates.length;
   if (N < MIN_CORPUS_FOR_IDF) {
-    const moat = moatTagSet(ctx);
     return (slug: string) => {
       if (descriptors.has(slug)) return DESCRIPTOR_FALLBACK_WEIGHT;
-      return moat.has(slug) ? TAGGED_WEIGHT_FALLBACK : UNTAGGED_WEIGHT_FALLBACK;
+      return UNTAGGED_WEIGHT_FALLBACK;
     };
   }
   const df = new Map<string, number>();
@@ -113,18 +111,6 @@ function descriptorSet(ctx: EngineContext): Set<string> {
     if (cap.is_descriptor) set.add(cap.slug);
   }
   descriptorCache.set(ctx, set);
-  return set;
-}
-
-const moatTagCache = new WeakMap<EngineContext, Set<string>>();
-function moatTagSet(ctx: EngineContext): Set<string> {
-  const cached = moatTagCache.get(ctx);
-  if (cached) return cached;
-  const set = new Set<string>();
-  for (const cap of ctx.capabilities) {
-    if (cap.moat_tags.length > 0) set.add(cap.slug);
-  }
-  moatTagCache.set(ctx, set);
   return set;
 }
 

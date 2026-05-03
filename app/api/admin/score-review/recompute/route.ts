@@ -5,8 +5,6 @@ import {
   getReportBySlug,
 } from "@/lib/db/reports";
 import { recomputeReportScoring } from "@/lib/normalization/recompute";
-import { getCachedScoringConfig } from "@/lib/normalization/scoring_loader";
-import { logScoringAudit } from "@/lib/db/scoring_config";
 import { loadEngineContextFromDb } from "@/lib/db/taxonomy_loader";
 
 const Body = z.object({
@@ -14,10 +12,7 @@ const Body = z.object({
 });
 
 /**
- * Recompute a single report's projection + moat + wedge fields against the
- * current DB-backed scoring config. Used by the score-audit drilldown's
- * "↻ recompute this report" button. Forces a fresh config load so just-
- * edited patterns / weights apply on the next click.
+ * Recompute a single report's projection, LLM moat score, and wedge fields.
  */
 export async function POST(req: Request) {
   if (!(await isAdmin())) {
@@ -40,33 +35,16 @@ export async function POST(req: Request) {
   }
 
   try {
-    const [config, { context, capabilities: catalog }] = await Promise.all([
-      getCachedScoringConfig(true),
-      loadEngineContextFromDb(),
-    ]);
+    const { context } = await loadEngineContextFromDb();
     const result = await recomputeReportScoring(report, {
-      config,
       context,
-      catalog,
-    });
-
-    const moved = report.tier !== result.after.tier;
-    await logScoringAudit({
-      actor: "admin",
-      scope: "recompute",
-      change_kind: "recompute_one",
-      ref_id: report.id,
-      ref_key: report.slug,
-      before_value: result.before,
-      after_value: result.after,
-      reports_moved: moved ? 1 : 0,
     });
 
     return NextResponse.json({
       ok: true,
       before: result.before,
       after: result.after,
-      tier_moved: moved,
+      tier_moved: report.tier !== result.after.tier,
       moat: result.moat,
     });
   } catch (e) {

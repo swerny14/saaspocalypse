@@ -30,7 +30,7 @@ export type StoredReport = VerdictReport & {
  * DB and in our Zod schema, so no key transformation is needed.
  */
 const REPORT_COLUMNS =
-  "*, moat:report_moat_scores(rubric_version, capital, technical, network, switching, data_moat, regulatory, distribution, aggregate, computed_at, review_status, reviewed_at, audit_summary, audit_suggestions, audited_at)";
+  "*, moat:report_moat_scores(rubric_version, capital, technical, network, switching, data_moat, regulatory, distribution, aggregate, computed_at, review_status, reviewed_at, score_judgment)";
 
 /**
  * Defensive parse for rows we just read from the DB. Verifies the

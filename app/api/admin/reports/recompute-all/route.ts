@@ -4,8 +4,6 @@ import { getAllReports } from "@/lib/db/reports";
 import { loadEngineContextFromDb } from "@/lib/db/taxonomy_loader";
 import { logError } from "@/lib/error_log";
 import { recomputeReportScoring } from "@/lib/normalization/recompute";
-import { getCachedScoringConfig } from "@/lib/normalization/scoring_loader";
-import { logScoringAudit } from "@/lib/db/scoring_config";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -26,8 +24,7 @@ export async function POST() {
     return NextResponse.json({ ok: false, reason: "unauthorized" }, { status: 401 });
   }
 
-  const { context, capabilities: catalog } = await loadEngineContextFromDb();
-  const config = await getCachedScoringConfig(true);
+  const { context } = await loadEngineContextFromDb();
   const reports = await getAllReports(10_000);
   let processed = 0;
   let failed = 0;
@@ -38,8 +35,6 @@ export async function POST() {
     try {
       const result = await recomputeReportScoring(r, {
         context,
-        catalog,
-        config,
       });
       if (r.tier !== result.after.tier) tierMoves += 1;
       processed += 1;
@@ -55,15 +50,6 @@ export async function POST() {
       });
     }
   }
-
-  await logScoringAudit({
-    actor: "admin",
-    scope: "recompute",
-    change_kind: "recompute_all",
-    reports_moved: tierMoves,
-    after_value: { total: reports.length, processed, failed, failures },
-    reason: "Admin score workbench recompute-all",
-  });
 
   return NextResponse.json({ ok: true, processed, failed, failures, tierMoves });
 }

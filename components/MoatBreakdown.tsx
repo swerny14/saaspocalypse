@@ -14,6 +14,14 @@ type Props = {
 };
 
 type AxisKey = MoatAxis;
+type JudgedAxisKey = Exclude<MoatAxis, "distribution">;
+
+type AxisJudgment = {
+  score: number;
+  confidence: "low" | "medium" | "high";
+  rationale: string;
+  evidence: string[];
+};
 
 const AXES: Array<{
   key: AxisKey;
@@ -101,6 +109,20 @@ function severity(score: number): Severity {
     return { label: "shallow", barClass: "bg-muted", trailing: "thin walls" };
   }
   return { label: "open", barClass: "bg-ink/20", trailing: "wide open" };
+}
+
+function axisJudgment(
+  moat: StoredMoatScore,
+  axis: AxisKey,
+): AxisJudgment | null {
+  if (axis === "distribution") return null;
+  return moat.score_judgment?.axes?.[axis as JudgedAxisKey] ?? null;
+}
+
+function previewText(text: string, max = 118): string {
+  const trimmed = text.replace(/\s+/g, " ").trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max).replace(/\s+\S*$/, "")}...`;
 }
 
 /** Pick the strongest axis (highest score, tie-break by fixed axis order). */
@@ -217,6 +239,7 @@ export function MoatBreakdown({ moat, slug, weakestAxis }: Props) {
                 ? isLast
                 : !isOdd && i >= visibleAxes.length - 2;
               const isWeakest = axis.key === weakest;
+              const judgment = axisJudgment(moat, axis.key);
               return (
                 <div
                   key={axis.key}
@@ -261,6 +284,38 @@ export function MoatBreakdown({ moat, slug, weakestAxis }: Props) {
                   <div className="mt-2.5 font-mono text-[12px] text-muted">
                     {axis.blurb}
                   </div>
+                  {judgment ? (
+                    <details className="group mt-3 border-t border-ink/15 pt-3">
+                      <summary className="cursor-pointer list-none">
+                        <span className="flex items-center justify-between gap-3">
+                          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-ink/65 group-open:text-ink">
+                            why this score
+                          </span>
+                          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted">
+                            {judgment.confidence} confidence
+                          </span>
+                        </span>
+                        <span className="mt-1.5 block font-display text-[13px] leading-[1.3] text-ink/65 group-open:hidden">
+                          {previewText(judgment.rationale)}
+                        </span>
+                      </summary>
+                      <p className="mt-2 mb-0 font-display text-[13.5px] leading-[1.35] text-ink/80">
+                        {judgment.rationale}
+                      </p>
+                      {judgment.evidence.length > 0 ? (
+                        <ul className="mt-2 mb-0 grid gap-1.5 pl-0 list-none">
+                          {judgment.evidence.slice(0, 3).map((item, idx) => (
+                            <li
+                              key={`${axis.key}-evidence-${idx}`}
+                              className="font-mono text-[11px] leading-snug text-muted before:content-['-'] before:mr-1.5"
+                            >
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </details>
+                  ) : null}
                 </div>
               );
             })}

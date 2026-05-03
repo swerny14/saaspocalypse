@@ -12,8 +12,6 @@ import {
 } from "@/lib/scanner/distribution";
 import { projectReport } from "@/lib/normalization/engine";
 import { recomputeReportScoring } from "@/lib/normalization/recompute";
-import { getCachedScoringConfig } from "@/lib/normalization/scoring_loader";
-import { activeDomains } from "@/lib/normalization/scoring_defaults";
 import type { FetchResult } from "@/lib/scanner/fetch";
 
 export const runtime = "nodejs";
@@ -41,19 +39,10 @@ export async function POST(
   }
 
   try {
-    const [config, { context, capabilities: catalog }] = await Promise.all([
-      getCachedScoringConfig(true),
-      loadEngineContextFromDb(),
-    ]);
-    const authoritativeDomains = activeDomains(
-      config,
-      "distribution",
-      "distribution_authoritative_domain",
-    );
+    const { context } = await loadEngineContextFromDb();
     const external = await collectExternalDistributionSignals(
       report.domain,
       req.signal,
-      authoritativeDomains,
     );
     const projection = projectReport(report, report.detected_stack, context);
     const distribution = combineDistributionSignals(
@@ -64,8 +53,6 @@ export async function POST(
     await persistDistributionSignals(report.id, distribution);
     const result = await recomputeReportScoring(report, {
       context,
-      catalog,
-      config,
     });
 
     return NextResponse.json({

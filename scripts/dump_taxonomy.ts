@@ -3,13 +3,13 @@
  *
  * Today we dump:
  *   - lib/normalization/taxonomy/stack_components.ts (edited via /admin/unknowns)
- *   - lib/normalization/taxonomy/capabilities.ts     (edited via score workbench)
+ *   - lib/normalization/taxonomy/capabilities.ts     (edited via admin curation)
  *
  * market_segments.ts and business_models.ts are still TS-only — no admin
  * write path exists yet, so the DB never holds changes the TS file doesn't.
  *
  * Workflow:
- *   1. Triage at /admin/unknowns or the score workbench — DB updated.
+ *   1. Triage at /admin/unknowns or /admin/similarity-gaps — DB updated.
  *   2. `pnpm tsx scripts/dump_taxonomy.ts` — TS files regenerated from DB.
  *   3. Inspect the diff with `git diff lib/normalization/taxonomy/`.
  *   4. Commit.
@@ -82,7 +82,6 @@ type CapRow = {
   display_name: string;
   category: string;
   match_patterns: string[] | null;
-  moat_tags: string[] | null;
   is_descriptor: boolean | null;
 };
 
@@ -141,20 +140,11 @@ const CAPS_HEADER = `import type { Capability } from "./types";
  *
  * Source of truth flow:
  *   1. The TS file is the seed (initial set + manual edits by hand).
- *   2. Score workbench writes new patterns + new capabilities to the DB.
+ *   2. Admin curation writes new patterns + new capabilities to the DB.
  *   3. \`pnpm tsx scripts/dump_taxonomy.ts\` rewrites this file from DB rows.
  *   4. \`pnpm tsx scripts/sync_taxonomy.ts\` pushes TS back to DB (idempotent).
  *
- * \`moat_tags\` are the load-bearing field for moat scoring. They map a
- * capability onto the moat axes:
- *   network:    multi_sided | ugc | marketplace | viral_loop
- *   switching:  data_storage | workflow_lock_in | integration_hub
- *   data:       proprietary_dataset | training_data | behavioral
- *   regulatory: hipaa | finra | gdpr_critical | licensed
- *
- * Most capabilities carry zero tags — they exist for product-comparison
- * features (capability overlap, "products like X") rather than moat math.
- * Tag a capability only when its presence genuinely tilts a moat axis.
+ * Capabilities power product comparison, descriptor overlap, and similarity.
  */
 export const CAPABILITIES: Capability[] = [
 `;
@@ -164,9 +154,8 @@ const CAPS_FOOTER = `];
 
 function emitCapRow(c: CapRow): string {
   const patterns = (c.match_patterns ?? []).map(jsString).join(", ");
-  const tags = (c.moat_tags ?? []).map(jsString).join(", ");
   const descriptor = c.is_descriptor === true ? `, is_descriptor: true` : "";
-  return `  { slug: ${jsString(c.slug)}, display_name: ${jsString(c.display_name)}, category: ${jsString(c.category)}, match_patterns: [${patterns}], moat_tags: [${tags}]${descriptor} },`;
+  return `  { slug: ${jsString(c.slug)}, display_name: ${jsString(c.display_name)}, category: ${jsString(c.category)}, match_patterns: [${patterns}]${descriptor} },`;
 }
 
 /* ───────────────────────────── shared helpers ───────────────────────────── */
@@ -236,7 +225,7 @@ async function main() {
   {
     const { data, error } = await admin
       .from("capabilities")
-      .select("slug, display_name, category, match_patterns, moat_tags, is_descriptor")
+      .select("slug, display_name, category, match_patterns, is_descriptor")
       .order("category")
       .order("slug");
     if (error) {

@@ -17,8 +17,6 @@ loadEnv({ path: ".env" });
 
 import { getAllReports } from "../lib/db/reports";
 import { deleteOpenUnknowns } from "../lib/db/normalization_unknowns";
-import { getCachedScoringConfig } from "../lib/normalization/scoring_loader";
-import { logScoringAudit } from "../lib/db/scoring_config";
 import { recomputeReportScoring } from "../lib/normalization/recompute";
 
 function parseSlugFilter(): string | null {
@@ -54,8 +52,6 @@ async function main() {
     }`,
   );
 
-  const config = await getCachedScoringConfig(true);
-
   let ok = 0;
   let failed = 0;
   let tierMoves = 0;
@@ -67,7 +63,7 @@ async function main() {
 
   for (const r of reports) {
     try {
-      const result = await recomputeReportScoring(r, { config });
+      const result = await recomputeReportScoring(r);
 
       if (result.before.tier !== result.after.tier) {
         tierMoves += 1;
@@ -114,24 +110,6 @@ async function main() {
       );
     }
   }
-
-  await logScoringAudit({
-    actor: "recompute",
-    scope: "recompute",
-    change_kind: slugFilter ? "recompute_one" : "recompute_all",
-    ref_key: slugFilter ?? null,
-    reports_moved: tierMoves,
-    after_value: {
-      total: reports.length,
-      ok,
-      failed,
-      tier_moves: tierMoves,
-      sample: driftSamples.slice(0, 20),
-    },
-    reason: slugFilter
-      ? `Slug-filtered recompute: ${slugFilter}`
-      : `Corpus-wide recompute (${reports.length} reports)`,
-  });
 
   if (failed > 0) process.exit(1);
 }

@@ -463,7 +463,6 @@ function NewCapabilitySuggestion({
               display_name: displayName,
               category,
               match_patterns: matchPatterns,
-              moat_tags: [],
               is_descriptor: true,
             },
             "applying",

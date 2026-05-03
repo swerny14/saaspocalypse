@@ -37,7 +37,8 @@ import {
   persistProjection,
   persistDistributionSignals,
 } from "../lib/db/projections";
-import { scoreMoat, weakestAxis } from "../lib/normalization/moat";
+import { weakestAxis } from "../lib/normalization/moat";
+import { scoreMoatWithLLM } from "../lib/normalization/moat_llm";
 import { persistMoatScore } from "../lib/db/moat_scores";
 import { fetchAndCleanHomepage } from "../lib/scanner/fetch";
 import {
@@ -48,8 +49,6 @@ import {
   tierFromWedgeScore,
   wedgeScoreFromAggregate,
 } from "../lib/scanner/schema";
-import { getCachedScoringConfig } from "../lib/normalization/scoring_loader";
-import { activeDomains } from "../lib/normalization/scoring_defaults";
 
 function parseSlugFilter(): string | null {
   const flag = process.argv.find((a) => a.startsWith("--slug="));
@@ -81,13 +80,6 @@ async function main() {
     `[backfill] ${reports.length} report(s) to backfill${slugFilter ? ` (filter: ${slugFilter})` : ""}`,
   );
 
-  const config = await getCachedScoringConfig(true);
-  const authoritativeDomains = activeDomains(
-    config,
-    "distribution",
-    "distribution_authoritative_domain",
-  );
-
   let ok = 0;
   let failed = 0;
   let serpOk = 0;
@@ -100,7 +92,7 @@ async function main() {
       // 1. Fetch + collect externals in parallel.
       const [fetched, externals] = await Promise.all([
         fetchAndCleanHomepage(`https://${r.domain}`),
-        collectExternalDistributionSignals(r.domain, undefined, authoritativeDomains),
+        collectExternalDistributionSignals(r.domain),
       ]);
 
       // 2. Re-project so attributes (esp. monthly_floor_usd) are current.
@@ -116,13 +108,16 @@ async function main() {
       await persistDistributionSignals(r.id, distribution);
 
       // 4. Recompute moat with the new axis + propagate wedge fields.
-      const moat = scoreMoat({
+      const scored = await scoreMoatWithLLM({
         verdict: r,
-        capabilities: projection.capabilities,
         distribution,
-        config,
+        detectedStack: r.detected_stack,
       });
-      await persistMoatScore(r.id, moat);
+      if (scored.kind === "error") {
+        throw new Error(`LLM moat scoring failed: ${scored.message}`);
+      }
+      const moat = scored.score;
+      await persistMoatScore(r.id, moat, scored.judgment);
 
       const newWedgeScore = wedgeScoreFromAggregate(moat.aggregate);
       const newTier = tierFromWedgeScore(newWedgeScore);

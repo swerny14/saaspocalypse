@@ -13,11 +13,11 @@ type Surface = {
 
 const SURFACES: Surface[] = [
   {
-    href: "/admin/score-audit",
-    title: "score workbench",
+    href: "/admin/score-review",
+    title: "score review",
     blurb:
-      "Find suspect wedge scores, inspect exactly what fired, add patterns, tune weights, recompute, and mark reports verified.",
-    posture: "calibration",
+      "Review LLM moat judgments, inspect evidence/confidence, refresh distribution, recompute scores, and mark reports verified.",
+    posture: "review",
   },
   {
     href: "/admin/unknowns",
@@ -45,7 +45,7 @@ export default async function AdminIndex() {
           curation surfaces.
         </h1>
         <p className="font-mono text-[12px] tracking-[0.05em] opacity-65">
-          deterministic engine, human-curated taxonomy. pick a queue.
+          score review, corpus normalization, and similarity curation.
         </p>
       </div>
 

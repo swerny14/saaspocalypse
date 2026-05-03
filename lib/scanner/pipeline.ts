@@ -24,11 +24,13 @@ import { STEP_LABELS } from "./events";
 import { USER_SCAN_MESSAGES } from "./user_messages";
 import { projectReport } from "@/lib/normalization/engine";
 import { persistProjection, persistDistributionSignals } from "@/lib/db/projections";
-import { scoreMoat, weakestAxis } from "@/lib/normalization/moat";
+import { weakestAxis, type MoatScore } from "@/lib/normalization/moat";
+import {
+  scoreMoatWithLLM,
+  type MoatJudgment,
+} from "@/lib/normalization/moat_llm";
 import { persistMoatScore } from "@/lib/db/moat_scores";
-import { getCachedScoringConfig } from "@/lib/normalization/scoring_loader";
 import { loadEngineContextFromDb } from "@/lib/db/taxonomy_loader";
-import { activeDomains } from "@/lib/normalization/scoring_defaults";
 import {
   tierFromWedgeScore,
   wedgeScoreFromAggregate,
@@ -200,17 +202,7 @@ export async function runScan(
     }
     const detectedSignals = detectedStack ? formatDetectedStackForLLM(detectedStack) : "";
 
-    // Load DB-backed scoring config + taxonomy context (cached 5min where
-    // applicable). This keeps fresh scans aligned with admin recompute.
-    const [scoringConfig, engineContext] = await Promise.all([
-      getCachedScoringConfig(),
-      loadEngineContextFromDb(),
-    ]);
-    const authoritativeDomains = activeDomains(
-      scoringConfig,
-      "distribution",
-      "distribution_authoritative_domain",
-    );
+    const engineContext = await loadEngineContextFromDb();
 
     // Kick off the external distribution-signal SERP call. Network-bound
     // and independent of the LLM, so it runs in parallel and finalizes when
@@ -218,7 +210,7 @@ export async function runScan(
     // distribution axis ends up uncomputable in that case but the rest of
     // the pipeline proceeds.
     const externalDistributionPromise: Promise<ExternalDistributionSignals | null> =
-      collectExternalDistributionSignals(domain, input.signal, authoritativeDomains);
+      collectExternalDistributionSignals(domain, input.signal);
 
     // 7. Call Claude (internally validates + retries). Returns LLMVerdict
     // — the wedge thesis + supporting analytical content. The displayed
@@ -272,23 +264,32 @@ export async function runScan(
       projection.attributes,
     );
 
-    let moat: ReturnType<typeof scoreMoat> | null = null;
+    let moat: MoatScore | null = null;
+    let moatJudgment: MoatJudgment | null = null;
     try {
-      moat = scoreMoat({
+      const scored = await scoreMoatWithLLM({
         verdict: llmOut.verdict,
-        capabilities: projection.capabilities,
         distribution,
-        catalog: engineContext.capabilities,
-        config: scoringConfig,
+        detectedStack,
+        signal: input.signal,
       });
+      if (scored.kind === "error") {
+        await emitScanError(emit, "internal", scored.message, {
+          url: input.url,
+          domain,
+          ip: input.ip,
+        });
+        return;
+      }
+      moat = scored.score;
+      moatJudgment = scored.judgment;
     } catch (e) {
-      await logError({
-        scope: "scan",
-        reason: "moat_scoring_failed",
-        refSlug: domain,
-        message: e instanceof Error ? e.message : String(e),
-        detail: { url: input.url },
+      await emitScanError(emit, "internal", e instanceof Error ? e.message : String(e), {
+        url: input.url,
+        domain,
+        ip: input.ip,
       });
+      return;
     }
 
     const verdictReport = buildVerdictReport(
@@ -352,7 +353,11 @@ export async function runScan(
 
     if (moat) {
       try {
-        await persistMoatScore(row.id, moat);
+        await persistMoatScore(
+          row.id,
+          moat,
+          moatJudgment,
+        );
         // Attach the freshly-computed score to the row so the SSE `done`
         // event carries it — otherwise the inline-rendered VerdictReport
         // would show no moat block until the user reloads. Fresh scans
@@ -362,9 +367,7 @@ export async function runScan(
           computed_at: new Date().toISOString(),
           review_status: "pending",
           reviewed_at: null,
-          audit_summary: null,
-          audit_suggestions: null,
-          audited_at: null,
+          score_judgment: moatJudgment,
         };
       } catch (e) {
         await logError({

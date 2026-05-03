@@ -16,9 +16,8 @@ const Body = z.object({
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 /**
- * Append a match pattern to an existing capability. Used by the
- * moat-anomalies admin page when a real-world report uses phrasing the
- * current patterns don't catch — fastest fix for a coverage gap.
+ * Append a match pattern to an existing capability when curation finds
+ * real-world phrasing the current taxonomy does not catch.
  */
 export async function POST(
   req: NextRequest,

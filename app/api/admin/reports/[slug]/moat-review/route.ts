@@ -12,9 +12,8 @@ const Body = z.object({
 });
 
 /**
- * Mark a report's moat score as verified (curator confirmed it's honest)
- * or pending (re-flag for review). Used by the /admin/moat-anomalies UI to
- * dismiss rows after manual review without affecting the underlying score.
+ * Mark a report's moat score as verified or pending without changing the
+ * underlying score.
  */
 export async function POST(
   req: NextRequest,

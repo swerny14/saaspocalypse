@@ -314,7 +314,6 @@ create table if not exists capabilities (
   display_name     text not null,
   category         text not null,                  -- collab | content | commerce | comm | ai | infra | data | workflow | identity
   match_patterns   jsonb not null default '[]'::jsonb,   -- string[] of lowercase phrases to match against report text
-  moat_tags        jsonb not null default '[]'::jsonb,   -- string[] feeding moat scoring (multi_sided | ugc | marketplace | viral_loop | data_storage | workflow_lock_in | integration_hub | proprietary_dataset | training_data | behavioral | hipaa | finra | gdpr_critical | licensed)
   is_descriptor    boolean not null default false,       -- true when capability defines a product category (form-builder, appointment-booking) — similarity engine 2× boost
   updated_at       timestamptz not null default now()
 );
@@ -455,14 +454,8 @@ create index if not exists normalization_unknowns_status_idx
 alter table normalization_unknowns enable row level security;
 -- No public policy: review queue is admin-only.
 
--- 2026-05-01: Phase B — moat scoring. Six 0–10 axes derived deterministically
--- from the per-report projection (capabilities, components, attributes) +
--- the canonical taxonomy (commoditization_level, moat_tags). No LLM. The
--- aggregate is a weighted average; weights live in lib/normalization/moat.ts
--- as MOAT_RUBRIC_V1, so changing them is a code change with `rubric_version`
--- bumped and a recompute. The data column is named `data_moat` because
--- bare `data` is reserved/awkward in some SQL contexts; the TS type uses
--- `data_moat` to match.
+-- Moat scoring. Six fuzzy axes are LLM-scored; distribution is deterministic.
+-- Numeric axes stay first-class for sorting/filtering and public rendering.
 create table if not exists report_moat_scores (
   report_id        uuid primary key references reports(id) on delete cascade,
   rubric_version   int not null,
@@ -476,14 +469,11 @@ create table if not exists report_moat_scores (
   computed_at      timestamptz not null default now()
 );
 
-create index if not exists report_moat_sc/cores_aggregate_idx
+create index if not exists report_moat_scores_aggregate_idx
   on report_moat_scores (aggregate desc);
 
--- Curator review state. `pending` = score is up for review and may surface
--- in /admin/moat-anomalies; `verified` = curator confirmed the score is
--- honest and the row should hide from the anomaly view. Stays sticky
--- across recomputes — admin can re-flag manually if a taxonomy change
--- materially shifts the score.
+-- Curator review state. `pending` = score is up for review; `verified` =
+-- curator confirmed the score is honest. Stays sticky across recomputes.
 alter table report_moat_scores
   add column if not exists review_status text not null default 'pending'
     check (review_status in ('pending','verified')),
@@ -492,52 +482,32 @@ alter table report_moat_scores
 create index if not exists report_moat_scores_review_status_idx
   on report_moat_scores (review_status);
 
--- 2026-04-29: persisted LLM moat-audit suggestions. Populated by the
--- per-row audit endpoint and the bulk audit endpoint at
--- POST /api/admin/moat-anomalies/audit-batch. Same posture as the
--- unknowns suggestion columns — pre-fills the triage UI, human still
--- applies each suggestion individually, deterministic engine unchanged.
--- Cleared on recompute since the underlying score moves.
+-- 2026-05-02: LLM-primary moat scoring evidence. The numeric axes remain
+-- first-class columns for sorting/filtering, while the scorer's rationale,
+-- confidence, and cited evidence live here for admin review.
 alter table report_moat_scores
-  add column if not exists audit_summary     text,
-  add column if not exists audit_suggestions jsonb,
-  add column if not exists audited_at        timestamptz;
+  add column if not exists score_judgment jsonb;
+
+-- Cleanup from the retired moat-anomaly and score-expectation workflows.
+alter table report_moat_scores
+  drop column if exists audit_summary,
+  drop column if exists audit_suggestions,
+  drop column if exists audited_at;
+
+drop table if exists report_score_expectations;
 
 alter table report_moat_scores enable row level security;
 drop policy if exists "moat scores are publicly readable" on report_moat_scores;
 create policy "moat scores are publicly readable"
   on report_moat_scores for select to anon, authenticated using (true);
 
--- 2026-05-01: admin-only LLM expectation check for score calibration.
--- Stores qualitative axis bands inferred from the verdict prose plus only
--- high-confidence mismatch flags. This lets /admin/score-audit highlight
--- likely overfires/underfires without calling the LLM during table render.
-create table if not exists report_score_expectations (
-  report_id      uuid primary key references reports(id) on delete cascade,
-  rubric_version int not null,
-  verdict_hash   text not null,
-  bands          jsonb not null,
-  rationale      jsonb not null default '{}'::jsonb,
-  flags          jsonb not null default '[]'::jsonb,
-  generated_at   timestamptz not null default now()
-);
-
-create index if not exists report_score_expectations_generated_at_idx
-  on report_score_expectations (generated_at desc);
-
-alter table report_score_expectations enable row level security;
--- No public policy: admin endpoints use service-role access.
-
 -- 2026-04-30: per-capability descriptor flag. True when the capability
--- defines what a product CATEGORICALLY IS (form-builder, appointment-
--- booking, ai-agent-platform) rather than a sub-feature it has
--- (rich-text-editor, social-login, push-notifications). Drives a 2× boost
--- in similarity scoring so category-defining caps outrank shared
--- infrastructure in "products like X" rankings. Distinct from
--- moat_tags: empty moat_tags means "doesn't grant a moat axis" — most
--- such capabilities are sub-features, not categories.
+-- defines what a product categorically is, so category-defining matches
+-- outrank shared infrastructure in similarity scoring.
 alter table capabilities
   add column if not exists is_descriptor boolean not null default false;
+alter table capabilities
+  drop column if exists moat_tags;
 
 -- 2026-04-30: similarity gaps queue. Pairs of reports the heuristic
 -- thinks SHOULD cluster as similar (high text-Jaccard over tagline+take)
@@ -545,8 +515,8 @@ alter table capabilities
 -- Surfaces taxonomy gaps — pairs where a missing descriptor capability
 -- prevents real twins from converging in `/admin/similarity-gaps`.
 --
--- Posture mirrors normalization_unknowns + moat-anomalies: deterministic
--- engine unchanged, LLM is curation aid only, human applies each fix.
+-- Posture mirrors normalization_unknowns: deterministic engine, LLM-assisted
+-- suggestions, human-applied fixes.
 --
 -- (report_a_id, report_b_id) is canonically ordered (a < b alphabetically)
 -- so the unique constraint dedupes pairs regardless of which side was
@@ -810,103 +780,10 @@ $$;
 revoke all on function truncate_reports_cascade() from public, anon, authenticated;
 
 -- 2026-05-02 (Phase 2.6 — calibration framework):
--- Move every tunable parameter from `lib/normalization/moat.ts` into the DB
--- so calibration becomes a data edit instead of a code deploy. Three tables:
---
---   1. `scoring_patterns` — regex / domain rows (capex prose patterns,
---      fortress-thesis patterns, capex-exclude patterns, distribution
---      authoritative-domain entries). Each row has axis + kind + pattern
---      + weight + status + evidence.
---
---   2. `scoring_weights` — keyed numeric knobs for everything that's
---      currently a magic constant in moat.ts: per-axis aggregate weights,
---      distribution sub-signal weights, capital path thresholds, technical
---      difficulty multipliers. Key naming: `<axis>.<knob>`.
---
---   3. `scoring_audit` — append-only log of every calibration change. One
---      row per pattern add / disable / weight update / recompute / sweep.
---      Drives the change history surface in /admin/score-audit.
---
--- Production scoring uses an in-process snapshot loaded at module init
--- (defaults baked into TS). The admin recompute paths await a fresh DB
--- load so calibration edits affect the next recompute without redeploy.
--- Mirrors the existing capability-table posture.
+-- Cleanup from the retired deterministic scoring calibration framework.
 
-create table if not exists scoring_patterns (
-  id           uuid primary key default gen_random_uuid(),
-  axis         text not null check (axis in (
-    'capital','technical','network','switching','data_moat','regulatory','distribution'
-  )),
-  kind         text not null check (kind in (
-    'capex',                                -- regex matched against verdict prose for capital
-    'fortress_thesis',                      -- regex matched against wedge_thesis for capital path-2 anchor
-    'capex_exclude',                        -- regex that suppresses a capex match (e.g. SOC 2)
-    'distribution_authoritative_domain'     -- domain string (suffix-matched) for distribution authoritative count
-  )),
-  pattern      text not null,               -- regex source (kinds capex/fortress_thesis/capex_exclude) OR domain string (distribution_authoritative_domain)
-  weight       numeric(4,2) not null default 1.0,
-  status       text not null default 'active' check (status in ('active','disabled')),
-  evidence     text,                        -- one-line justification (hand-typed or LLM-generated)
-  added_by     text,                        -- 'seed' | 'admin' | 'llm:moat_audit' | etc
-  added_at     timestamptz not null default now(),
-  updated_at   timestamptz not null default now()
-);
+drop table if exists scoring_patterns;
 
-create index if not exists scoring_patterns_axis_kind_idx
-  on scoring_patterns (axis, kind, status);
+drop table if exists scoring_weights;
 
--- Uniqueness: same pattern can't appear twice under the same axis+kind.
-create unique index if not exists scoring_patterns_axis_kind_pattern_uq
-  on scoring_patterns (axis, kind, pattern);
-
-drop trigger if exists scoring_patterns_set_updated_at on scoring_patterns;
-create trigger scoring_patterns_set_updated_at
-  before update on scoring_patterns
-  for each row execute function set_updated_at();
-
-alter table scoring_patterns enable row level security;
--- No public read policy: scoring config is admin-only.
-
--- Numeric knobs. Key format: `<axis>.<knob_name>`. Examples:
---   aggregate.capital                         (per-axis weight in moat aggregate)
---   distribution.sub_weight.has_sitelinks     (per-sub-signal weight)
---   capital.heavy_capex_hits_min              (path-3 threshold)
---   capital.descriptive_anchor                (path-1/2 anchor)
---   capital.heavy_capex_anchor                (path-3 anchor)
---   capital.surface_cap                       (per-surface capex match cap)
---   technical.nightmare_weight                (per-difficulty multiplier)
-create table if not exists scoring_weights (
-  key          text primary key,
-  value        numeric(8,3) not null,
-  description  text,                          -- human-readable explanation
-  updated_at   timestamptz not null default now()
-);
-
-drop trigger if exists scoring_weights_set_updated_at on scoring_weights;
-create trigger scoring_weights_set_updated_at
-  before update on scoring_weights
-  for each row execute function set_updated_at();
-
-alter table scoring_weights enable row level security;
-
--- Audit log. Append-only — never UPDATE or DELETE rows. Keep schema flat
--- so it's easy to query in the admin UI and in ad-hoc SQL.
-create table if not exists scoring_audit (
-  id                uuid primary key default gen_random_uuid(),
-  ts                timestamptz not null default now(),
-  actor             text,                     -- 'admin' | 'seed' | 'llm:moat_audit' | etc
-  scope             text not null,            -- 'pattern' | 'weight' | 'recompute' | 'sweep'
-  change_kind       text not null,            -- 'add' | 'update' | 'disable' | 'recompute_one' | 'recompute_all' | 'sweep_run'
-  axis              text,
-  ref_id            uuid,                     -- pattern_id OR report_id depending on scope
-  ref_key           text,                     -- weight key OR slug
-  before_value      jsonb,
-  after_value       jsonb,
-  reason            text,
-  reports_moved     int                       -- # reports that crossed tier boundaries as a result
-);
-
-create index if not exists scoring_audit_ts_idx on scoring_audit (ts desc);
-create index if not exists scoring_audit_scope_idx on scoring_audit (scope, ts desc);
-
-alter table scoring_audit enable row level security;
+drop table if exists scoring_audit;
