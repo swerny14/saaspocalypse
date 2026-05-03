@@ -147,9 +147,9 @@ export default async function MethodologyPage({
           </h2>
           <p>
             The point of the score is to be honest. Pure regex math is
-            repeatable, but moat depth is semantic: "users can export and
-            leave" should lower switching cost, while "years of fraud model
-            data" should raise data moat. The LLM makes that judgment; the
+            repeatable, but moat depth is semantic: &quot;users can export and
+            leave&quot; should lower switching cost, while &quot;years of fraud model
+            data&quot; should raise data moat. The LLM makes that judgment; the
             deterministic layer supplies measured facts and computes the final
             aggregate.
           </p>
