@@ -52,8 +52,10 @@ async function main() {
   // Lazy import so env is loaded first.
   const { getSupabaseAdmin } = await import("../lib/db/supabase");
   const { runScan } = await import("../lib/scanner/pipeline");
+  const { loadEngineContextFromDb } = await import("../lib/db/taxonomy_loader");
 
   const admin = getSupabaseAdmin();
+  const { context: engineContext } = await loadEngineContextFromDb();
 
   // 1. Snapshot the existing domain list.
   const { data: existing, error: listErr } = await admin
@@ -108,6 +110,10 @@ async function main() {
         async (event) => {
           lastEvent = event.type;
           if (VERBOSE) console.log(`${tag} · ${event.type}`);
+        },
+        {
+          engineContext,
+          skipRateLimit: true,
         },
       );
       if (lastEvent === "done") {

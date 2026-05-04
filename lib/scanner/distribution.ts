@@ -210,11 +210,12 @@ export async function collectExternalDistributionSignals(
   domain: string,
   signal?: AbortSignal,
   authoritativeDomains: ReadonlyArray<string> = DEFAULT_AUTHORITATIVE_DOMAINS,
+  brandQuery?: string,
 ): Promise<ExternalDistributionSignals | null> {
   const apiKey = process.env.SERPER_API_KEY;
   if (!apiKey) return null;
 
-  const query = domain.split(".")[0] || domain;
+  const query = brandQuery?.trim() || domain.split(".")[0] || domain;
 
   const ctrl = new AbortController();
   const timeoutId = setTimeout(() => ctrl.abort(), SERP_TIMEOUT_MS);

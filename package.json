@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "scan:curated": "tsx scripts/scan_curated_sites.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.0",

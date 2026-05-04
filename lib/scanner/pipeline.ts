@@ -17,12 +17,13 @@ import { callClaudeForVerdict } from "./llm";
 import {
   collectExternalDistributionSignals,
   combineDistributionSignals,
+  type DistributionSignals,
   type ExternalDistributionSignals,
 } from "./distribution";
 import type { ScanErrorReason, ScanEvent } from "./events";
 import { STEP_LABELS } from "./events";
 import { USER_SCAN_MESSAGES } from "./user_messages";
-import { projectReport } from "@/lib/normalization/engine";
+import { projectReport, type EngineContext } from "@/lib/normalization/engine";
 import { persistProjection, persistDistributionSignals } from "@/lib/db/projections";
 import { weakestAxis, type MoatScore } from "@/lib/normalization/moat";
 import {
@@ -38,12 +39,27 @@ import {
   type VerdictReport,
 } from "./schema";
 
-export type ScanInput = { url: string; ip: string; signal?: AbortSignal };
+export type ScanInput = {
+  url: string;
+  ip: string;
+  signal?: AbortSignal;
+  /** Optional brand-name SERP query for curated/scripted scans. */
+  brandQuery?: string;
+};
 export type ScanEmitter = (event: ScanEvent) => void | Promise<void>;
+export type ScanOptions = {
+  /** Internal/batch scripts can bypass the public cold-scan IP limiter. */
+  skipRateLimit?: boolean;
+  /** Batch scripts can load taxonomy once and pass it through every scan. */
+  engineContext?: EngineContext;
+  /** Moat scoring is the second LLM call; retry once by default. */
+  moatScoreAttempts?: number;
+};
 
 const LOCK_TTL_SECONDS = 60;
 const LOCK_POLL_TOTAL_MS = 30_000;
 const LOCK_POLL_INTERVAL_MS = 1_000;
+const DEFAULT_MOAT_SCORE_ATTEMPTS = 2;
 
 /**
  * Emit a generic user-facing error + log the internal detail server-side.
@@ -95,6 +111,7 @@ function buildVerdictReport(
 export async function runScan(
   input: ScanInput,
   emit: ScanEmitter,
+  options: ScanOptions = {},
 ): Promise<void> {
   // 1. Normalize.
   await emit({ type: "step", step: "normalize", label: STEP_LABELS.normalize });
@@ -127,7 +144,7 @@ export async function runScan(
   }
 
   // 3. Rate limit the IP.
-  const limiter = getScanRateLimiter();
+  const limiter = options.skipRateLimit ? null : getScanRateLimiter();
   if (limiter) {
     const result = await limiter.limit(input.ip);
     if (!result.success) {
@@ -202,7 +219,8 @@ export async function runScan(
     }
     const detectedSignals = detectedStack ? formatDetectedStackForLLM(detectedStack) : "";
 
-    const engineContext = await loadEngineContextFromDb();
+    const engineContext =
+      options.engineContext ?? (await loadEngineContextFromDb()).context;
 
     // Kick off the external distribution-signal SERP call. Network-bound
     // and independent of the LLM, so it runs in parallel and finalizes when
@@ -210,7 +228,12 @@ export async function runScan(
     // distribution axis ends up uncomputable in that case but the rest of
     // the pipeline proceeds.
     const externalDistributionPromise: Promise<ExternalDistributionSignals | null> =
-      collectExternalDistributionSignals(domain, input.signal);
+      collectExternalDistributionSignals(
+        domain,
+        input.signal,
+        undefined,
+        input.brandQuery,
+      );
 
     // 7. Call Claude (internally validates + retries). Returns LLMVerdict
     // — the wedge thesis + supporting analytical content. The displayed
@@ -243,7 +266,7 @@ export async function runScan(
     const projection = projectReport(
       llmOut.verdict,
       detectedStack,
-      engineContext.context,
+      engineContext,
     );
 
     let externals: ExternalDistributionSignals | null = null;
@@ -267,29 +290,28 @@ export async function runScan(
     let moat: MoatScore | null = null;
     let moatJudgment: MoatJudgment | null = null;
     try {
-      const scored = await scoreMoatWithLLM({
+      const scored = await scoreMoatWithRetry({
+        attempts: options.moatScoreAttempts ?? DEFAULT_MOAT_SCORE_ATTEMPTS,
+        domain,
+        url: input.url,
+        ip: input.ip,
         verdict: llmOut.verdict,
         distribution,
         detectedStack,
         signal: input.signal,
       });
-      if (scored.kind === "error") {
-        await emitScanError(emit, "internal", scored.message, {
-          url: input.url,
-          domain,
-          ip: input.ip,
-        });
-        return;
+      if (scored) {
+        moat = scored.score;
+        moatJudgment = scored.judgment;
       }
-      moat = scored.score;
-      moatJudgment = scored.judgment;
     } catch (e) {
-      await emitScanError(emit, "internal", e instanceof Error ? e.message : String(e), {
-        url: input.url,
-        domain,
-        ip: input.ip,
+      await logError({
+        scope: "scan",
+        reason: "moat_score_failed",
+        refSlug: domain,
+        message: e instanceof Error ? e.message : String(e),
+        detail: { url: input.url, ip: input.ip, fallback: "SOFT/100/null" },
       });
-      return;
     }
 
     const verdictReport = buildVerdictReport(
@@ -385,6 +407,51 @@ export async function runScan(
   } finally {
     await releaseDomainLock(domain);
   }
+}
+
+async function scoreMoatWithRetry(args: {
+  attempts: number;
+  domain: string;
+  url: string;
+  ip?: string;
+  verdict: LLMVerdict;
+  distribution: DistributionSignals;
+  detectedStack: DetectedStack | null;
+  signal?: AbortSignal;
+}): Promise<{ score: MoatScore; judgment: MoatJudgment } | null> {
+  const attempts = Math.max(1, Math.floor(args.attempts));
+  let lastMessage = "unknown moat scoring failure";
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    let scored: Awaited<ReturnType<typeof scoreMoatWithLLM>>;
+    try {
+      scored = await scoreMoatWithLLM({
+        verdict: args.verdict,
+        distribution: args.distribution,
+        detectedStack: args.detectedStack,
+        signal: args.signal,
+      });
+    } catch (e) {
+      scored = {
+        kind: "error",
+        message: e instanceof Error ? e.message : String(e),
+      };
+    }
+    if (scored.kind === "ok") return scored;
+
+    lastMessage = scored.message;
+    if (attempt < attempts) {
+      await logError({
+        scope: "scan",
+        reason: "moat_score_retry",
+        refSlug: args.domain,
+        message: scored.message,
+        detail: { url: args.url, ip: args.ip, attempt, attempts },
+      });
+    }
+  }
+
+  throw new Error(lastMessage);
 }
 
 async function waitForDbResult(domain: string): Promise<StoredReport | null> {
