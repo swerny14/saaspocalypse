@@ -45,7 +45,7 @@ export function Hero() {
           {headline.sub}
         </p>
 
-        <div id="scanner" className="w-full max-w-[1000px] scroll-mt-24">
+        <div id="scanner" className="w-full max-w-[1100px] scroll-mt-24">
           <Scanner priceCents={priceCents} />
         </div>
 

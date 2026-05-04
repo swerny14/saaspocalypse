@@ -58,8 +58,8 @@ export default async function ReportPage({ params }: { params: Params }) {
   if (!report) notFound();
 
   return (
-    <main className="bg-bg min-h-screen py-10">
-      <div className="container">
+    <main className="bg-bg min-h-screen px-6 sm:px-12 py-10">
+      <div className="mx-auto w-full max-w-[1100px]">
         <VerdictReport
           report={report}
           priceCents={guidePriceCents()}

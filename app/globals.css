@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #f4f1e8;
+  --color-bg: #f1efea;
   --color-ink: #0a0a0a;
   --color-accent: #c6ff00;
   --color-paper: #ffffff;
@@ -35,6 +35,19 @@ body {
 
 body {
   min-height: 100vh;
+}
+
+/* Subtle 45° ink hatch — manila-folder / evidence-doc texture. Sits on
+   top of any background color; ~5% ink at 7px spacing reads as surface
+   texture without competing with foreground content. */
+.bg-hatch {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(10, 10, 10, 0.05) 0,
+    rgba(10, 10, 10, 0.05) 1px,
+    transparent 1px,
+    transparent 7px
+  );
 }
 
 /* Brutalist borders + shadows */

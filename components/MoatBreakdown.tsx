@@ -178,7 +178,7 @@ export function MoatBreakdown({ moat, slug, weakestAxis }: Props) {
       <div className="flex justify-between items-baseline mb-5 gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
           <span className="bg-ink text-accent px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.15em] select-none leading-none">
-            wedge map
+            wedge
           </span>
           <h3 className="font-display text-[22px] sm:text-[26px] font-bold m-0 tracking-[-0.02em]">
             where the walls are.
@@ -272,7 +272,7 @@ export function MoatBreakdown({ moat, slug, weakestAxis }: Props) {
                     </div>
                   </div>
                   <div
-                    className="mt-2.5 h-2 border-[1.5px] border-ink bg-paper-alt relative overflow-hidden"
+                    className="mt-2.5 h-2.5 border-[1.5px] border-ink bg-paper-alt relative overflow-hidden"
                     role="img"
                     aria-label={`${axis.label}: ${value.toFixed(1)} out of 10 (${sev.trailing})`}
                   >
@@ -280,6 +280,16 @@ export function MoatBreakdown({ moat, slug, weakestAxis }: Props) {
                       className={`absolute inset-y-0 left-0 ${sev.barClass}`}
                       style={{ width: `${pct}%` }}
                     />
+                    {/* 10-segment ticks — calibrates the bar against the
+                        same scoring system as the wedge-score hero. */}
+                    <div aria-hidden className="absolute inset-0 flex pointer-events-none">
+                      {Array.from({ length: 10 }).map((_, t) => (
+                        <div
+                          key={t}
+                          className="flex-1 border-r border-ink/25 last:border-r-0"
+                        />
+                      ))}
+                    </div>
                   </div>
                   <div className="mt-2.5 font-mono text-[12px] text-muted">
                     {axis.blurb}

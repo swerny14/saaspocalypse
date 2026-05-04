@@ -1,7 +1,7 @@
 import type { StoredReport } from "@/lib/db/reports";
 import type { ReactNode } from "react";
 import type { DetectedStack } from "@/lib/scanner/fingerprint";
-import type { Difficulty, Tier } from "@/lib/scanner/schema";
+import type { Difficulty, MoatAxis, Tier } from "@/lib/scanner/schema";
 import { DIFFICULTIES } from "@/lib/scanner/schema";
 import { PurchaseCTA } from "./PurchaseCTA";
 import { MoatBreakdown } from "./MoatBreakdown";
@@ -33,6 +33,18 @@ const DIFF_BG_CLASS: Record<Difficulty, string> = {
   nightmare: "bg-purple",
 };
 
+/** Short, terminal-style label per moat axis. Used by the wedge-score
+ *  hero's `the door → {axis}` pointer so the hero previews the wedge map. */
+const AXIS_SHORT_LABEL: Record<MoatAxis, string> = {
+  capital: "capital",
+  technical: "technical",
+  network: "network",
+  switching: "switching",
+  data_moat: "data",
+  regulatory: "regulatory",
+  distribution: "distribution",
+};
+
 function SectionHeading({
   label,
   title,
@@ -44,16 +56,16 @@ function SectionHeading({
 }) {
   return (
     <div className="flex justify-between items-baseline mb-5 gap-3 flex-wrap">
-      <div className="flex items-center gap-2.5">
-        <span className="bg-ink text-accent px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.15em] select-none leading-none">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className="bg-ink text-accent px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.15em] select-none leading-none shrink-0">
           {label}
         </span>
-        <h3 className="font-display text-[22px] sm:text-[26px] font-bold m-0 tracking-[-0.02em]">
+        <h3 className="font-display text-[22px] sm:text-[26px] font-bold m-0 tracking-[-0.02em] break-words">
           {title}
         </h3>
       </div>
       {meta ? (
-        <div className="font-mono text-[11px] tracking-[0.1em] uppercase opacity-60">
+        <div className="hidden sm:block font-mono text-[11px] tracking-[0.1em] uppercase opacity-60">
           {meta}
         </div>
       ) : null}
@@ -133,7 +145,7 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
   return (
     <div className="bg-paper border-[2.5px] border-ink shadow-[5px_5px_0_0_#0a0a0a]">
       {/* HEADER BAR */}
-      <div className="flex justify-between items-center gap-3 px-4 sm:px-[22px] py-3 sm:py-3.5 bg-bg border-b-[2.5px] border-ink font-mono text-[10px] sm:text-[11px] tracking-[0.05em] flex-wrap">
+      <div className="flex justify-between items-center gap-3 px-4 sm:px-[22px] py-3 sm:py-3.5 bg-bg bg-hatch border-b-[2.5px] border-ink font-mono text-[10px] sm:text-[11px] tracking-[0.05em] flex-wrap">
         <div className="flex gap-3.5 items-center">
           <span className="bg-ink text-accent px-2 py-0.5 font-bold tracking-[0.1em]">
             SAASPOCALYPSE
@@ -146,8 +158,20 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
       </div>
 
       {/* TITLE BLOCK */}
-      <div className="px-5 sm:px-11 pt-7 sm:pt-9 pb-7 border-b-[2.5px] border-ink grid grid-cols-[1fr_auto] gap-8 items-center max-[640px]:grid-cols-1 max-[640px]:gap-5">
-        <div className="min-w-0">
+      <div className="relative overflow-hidden px-5 sm:px-11 pt-7 sm:pt-9 pb-7 border-b-[2.5px] border-ink grid grid-cols-[1fr_auto] gap-8 items-center max-[640px]:grid-cols-1 max-[640px]:gap-5">
+        {/* GHOST WATERMARK — brutalist evidence-doc texture. Lives on the
+            left so it doesn't compete with the stamp on the right.
+            Hidden below sm: the watermark's minimum size at narrow
+            viewports overpowers the section. */}
+        <div
+          aria-hidden
+          className="hidden sm:block pointer-events-none select-none absolute -left-4 top-1/2 -translate-y-1/2 font-display font-bold uppercase text-ink/[0.035] leading-none tracking-[-0.06em] whitespace-nowrap"
+          style={{ fontSize: "clamp(140px, 20vw, 240px)" }}
+        >
+          CASE FILE
+        </div>
+
+        <div className="relative min-w-0">
           <div className="font-mono text-xs font-bold tracking-[0.15em] uppercase text-muted mb-2.5">
             subject of investigation
           </div>
@@ -158,7 +182,7 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
         </div>
 
         <div
-          className={`inline-flex min-h-[48px] items-center gap-3 justify-self-end whitespace-nowrap border-[2.5px] border-ink px-3.5 py-2 shadow-[4px_4px_0_0_#0a0a0a] rotate-[-1deg] max-[640px]:justify-self-start ${tierBg}`}
+          className={`inline-flex min-h-[48px] items-center gap-3 justify-self-end whitespace-nowrap border-[2.5px] border-ink px-3.5 py-2 shadow-[5px_5px_0_0_#0a0a0a] rotate-[-2deg] max-[640px]:justify-self-center ${tierBg}`}
         >
           <span className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] opacity-65">
             verdict
@@ -173,7 +197,7 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
       {/* WEDGE SCORE HERO */}
       <div className="grid grid-cols-[280px_1fr] border-b-[2.5px] border-ink max-[720px]:grid-cols-1">
         <div
-          className={`px-5 sm:px-7 py-6 sm:py-8 border-r-[2.5px] border-ink flex flex-col justify-between min-h-[200px] sm:min-h-[260px] gap-4 sm:gap-0 max-[720px]:border-r-0 max-[720px]:border-b-[2.5px] ${tierBg}`}
+          className={`px-5 sm:px-7 py-6 sm:py-8 border-r-[2.5px] border-ink flex flex-col justify-between min-h-[200px] sm:min-h-[260px] gap-4 sm:gap-5 max-[720px]:border-r-0 max-[720px]:border-b-[2.5px] ${tierBg}`}
         >
           <div className="font-mono text-[11px] font-bold tracking-[0.15em] uppercase text-[#333]">
             wedge score
@@ -186,8 +210,21 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
               /100
             </div>
           </div>
-          <div className="font-mono text-[11px] tracking-[0.1em] uppercase opacity-70">
-            tier · <span className="font-bold text-ink">{v.tier.toLowerCase()}</span>
+          {/* 10-tick segmented bar — calibrates the giant number against the
+              same scoring system as the moat axes. Each tick = 10pts. */}
+          <div
+            aria-hidden
+            className="flex gap-[3px] h-2.5"
+          >
+            {Array.from({ length: 10 }).map((_, i) => {
+              const filled = i < Math.round(v.wedge_score / 10);
+              return (
+                <div
+                  key={i}
+                  className={`flex-1 border-[1.5px] border-ink ${filled ? "bg-ink" : "bg-paper/40"}`}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -196,10 +233,13 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
             wedge thesis
           </div>
           {/* LEDE — the LLM's one-sentence wedge thesis. The headline of
-              the report; everything below is supporting evidence. */}
-          <p className="font-display text-xl sm:text-2xl font-medium leading-[1.3] tracking-[-0.015em] m-0 text-balance">
-            {v.wedge_thesis}
-          </p>
+              the report; everything below is supporting evidence. The
+              left lime rail anchors it as the load-bearing sentence. */}
+          <div className="border-l-[3px] border-accent pl-4">
+            <p className="font-display text-xl sm:text-2xl font-medium leading-[1.3] tracking-[-0.015em] m-0 text-balance">
+              {v.wedge_thesis}
+            </p>
+          </div>
           <div className="mt-4 mb-0 flex items-baseline gap-3 text-[13px] font-mono text-muted flex-wrap">
             <span className="font-bold text-ink uppercase tracking-[0.1em] text-[11px]">
               {tierSubline}
@@ -209,6 +249,13 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
             <span className="opacity-50">·</span>
             <span>run for {fmtMonthlyTotal(v.est_total)}</span>
           </div>
+          {v.weakest_moat_axis ? (
+            <div className="mt-3 inline-flex items-center gap-2 font-mono text-[11px] font-bold tracking-[0.15em] uppercase">
+              <span className="text-success">the door</span>
+              <span className="text-ink/40">→</span>
+              <span className="text-ink">{AXIS_SHORT_LABEL[v.weakest_moat_axis]}</span>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -240,26 +287,18 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
 
       {/* COST OF COMPETING */}
       <div className="px-5 sm:px-11 py-6 sm:py-8 border-b-[2.5px] border-ink">
-        <div className="flex justify-between items-baseline mb-5 gap-3 flex-wrap">
-          <div className="flex items-center gap-2.5">
-            <span className="bg-ink text-accent px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.15em] select-none leading-none">
-              cost
-            </span>
-            <h3 className="font-display text-[22px] sm:text-[26px] font-bold m-0 tracking-[-0.02em]">
-              cost of competing.
-            </h3>
-          </div>
-          <div className="font-mono text-[11px] tracking-[0.1em] uppercase opacity-60">
-            their price ←→ your run-rate
-          </div>
-        </div>
+        <SectionHeading
+          label="cost"
+          title="cost of competing."
+          meta="their price ←→ your run-rate"
+        />
 
         <div className="grid grid-cols-[1fr_40px_1fr] gap-4 items-stretch max-[720px]:grid-cols-1">
           {/* THEIR price */}
-          <div className="border-[2.5px] border-ink bg-[#fff5f3]">
-            <div className="px-4 py-2.5 border-b-[2.5px] border-ink font-mono text-[11px] font-bold tracking-[0.1em] uppercase flex justify-between">
+          <div className="border-[2.5px] border-ink bg-paper">
+            <div className="px-4 py-2.5 border-b-[2.5px] border-ink font-mono text-[11px] font-bold tracking-[0.1em] uppercase bg-coral text-ink flex justify-between">
               <span>what they charge</span>
-              <span className="text-coral">●</span>
+              <span>●</span>
             </div>
             <div className="px-5 pt-5 pb-6">
               <div className="font-mono text-xs opacity-70 mb-1.5">
@@ -304,7 +343,7 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
           </div>
 
           {/* YOUR run-rate */}
-          <div className="border-[2.5px] border-ink bg-[#f0fdf4] shadow-[5px_5px_0_0_#0a0a0a]">
+          <div className="border-[2.5px] border-ink bg-paper shadow-[5px_5px_0_0_#0a0a0a]">
             <div className="px-4 py-2.5 border-b-[2.5px] border-ink font-mono text-[11px] font-bold tracking-[0.1em] uppercase bg-accent flex justify-between">
               <span>what running yours costs</span>
               <span>✦</span>
@@ -355,7 +394,7 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
               what you&apos;re up against.
             </h3>
           </div>
-          <div className="font-mono text-[11px] tracking-[0.1em] uppercase opacity-60">
+          <div className="hidden sm:block font-mono text-[11px] tracking-[0.1em] uppercase opacity-60">
             est. total: {v.time_estimate}
           </div>
         </div>
@@ -379,9 +418,9 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
           {v.challenges.map((c, i) => (
             <div
               key={i}
-              className="grid grid-cols-[40px_110px_1fr] gap-3.5 items-center px-3.5 py-2.5 border-2 border-ink bg-paper max-[520px]:grid-cols-[110px_1fr]"
+              className={`grid grid-cols-[44px_110px_1fr] gap-3.5 items-center px-3.5 py-2.5 border-2 border-ink max-[520px]:grid-cols-[110px_1fr] ${i % 2 === 0 ? "bg-paper" : "bg-paper-alt"}`}
             >
-              <div className="font-mono text-[13px] font-bold text-[#999] max-[520px]:hidden">
+              <div className="font-mono text-[15px] font-bold text-ink/35 tracking-[-0.02em] max-[520px]:hidden">
                 {String(i + 1).padStart(2, "0")}
               </div>
               <div
@@ -405,19 +444,11 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
       {/* THEIR POSITION — stack receipt. Their inferred / detected
           infrastructure choices. Inferred tag covers accuracy. */}
       <div className="px-5 sm:px-11 py-6 sm:py-8 border-b-[2.5px] border-ink bg-bg">
-        <div className="flex justify-between items-baseline mb-4 gap-3 flex-wrap">
-          <div className="flex items-center gap-2.5">
-            <span className="bg-ink text-accent px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.15em] select-none leading-none">
-              stack
-            </span>
-            <h3 className="font-display text-[22px] sm:text-[26px] font-bold m-0 tracking-[-0.02em]">
-              their position.
-            </h3>
-          </div>
-          <div className="font-mono text-[11px] tracking-[0.1em] uppercase opacity-60">
-            inferred + measured stack
-          </div>
-        </div>
+        <SectionHeading
+          label="stack"
+          title="their position."
+          meta="inferred + measured stack"
+        />
 
         {/* detected signals — server-fingerprinted */}
         {(() => {
@@ -455,11 +486,12 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
             {v.stack.map((s, i) => (
               <span
                 key={i}
-                className={`font-mono text-xs px-2.5 py-[5px] border-2 border-ink max-w-full break-words ${
-                  i % 2 === 0 ? "bg-paper" : "bg-bg"
-                }`}
+                className="font-mono text-xs border-2 border-ink max-w-full break-words flex items-center bg-paper"
               >
-                {s}
+                <span className="bg-paper-alt text-ink/55 px-2 py-[5px] font-bold tracking-[0.1em] uppercase border-r-[1.5px] border-ink">
+                  infer
+                </span>
+                <span className="px-2.5 py-[5px]">{s}</span>
               </span>
             ))}
           </div>
@@ -468,19 +500,11 @@ export function VerdictReport({ report: v, priceCents, comparisons }: Props) {
 
       {/* ALTERNATIVES — who else has already attacked this category. */}
       <div className="px-5 sm:px-11 py-6 sm:py-8 border-b-[2.5px] border-ink">
-        <div className="flex justify-between items-baseline mb-5 gap-3 flex-wrap">
-          <div className="flex items-center gap-2.5">
-            <span className="bg-ink text-accent px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.15em] select-none leading-none">
-              rivals
-            </span>
-            <h3 className="font-display text-[22px] sm:text-[26px] font-bold m-0 tracking-[-0.02em]">
-              who else has tried this.
-            </h3>
-          </div>
-          <div className="font-mono text-[11px] tracking-[0.1em] uppercase opacity-60">
-            indies + alternatives
-          </div>
-        </div>
+        <SectionHeading
+          label="rivals"
+          title="who else has tried this."
+          meta="indies + alternatives"
+        />
 
         <div className="grid grid-cols-3 gap-3.5 max-[640px]:grid-cols-1">
           {v.alternatives.map((alt, i) => (
