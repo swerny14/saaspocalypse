@@ -1,6 +1,6 @@
 import { Hero } from "@/components/Hero";
 import { Marquee } from "@/components/Marquee";
-import { VerdictGrid } from "@/components/VerdictGrid";
+import { MiniLeaderboard } from "@/components/MiniLeaderboard";
 import { HowItWorks } from "@/components/HowItWorks";
 import { Testimonials } from "@/components/Testimonials";
 import { Pricing } from "@/components/Pricing";
@@ -14,7 +14,7 @@ export default function Home() {
     <>
       <Hero />
       <Marquee />
-      <VerdictGrid />
+      <MiniLeaderboard />
       <HowItWorks />
       <Testimonials />
       <Pricing />

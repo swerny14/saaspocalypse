@@ -131,6 +131,36 @@ export function comparePageJsonLd(a: StoredReport, b: StoredReport): JsonLd {
   };
 }
 
+/**
+ * Leaderboard JSON-LD: a `WebPage` whose mainEntity is an `ItemList` of one
+ * `Review` per ranked report. Mirrors the compare-page pattern.
+ */
+export function leaderboardJsonLd(args: {
+  slug: string;
+  title: string;
+  description: string;
+  reports: StoredReport[];
+}): JsonLd {
+  const url = `${SITE_URL}/leaderboards/${args.slug}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${url}#leaderboard`,
+    url,
+    name: args.title,
+    description: args.description,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListOrder: "https://schema.org/ItemListOrderAscending",
+      itemListElement: args.reports.map((r, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: reportJsonLd(r),
+      })),
+    },
+  };
+}
+
 export function reportJsonLd(report: StoredReport): JsonLd {
   return {
     "@context": "https://schema.org",

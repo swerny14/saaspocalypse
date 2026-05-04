@@ -63,4 +63,33 @@ export function comparePageDescription(a: StoredReport, b: StoredReport): string
   return `${a.name} vs ${b.name}. Wedge score ${a.wedge_score} vs ${b.wedge_score}. ${a.time_estimate} vs ${b.time_estimate}.`;
 }
 
+/**
+ * Leaderboard surfaces. Each board is its own URL with its own metadata so
+ * search engines can index "softest walls in saas" / "hardest moats" /
+ * "most-watched" as distinct queries.
+ */
+export type LeaderboardMeta = { title: string; tabLabel: string; blurb: string };
+
+export function leaderboardTitle(board: LeaderboardMeta): string {
+  return `${stripTrailingPunct(board.title)} - SaaS leaderboard | ${BRAND}`;
+}
+
+export function leaderboardOgTitle(board: LeaderboardMeta): string {
+  return `${stripTrailingPunct(board.title)} - the saaspocalypse leaderboard`;
+}
+
+export function leaderboardDescription(board: LeaderboardMeta): string {
+  const lead = `${stripTrailingPunct(board.title)} on saaspocalypse — ${board.blurb}`;
+  if (lead.length <= 155) return lead;
+  return `${stripTrailingPunct(board.title)} — ${board.blurb}`.slice(0, 155);
+}
+
+export function leaderboardCanonical(slug: string): string {
+  return `${SITE_URL}/leaderboards/${slug}`;
+}
+
+function stripTrailingPunct(s: string): string {
+  return s.replace(/[.!?]+$/, "");
+}
+
 export { SITE_URL, BRAND };

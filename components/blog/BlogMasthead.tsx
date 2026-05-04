@@ -6,7 +6,7 @@ export function BlogMasthead() {
   return (
     <div className="border-b-[2.5px] border-ink pb-6 mb-7">
       <div className="font-mono text-[11px] font-bold tracking-[0.2em] uppercase opacity-60 mb-2.5">
-        ▸ the blog · {count} posts on file · updated roughly weekly
+        the blog · {count} posts on file · updated roughly weekly
       </div>
       <h1 className="font-display font-bold text-[clamp(48px,7vw,76px)] leading-[0.92] tracking-[-0.045em] m-0">
         {BLOG_MASTHEAD.title_lead}

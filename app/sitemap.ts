@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getAllReportsForSitemap } from "@/lib/db/reports";
 import { getAllNeighborPairs } from "@/lib/db/neighbors";
 import { getAllPosts, getPublishedPosts } from "@/lib/blog/posts";
+import { LEADERBOARD_SLUGS } from "@/lib/db/leaderboards";
 import { SITE_URL } from "@/lib/seo/meta";
 
 export const revalidate = 3600;
@@ -72,5 +73,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(p.lastModified),
   }));
 
-  return [...staticEntries, ...reportEntries, ...blogEntries, ...compareEntries];
+  const leaderboardEntries: MetadataRoute.Sitemap = LEADERBOARD_SLUGS.map((slug) => ({
+    url: `${SITE_URL}/leaderboards/${slug}`,
+    changeFrequency: "daily",
+    priority: 0.8,
+    lastModified: new Date(),
+  }));
+
+  return [
+    ...staticEntries,
+    ...reportEntries,
+    ...blogEntries,
+    ...compareEntries,
+    ...leaderboardEntries,
+  ];
 }

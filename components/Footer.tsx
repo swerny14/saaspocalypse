@@ -28,6 +28,12 @@ export function Footer() {
             Directory
           </Link>
           <Link
+            href="/blog"
+            className="hover:underline underline-offset-4"
+          >
+            Blog
+          </Link>
+          <Link
             href="/terms"
             className="hover:underline underline-offset-4"
           >
