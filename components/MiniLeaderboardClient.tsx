@@ -123,13 +123,10 @@ function Row({
     <li className={isLast ? "" : "border-b-2 border-dashed border-ink"}>
       <Link
         href={`/r/${entry.slug}`}
-        className="grid items-center gap-4 px-6 py-4 no-underline text-ink hover:bg-paper-alt transition-colors"
-        style={{
-          gridTemplateColumns: "58px minmax(0,1fr) 96px 112px",
-        }}
+        className="grid items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 no-underline text-ink hover:bg-paper-alt transition-colors grid-cols-[44px_minmax(0,1fr)_auto] sm:grid-cols-[58px_minmax(0,1fr)_96px_auto]"
       >
         <div
-          className="font-display font-bold text-[36px] leading-none tracking-[-0.04em] tabular-nums"
+          className="font-display font-bold text-[30px] sm:text-[36px] leading-none tracking-[-0.04em] tabular-nums"
           style={{ color: entry.rank === 1 ? tierColor : undefined }}
         >
           {entry.rank.toString().padStart(2, "0")}
@@ -137,7 +134,7 @@ function Row({
 
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="font-display font-bold text-[18px] leading-tight tracking-[-0.01em] truncate">
+            <div className="font-display font-bold text-[17px] sm:text-[18px] leading-tight tracking-[-0.01em] truncate">
               {entry.name}
             </div>
             {isNew(entry) && <NewPill />}
@@ -148,17 +145,21 @@ function Row({
           </div>
         </div>
 
-        <div className="hidden sm:flex items-baseline gap-1 justify-end">
+        {/* Score — anchors the row visually as the headline number on every
+            breakpoint. Big, tier-colored, baseline-aligned. */}
+        <div className="flex items-baseline gap-1 justify-end tabular-nums">
           <div
-            className="font-display font-bold text-[32px] leading-none tracking-[-0.03em] tabular-nums"
+            className="font-display font-bold text-[28px] sm:text-[32px] leading-none tracking-[-0.03em]"
             style={{ color: tierColor }}
           >
             {entry.wedge_score}
           </div>
-          <div className="font-mono text-[11px] text-muted">/100</div>
+          <div className="font-mono text-[10px] sm:text-[11px] text-muted">/100</div>
         </div>
 
-        <div className="flex justify-center">
+        {/* Tier — categorical badge, hidden below sm where space is tight
+            and the score's tier color does the categorical work. */}
+        <div className="hidden sm:flex justify-center">
           <span
             className="inline-block whitespace-nowrap font-mono font-bold tracking-[0.12em] border-2 border-ink text-[10px] px-2 py-[3px]"
             style={{ background: tier.bg, color: tier.fg }}

@@ -223,10 +223,10 @@ function FullRow({
     <li className={isLast ? "" : "border-b-2 border-dashed border-ink"}>
       <Link
         href={`/r/${entry.slug}`}
-        className="grid items-center gap-4 px-6 py-5 no-underline text-ink hover:bg-paper-alt transition-colors grid-cols-[64px_minmax(0,1fr)_96px_112px] md:grid-cols-[64px_minmax(0,1fr)_96px_96px_112px]"
+        className="grid items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5 no-underline text-ink hover:bg-paper-alt transition-colors grid-cols-[44px_minmax(0,1fr)_auto] sm:grid-cols-[64px_minmax(0,1fr)_96px_auto] md:grid-cols-[64px_minmax(0,1fr)_96px_96px_auto]"
       >
         <div
-          className="font-display font-bold text-[40px] leading-none tracking-[-0.04em] tabular-nums"
+          className="font-display font-bold text-[32px] sm:text-[40px] leading-none tracking-[-0.04em] tabular-nums"
           style={{ color: entry.rank <= 3 ? tierColor : undefined }}
         >
           {entry.rank.toString().padStart(2, "0")}
@@ -234,7 +234,7 @@ function FullRow({
 
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="font-display font-bold text-[20px] leading-tight tracking-[-0.01em] truncate">
+            <div className="font-display font-bold text-[18px] sm:text-[20px] leading-tight tracking-[-0.01em] truncate">
               {entry.name}
             </div>
             {isNew(entry) && <NewPill />}
@@ -243,7 +243,7 @@ function FullRow({
           <div className="font-mono text-[12px] text-muted mt-1 truncate">
             {entry.tagline}
           </div>
-          <div className="font-mono text-[11px] text-muted mt-1 hidden sm:flex flex-wrap gap-x-3">
+          <div className="font-mono text-[11px] text-muted mt-1 flex flex-wrap gap-x-3">
             <span>{entry.time_estimate}</span>
             <span className="opacity-60">{entry.view_count ?? 0} views</span>
           </div>
@@ -253,17 +253,21 @@ function FullRow({
           <MoatSparkline moat={entry.moat} />
         </div>
 
-        <div className="hidden sm:flex items-baseline gap-1 justify-end">
+        {/* Score — anchors the row visually as the headline number on every
+            breakpoint. Big, tier-colored, baseline-aligned. */}
+        <div className="flex items-baseline gap-1 justify-end tabular-nums">
           <div
-            className="font-display font-bold text-[34px] leading-none tracking-[-0.03em] tabular-nums"
+            className="font-display font-bold text-[30px] sm:text-[34px] leading-none tracking-[-0.03em]"
             style={{ color: tierColor }}
           >
             {entry.wedge_score}
           </div>
-          <div className="font-mono text-[11px] text-muted">/100</div>
+          <div className="font-mono text-[10px] sm:text-[11px] text-muted">/100</div>
         </div>
 
-        <div className="flex justify-center">
+        {/* Tier — categorical badge, hidden below sm where space is at a
+            premium and the score is doing the categorical work via color. */}
+        <div className="hidden sm:flex justify-center">
           <span
             className="inline-block whitespace-nowrap font-mono font-bold tracking-[0.12em] border-2 border-ink text-[10px] px-2 py-[3px]"
             style={{ background: tier.bg, color: tier.fg }}
