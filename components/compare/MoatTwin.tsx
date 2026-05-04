@@ -76,13 +76,6 @@ export function MoatTwin({ a, b, moat_diff }: Props) {
     <section className="bg-paper border-[2.5px] border-ink shadow-[6px_6px_0_0_var(--color-ink)] mb-0">
       <CardHead title="how deep is each moat." badge="moat">
         <div className="font-mono text-[10.5px] font-bold tracking-[0.18em] uppercase text-muted flex items-center gap-3">
-          <span
-            className={`px-2 py-[3px] border-2 border-ink shadow-[2px_2px_0_0_var(--color-ink)] tracking-[0.14em] ${
-              head.tie ? "bg-accent text-ink" : "bg-ink text-accent"
-            }`}
-          >
-            {head.text}
-          </span>
           <a
             href={methodologyHref}
             className="text-ink no-underline border-b-2 border-ink pb-[1px] hover:text-coral hover:border-coral hidden sm:inline"

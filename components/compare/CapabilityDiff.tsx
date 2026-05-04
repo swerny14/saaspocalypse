@@ -8,10 +8,6 @@ function capLabel(slug: string): string {
   return CAP_LOOKUP.get(slug)?.display_name.toLowerCase() ?? slug.replace(/-/g, " ");
 }
 
-function isDescriptor(slug: string): boolean {
-  return CAP_LOOKUP.get(slug)?.is_descriptor ?? false;
-}
-
 type Props = {
   diff: CapabilityBucket;
   aName: string;
@@ -44,7 +40,6 @@ export function CapabilityDiff({ diff, aName, bName }: Props) {
             count={aCount}
             variant="a"
             slugs={diff.a_only}
-            firstSolid="solid-coral"
             emptyLine={`${aName} is a strict subset of the shared surface.`}
           />
           <Column
@@ -52,7 +47,6 @@ export function CapabilityDiff({ diff, aName, bName }: Props) {
             count={sharedCount}
             variant="shared"
             slugs={diff.shared}
-            firstSolid="solid-lime"
             emptyLine="zero capability overlap."
           />
           <Column
@@ -60,7 +54,6 @@ export function CapabilityDiff({ diff, aName, bName }: Props) {
             count={bCount}
             variant="b"
             slugs={diff.b_only}
-            firstSolid="solid-purple"
             emptyLine={`${bName} is a strict subset of the shared surface.`}
           />
         </div>
@@ -69,45 +62,36 @@ export function CapabilityDiff({ diff, aName, bName }: Props) {
   );
 }
 
+/**
+ * Tag rendering: uniform outline across every column. No per-column hue
+ * and no descriptor distinction — earlier versions tinted descriptors
+ * lime, but two similar products usually share their categorical
+ * descriptor, which made the shared column read as a green-highlighted
+ * block. Descriptor taxonomy is a report-level concern; the compare
+ * page is about overlap and divergence, not categorization.
+ */
 function Column({
   title,
   count,
   variant,
   slugs,
-  firstSolid,
   emptyLine,
 }: {
   title: string;
   count: number;
   variant: "a" | "b" | "shared";
   slugs: string[];
-  firstSolid: "solid-coral" | "solid-lime" | "solid-purple";
   emptyLine: string;
 }) {
   return (
     <TriptychCol title={title} count={count} variant={variant} emptyLine={emptyLine}>
       {slugs.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {slugs.map((s, i) => {
-            const desc = isDescriptor(s);
-            // Solid lead tag anchors the eye; descriptors after that get the
-            // outline-with-bold treatment so categorical signals still pop.
-            const tagVariant =
-              i === 0
-                ? firstSolid
-                : desc
-                  ? variant === "shared"
-                    ? "solid-ink"
-                    : variant === "a"
-                      ? "solid-coral"
-                      : "solid-purple"
-                  : "outline";
-            return (
-              <Tag key={s} variant={tagVariant}>
-                {capLabel(s)}
-              </Tag>
-            );
-          })}
+          {slugs.map((s) => (
+            <Tag key={s} variant="outline" side={variant}>
+              {capLabel(s)}
+            </Tag>
+          ))}
         </div>
       )}
     </TriptychCol>

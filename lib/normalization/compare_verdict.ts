@@ -16,10 +16,16 @@ export type CompareVerdict = {
   winner: CompareWinner;
   /** Slug of the winner side (null on tie). */
   winner_slug: string | null;
+  /** Display name of the winner (null on tie). */
+  winner_name: string | null;
   /** Short uppercase chip in the title block, e.g. "ATTACK CALENDLY-ISH FIRST". */
   chip: string;
   /** One-sentence prose under the chip — concrete reasons, lowercase. */
   summary: string;
+  /** Concrete supporting reasons surfaced as chips inside the verdict band.
+   *  Same data as `summary`, exposed as an array so the band can render
+   *  them as discrete chips. Up to 3 entries. */
+  reasons: string[];
   /** Verdict-band line (may reference the `punch` phrase verbatim). */
   line: string;
   /** Emphasized lime phrase rendered inside the verdict band. */
@@ -58,11 +64,13 @@ export function computeCompareVerdict(
   return {
     winner,
     winner_slug: winnerSide.report.slug,
+    winner_name: winnerName,
     chip: `ATTACK ${winnerName.toUpperCase()} FIRST`,
     summary,
+    reasons,
     line,
     punch,
-    cta_label: "read the full reports →",
+    cta_label: `read the ${winnerName} report →`,
     cta_href: `/r/${winnerSide.report.slug}`,
   };
 }
@@ -90,8 +98,10 @@ function tieVerdict(pair: ComparePair, diff: CompareDiff): CompareVerdict {
   return {
     winner: "tie",
     winner_slug: null,
+    winner_name: null,
     chip: "TOO CLOSE TO CALL",
     summary: `same tier, near-identical wedge score — pick on taste.`,
+    reasons: ["matched tier", "matched wedge score", moatPhrase],
     line: `${aName} and ${bName} ${moatPhrase}, sit in the same tier, and present the same wall. either is a defensible angle of attack — the choice is taste, not difficulty.`,
     punch: "either is a defensible angle of attack",
     cta_label: "read both reports →",

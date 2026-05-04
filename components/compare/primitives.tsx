@@ -58,28 +58,47 @@ export function CardHead({
 
 export function CountBadge({
   count,
-  variant,
+  side,
 }: {
   count: number;
-  variant: ColumnVariant;
+  /** Compare-page side encoding. Mirrors Tag's `side` prop so the count
+   *  badges inherit the same coral / purple / mixed border treatment as
+   *  the tags they cap. */
+  side?: "a" | "b" | "shared";
 }) {
   const isZero = count === 0;
-  const cls = isZero
-    ? "bg-paper text-muted border-2 border-muted shadow-[3px_3px_0_0_#999]"
-    : variant === "shared"
-      ? "bg-accent text-ink shadow-[3px_3px_0_0_var(--color-ink)]"
-      : variant === "a"
-        ? "bg-coral text-ink shadow-[3px_3px_0_0_var(--color-ink)]"
-        : "bg-purple text-ink shadow-[3px_3px_0_0_var(--color-ink)]";
+  if (side === "shared" && !isZero) {
+    return (
+      <span
+        className="font-display font-bold text-[26px] tracking-[-0.03em] leading-none px-2 py-0.5 bg-transparent text-ink border-mixed"
+      >
+        {count}
+      </span>
+    );
+  }
+  const borderCls = isZero
+    ? "border-muted/60"
+    : side === "a"
+      ? "border-coral"
+      : side === "b"
+        ? "border-purple"
+        : "border-ink";
+  const textCls = isZero ? "text-muted" : "text-ink";
   return (
     <span
-      className={`font-display font-bold text-[28px] tracking-[-0.03em] leading-none px-2.5 py-1 ${cls}`}
+      className={`font-display font-bold text-[26px] tracking-[-0.03em] leading-none px-2 py-0.5 bg-transparent border-[2.5px] ${borderCls} ${textCls}`}
     >
       {count}
     </span>
   );
 }
 
+/**
+ * Column shell for the only-A / shared / only-B triptych. Side identity is
+ * encoded by background tone matching VerdictTwin and MoatTwin (paper for
+ * left, paper-alt for right, bg for the muted middle), not by saturated
+ * hues — the column header + count badge already differentiate them.
+ */
 export function TriptychCol({
   title,
   count,
@@ -93,18 +112,17 @@ export function TriptychCol({
   emptyLine?: string;
   children: React.ReactNode;
 }) {
-  const isShared = variant === "shared";
+  const bgCls =
+    variant === "a" ? "bg-paper" : variant === "b" ? "bg-paper-alt" : "bg-bg";
   return (
     <div
-      className={`flex flex-col gap-3.5 px-5 py-4 md:px-6 md:py-[18px] min-h-[184px] border-r-[2.5px] border-ink last:border-r-0 max-md:border-r-0 max-md:border-b-[2.5px] max-md:last:border-b-0 ${
-        isShared ? "bg-bg" : ""
-      }`}
+      className={`flex flex-col gap-3.5 px-5 py-4 md:px-6 md:py-[18px] min-h-[184px] border-r-[2.5px] border-ink last:border-r-0 max-md:border-r-0 max-md:border-b-[2.5px] max-md:last:border-b-0 ${bgCls}`}
     >
       <div className="flex items-center justify-between gap-2.5">
         <span className="font-mono text-[10.5px] font-bold tracking-[0.18em] uppercase text-ink truncate">
           {title} · {count}
         </span>
-        <CountBadge count={count} variant={variant} />
+        <CountBadge count={count} />
       </div>
       {children}
       {count === 0 && emptyLine && (
@@ -119,11 +137,19 @@ export function TriptychCol({
 export function Tag({
   children,
   variant = "outline",
+  side,
 }: {
   children: React.ReactNode;
   variant?: "outline" | "solid-coral" | "solid-lime" | "solid-purple" | "solid-ink" | "muted";
+  /**
+   * Compare-page side encoding. When set, overrides the variant's border
+   * color so "only-A" tags wear coral, "only-B" wear purple, and "shared"
+   * tags wear a half-and-half gradient that visually says "both sides own
+   * this." `bg-paper` text remains unchanged so the tag stays readable.
+   */
+  side?: "a" | "b" | "shared";
 }) {
-  const cls =
+  const baseCls =
     variant === "solid-coral"
       ? "bg-coral text-ink border-ink"
       : variant === "solid-lime"
@@ -135,9 +161,32 @@ export function Tag({
             : variant === "muted"
               ? "bg-transparent text-muted border-muted"
               : "bg-paper text-ink border-ink";
+
+  if (side === "shared") {
+    return (
+      <span
+        className={`font-mono text-[11px] font-medium px-2 py-[3px] border-mixed leading-[1.4] tracking-[0.02em] bg-paper text-ink`}
+      >
+        {children}
+      </span>
+    );
+  }
+
+  const sideCls =
+    side === "a"
+      ? "border-coral"
+      : side === "b"
+        ? "border-purple"
+        : "";
+  // When `side` is set, drop the variant's border-* class so the side
+  // border color wins. Side-encoded tags also use a thicker border so
+  // they match the matching count badge weight.
+  const stripped = side ? baseCls.replace(/border-\S+/g, "") : baseCls;
+  const borderWeight = side ? "border-[2.5px]" : "border-[1.5px]";
+
   return (
     <span
-      className={`font-mono text-[11px] font-medium px-2 py-[3px] border-[1.5px] leading-[1.4] tracking-[0.02em] ${cls}`}
+      className={`font-mono text-[11px] font-medium px-2 py-[3px] ${borderWeight} leading-[1.4] tracking-[0.02em] ${stripped} ${sideCls}`}
     >
       {children}
     </span>

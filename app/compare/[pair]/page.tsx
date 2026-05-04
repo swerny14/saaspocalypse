@@ -101,25 +101,23 @@ export default async function ComparePage({ params }: { params: Params }) {
 
   return (
     <main className="bg-bg min-h-screen">
-      <div className="max-w-[1200px] mx-auto px-5 sm:px-7 pt-7 pb-16">
+      <div className="max-w-[1200px] mx-auto px-5 sm:px-7 py-10">
         {/* breadcrumb top rail */}
-        <div className="flex justify-between items-center pb-4 font-mono text-[11px] font-medium tracking-[0.18em] uppercase text-muted flex-wrap gap-2">
-          <div className="min-w-0">
-            <a href="/directory" className="text-muted no-underline hover:text-ink">
-              ← directory
-            </a>
-            <span className="opacity-40 px-1.5">/</span>
-            <span>compare</span>
-            <span className="opacity-40 px-1.5">/</span>
-            <strong className="text-ink font-bold">
-              {comparePair.a.report.slug} vs {comparePair.b.report.slug}
-            </strong>
-          </div>
+        <div className="pb-4 font-mono text-[11px] font-medium tracking-[0.18em] uppercase text-muted">
+          <a href="/directory" className="text-muted no-underline hover:text-ink">
+            ← directory
+          </a>
+          <span className="opacity-40 px-1.5">/</span>
+          <span>compare</span>
         </div>
 
-        <TitleBlock aName={aName} bName={bName} verdict={verdict} />
+        <TitleBlock aName={aName} bName={bName} />
 
-        <div className="flex flex-col gap-6">
+        {/* Evidence sections — each card builds toward the verdict band
+            below. Order: scores → walls → cost → features → plumbing →
+            verdict. Concrete numbers first, abstract walls next, with
+            the verdict resolving the page at the bottom. */}
+        <div className="flex flex-col gap-7 sm:gap-9">
           <VerdictTwin
             a={comparePair.a}
             b={comparePair.b}
@@ -130,6 +128,11 @@ export default async function ComparePage({ params }: { params: Params }) {
             b={comparePair.b}
             moat_diff={diff.moat_diff}
           />
+          <CostStrip
+            a={comparePair.a}
+            b={comparePair.b}
+            cost_delta={diff.cost_delta}
+          />
           <CapabilityDiff
             diff={diff.capability_diff}
             aName={aName}
@@ -139,11 +142,6 @@ export default async function ComparePage({ params }: { params: Params }) {
             diffAll={diff.stack_diff_all}
             aName={aName}
             bName={bName}
-          />
-          <CostStrip
-            a={comparePair.a}
-            b={comparePair.b}
-            cost_delta={diff.cost_delta}
           />
           <VerdictBand verdict={verdict} />
         </div>

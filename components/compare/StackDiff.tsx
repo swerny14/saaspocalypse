@@ -45,7 +45,6 @@ export function StackDiff({ diffAll, aName, bName }: Props) {
             count={diffAll.a_only.length}
             variant="a"
             slugs={diffAll.a_only}
-            firstSolid="solid-coral"
             emptyLine={`${aName} ships nothing exotic the other doesn't.`}
           />
           <Column
@@ -53,7 +52,6 @@ export function StackDiff({ diffAll, aName, bName }: Props) {
             count={diffAll.shared.length}
             variant="shared"
             slugs={diffAll.shared}
-            firstSolid="solid-lime"
             emptyLine="no shared dependencies."
           />
           <Column
@@ -61,7 +59,6 @@ export function StackDiff({ diffAll, aName, bName }: Props) {
             count={diffAll.b_only.length}
             variant="b"
             slugs={diffAll.b_only}
-            firstSolid="solid-purple"
             emptyLine={`${bName} ships nothing exotic the other doesn't.`}
           />
         </div>
@@ -75,22 +72,20 @@ function Column({
   count,
   variant,
   slugs,
-  firstSolid,
   emptyLine,
 }: {
   title: string;
   count: number;
   variant: "a" | "b" | "shared";
   slugs: string[];
-  firstSolid: "solid-coral" | "solid-lime" | "solid-purple";
   emptyLine: string;
 }) {
   return (
     <TriptychCol title={title} count={count} variant={variant} emptyLine={emptyLine}>
       {slugs.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {slugs.map((s, i) => (
-            <Tag key={s} variant={i === 0 ? firstSolid : "outline"}>
+          {slugs.map((s) => (
+            <Tag key={s} variant="outline" side={variant}>
               {compLabel(s)}
             </Tag>
           ))}

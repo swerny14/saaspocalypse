@@ -37,6 +37,23 @@ body {
   min-height: 100vh;
 }
 
+/* Blended border for "shared" tags + count badges on the compare page:
+   side-A (coral) on the left, side-B (purple) on the right, with a soft
+   fade band through the middle so the gradient reads as "both sides own
+   this" instead of a hard split. */
+.border-mixed {
+  border-style: solid;
+  border-width: 2.5px;
+  border-image: linear-gradient(
+      to right,
+      var(--color-coral) 0%,
+      var(--color-coral) 28%,
+      var(--color-purple) 72%,
+      var(--color-purple) 100%
+    )
+    1;
+}
+
 /* Subtle 45° ink hatch — manila-folder / evidence-doc texture. Sits on
    top of any background color; ~5% ink at 7px spacing reads as surface
    texture without competing with foreground content. */

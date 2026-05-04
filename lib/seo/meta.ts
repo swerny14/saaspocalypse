@@ -50,17 +50,17 @@ export function compareCanonical(slugA: string, slugB: string): string {
 }
 
 export function comparePageTitle(a: StoredReport, b: StoredReport): string {
-  return `${a.name} vs ${b.name}: which SaaS is easier to compete with? - ${BRAND}`;
+  return `${a.name} vs ${b.name}: which has thinner walls? | ${BRAND}`;
 }
 
 export function comparePageOgTitle(a: StoredReport, b: StoredReport): string {
-  return `${a.name} vs ${b.name}: SaaS moat comparison - ${a.wedge_score}/100 vs ${b.wedge_score}/100 | ${BRAND}`;
+  return `${a.name} vs ${b.name} - wedge scan: ${a.wedge_score}/100 vs ${b.wedge_score}/100 | ${BRAND}`;
 }
 
 export function comparePageDescription(a: StoredReport, b: StoredReport): string {
-  const full = `${a.name} vs ${b.name}. Compare wedge scores, moat depth, stack, capabilities, cost, and estimated build time side by side.`;
+  const full = `${a.name} vs ${b.name} - which has thinner walls? Wedge scores ${a.wedge_score} vs ${b.wedge_score}, moat depth, build time, stack, and cost side by side.`;
   if (full.length <= 155) return full;
-  return `${a.name} vs ${b.name}. Wedge score ${a.wedge_score} vs ${b.wedge_score}. ${a.time_estimate} vs ${b.time_estimate}.`;
+  return `${a.name} vs ${b.name}: wedge score ${a.wedge_score} vs ${b.wedge_score}, ${a.time_estimate} vs ${b.time_estimate} to build. Side-by-side wedge scan.`;
 }
 
 /**
